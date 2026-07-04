@@ -39,6 +39,14 @@ class WarningEvenement(BaseModel):
     detail: str | None = None
 
 
+class RelationResume(BaseModel):
+    id_gedcom: str
+    nom: str
+    prenoms: str | None = None
+    sexe: str | None = None
+    role: str | None = None
+
+
 class EvenementArbre(BaseModel):
     type: str
     date: str | None = None
@@ -60,14 +68,6 @@ class ActesPersonne(BaseModel):
 class PhotoPersonne(BaseModel):
     url: str
     suffixe: str | None = None
-
-
-class RelationResume(BaseModel):
-    id_gedcom: str
-    nom: str
-    prenoms: str | None = None
-    sexe: str | None = None
-    role: str | None = None
 
 
 class RelationsPersonne(BaseModel):
