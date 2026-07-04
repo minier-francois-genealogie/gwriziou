@@ -46,7 +46,7 @@ Repo : [github.com/minier-francois-genealogie/gwriziou/web](https://github.com/m
 
 ### Render (recommandé)
 
-Le fichier `render.yaml` à la racine du monorepo déclare **gwriziou-api** (Docker) et **gwriziou-web** (static).
+Le fichier `render.yaml` à la racine du monorepo déclare **gwriziou-api** (Docker) et **gwriziou** (static).
 
 1. Render → **New** → **Blueprint** → repo `minier-francois-genealogie/gwriziou`
 2. Le site static build depuis `web/` avec `VITE_API_URL` pointant vers l'API

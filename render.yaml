@@ -20,7 +20,7 @@ services:
         value: "*"
 
   - type: web
-    name: gwriziou-web
+    name: gwriziou
     runtime: static
     rootDir: web
     buildCommand: npm install && npm run build
