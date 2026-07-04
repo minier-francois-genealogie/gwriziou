@@ -760,16 +760,23 @@ def get_arbre(
             return
         unions[id_famille] = _fetch_union_noeud(conn, id_famille)
 
-    def link_union(id_famille: str, child_ids: list[str]) -> None:
+    def link_union_epoux(id_famille: str) -> None:
         add_union(id_famille)
         for parent_id in _parent_ids_for_famille(conn, id_famille):
             add_person(parent_id)
             aretes.append(
                 AreteArbre(de=parent_id, vers=id_famille, type="union_epoux")
             )
+
+    def link_union(id_famille: str, child_ids: list[str]) -> None:
+        link_union_epoux(id_famille)
         for cid in child_ids:
             add_person(cid)
             aretes.append(AreteArbre(de=id_famille, vers=cid, type="union_enfant"))
+
+    def add_marriage_unions(pid: str) -> None:
+        for id_famille in _famille_ids_as_parent(conn, pid):
+            link_union_epoux(id_famille)
 
     def walk_ancestors(pid: str, depth: int) -> None:
         add_person(pid)
@@ -792,14 +799,9 @@ def get_arbre(
                 AreteArbre(de=famc, vers=sibling_id, type="union_enfant")
             )
 
-    def add_conjoints(pid: str) -> None:
-        for conjoint_id in _conjoint_ids(conn, pid):
-            add_person(conjoint_id)
-            aretes.append(AreteArbre(de=pid, vers=conjoint_id, type="conjoint"))
-
     def walk_descendants(pid: str, depth: int) -> None:
         add_person(pid)
-        add_conjoints(pid)
+        add_marriage_unions(pid)
         if depth >= descendants:
             return
         for id_famille in _famille_ids_as_parent(conn, pid):

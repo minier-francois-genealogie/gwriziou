@@ -58,7 +58,7 @@ export function ActeIconSingle({
   const ariaLabel = lines.join(" — ");
 
   return (
-    <span className="group/acte relative inline-flex justify-center">
+    <span className="group/acte relative z-50 inline-flex justify-center">
       <button
         type="button"
         aria-disabled={!canOpen}
@@ -67,6 +67,8 @@ export function ActeIconSingle({
           if (!canOpen || !acte?.url || !onActeClick) return;
           onActeClick(type, acte.url);
         }}
+        onPointerDown={(e) => e.stopPropagation()}
+        onPointerUp={(e) => e.stopPropagation()}
         className={`inline-flex items-center justify-center rounded-full transition-colors ${dim} ${
           active
             ? canOpen

@@ -8,16 +8,16 @@ import { useAsync } from "../hooks/useApi";
 import { saveDerniereVue } from "../utils/appStorage";
 
 export function Layout() {
-  const { initPersonneId } = useApp();
+  const { initAncrePersonneId } = useApp();
   const { data: status } = useAsync(() => api.status(), []);
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (status?.id_gedcom_racine) {
-      initPersonneId(status.id_gedcom_racine);
+      initAncrePersonneId(status.id_gedcom_racine);
     }
-  }, [status?.id_gedcom_racine, initPersonneId]);
+  }, [status?.id_gedcom_racine, initAncrePersonneId]);
 
   useEffect(() => {
     const view =

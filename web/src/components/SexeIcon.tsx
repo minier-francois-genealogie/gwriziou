@@ -47,22 +47,32 @@ export function SexeIcon({ sexe, className = "" }: SexeIconProps) {
   if (sexe === "M") {
     return (
       <span
-        className={`inline-flex items-center justify-center ${className}`}
+        className={`group/sexe relative inline-flex items-center justify-center ${className}`}
         aria-label="Homme"
-        title="Homme"
       >
         <MarsIcon className={`${ICON_CLASS} text-sky-600`} />
+        <span
+          role="tooltip"
+          className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-800 px-2 py-1 text-[10px] text-white shadow-md group-hover/sexe:block"
+        >
+          Homme
+        </span>
       </span>
     );
   }
   if (sexe === "F") {
     return (
       <span
-        className={`inline-flex items-center justify-center ${className}`}
+        className={`group/sexe relative inline-flex items-center justify-center ${className}`}
         aria-label="Femme"
-        title="Femme"
       >
         <VenusIcon className={`${ICON_CLASS} text-rose-500`} />
+        <span
+          role="tooltip"
+          className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-800 px-2 py-1 text-[10px] text-white shadow-md group-hover/sexe:block"
+        >
+          Femme
+        </span>
       </span>
     );
   }

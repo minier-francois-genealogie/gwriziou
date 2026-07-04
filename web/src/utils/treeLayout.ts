@@ -43,7 +43,7 @@ export interface TreeLayout {
   height: number;
 }
 
-const NODE_W = 176;
+const NODE_W = 192;
 const NODE_H = 112;
 /** Descente verticale sous l'icône union avant la ramification vers les enfants. */
 const UNION_DESC_STEM = NODE_H / 2;
@@ -173,7 +173,7 @@ function coupleBlockWidth(
   return 1 + spouseIdsFor(id, spouses, generations, gen, byId).length;
 }
 
-/** Place personne + conjoint(s) dans un bloc [coupleLeft, coupleLeft + width). */
+/** Place personne + conjoint(s) dans un bloc [coupleLeft, coupleLeft + width). Homme à gauche, femme à droite. */
 function placeCouple(
   id: string,
   coupleLeft: number,
@@ -184,13 +184,16 @@ function placeCouple(
   byId: Map<string, NoeudArbre>,
 ): number {
   const spouseList = gen >= 0 ? spouseIdsFor(id, spouses, generations, gen, byId) : [];
-  positions.set(id, coupleLeft + 0.5);
-  for (let i = 0; i < spouseList.length; i++) {
-    const sid = spouseList[i]!;
-    if (!positions.has(sid)) {
-      generations.set(sid, gen);
-      positions.set(sid, coupleLeft + 1.5 + i);
-    }
+  const members = [id, ...spouseList.filter((sid) => sid !== id)];
+  members.sort((a, b) => {
+    const d = sexeRank(byId.get(a)?.sexe) - sexeRank(byId.get(b)?.sexe);
+    return d !== 0 ? d : a.localeCompare(b);
+  });
+  for (let i = 0; i < members.length; i++) {
+    const pid = members[i]!;
+    if (pid !== id && positions.has(pid)) continue;
+    generations.set(pid, gen);
+    positions.set(pid, coupleLeft + 0.5 + i);
   }
   return 1 + spouseList.length;
 }
@@ -205,6 +208,27 @@ function sortChildren(ids: string[], byId: Map<string, NoeudArbre>): string[] {
     if (!da && db) return 1;
     return a.localeCompare(b);
   });
+}
+
+function linkSpousesFromUnions(
+  spouses: Map<string, string[]>,
+  unionParents: Map<string, string[]>,
+): void {
+  for (const par of unionParents.values()) {
+    for (let i = 0; i < par.length; i++) {
+      for (let j = 0; j < par.length; j++) {
+        if (i === j) continue;
+        const de = par[i]!;
+        const vers = par[j]!;
+        if (!spouses.has(de)) spouses.set(de, []);
+        if (!spouses.get(de)!.includes(vers)) spouses.get(de)!.push(vers);
+      }
+    }
+  }
+}
+
+function spousePairKey(a: string, b: string): string {
+  return a < b ? `${a}|${b}` : `${b}|${a}`;
 }
 
 function buildMaps(_centre: string, aretes: AreteArbre[]) {
@@ -226,6 +250,8 @@ function buildMaps(_centre: string, aretes: AreteArbre[]) {
       if (!spouses.get(de)!.includes(vers)) spouses.get(de)!.push(vers);
     }
   }
+
+  linkSpousesFromUnions(spouses, unionParents);
 
   for (const [idFamille, par] of unionParents) {
     const kids = unionChildren.get(idFamille) ?? [];
@@ -336,7 +362,7 @@ function assignGenerations(
   parents: Map<string, string[]>,
   children: Map<string, string[]>,
   unionChildren: Map<string, string[]>,
-  _spouses: Map<string, string[]>,
+  unionParents: Map<string, string[]>,
   aretes: AreteArbre[],
   maxAncestors: number,
   maxDescendants: number,
@@ -367,6 +393,16 @@ function assignGenerations(
         generations.set(childId, nextGen);
         downQueue.push({ id: childId, gen: nextGen });
       }
+    }
+  }
+
+  for (const par of unionParents.values()) {
+    const knownGen = par
+      .map((pid) => generations.get(pid))
+      .find((g): g is number => g !== undefined);
+    if (knownGen === undefined) continue;
+    for (const pid of par) {
+      if (!generations.has(pid)) generations.set(pid, knownGen);
     }
   }
 
@@ -722,7 +758,7 @@ export function layoutTree(
     parents,
     children,
     unionChildren,
-    spouses,
+    unionParents,
     aretes,
     ancetres,
     descendants,
@@ -835,8 +871,18 @@ export function layoutTree(
 
   const edges: TreeLayoutEdge[] = [];
 
+  const unionSpousePairs = new Set<string>();
+  for (const par of unionParents.values()) {
+    for (let i = 0; i < par.length; i++) {
+      for (let j = i + 1; j < par.length; j++) {
+        unionSpousePairs.add(spousePairKey(par[i]!, par[j]!));
+      }
+    }
+  }
+
   for (const { de, vers, type } of aretes) {
     if (type === "conjoint") {
+      if (unionSpousePairs.has(spousePairKey(de, vers))) continue;
       const from = nodePos.get(de);
       const to = nodePos.get(vers);
       if (!from || !to) continue;

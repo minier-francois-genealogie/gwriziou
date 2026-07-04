@@ -1,5 +1,6 @@
 import type { ActeType, NoeudArbre } from "../types/api";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useCoarsePointer } from "../hooks/useCoarsePointer";
 import type { ParentsAilleursRef } from "../utils/treeLayout";
 import {
   formatNom,
@@ -7,7 +8,9 @@ import {
   hasMultiplePrenoms,
 } from "../utils/format";
 import { NODE_H, NODE_W } from "../utils/treeLayout";
+import { AncreButton } from "./AncreButton";
 import { EvenementsList } from "./EvenementsList";
+import { SexeIcon } from "./SexeIcon";
 
 const REF_BADGE_H = 26;
 
@@ -15,11 +18,12 @@ interface PersonNodeProps {
   noeud: NoeudArbre;
   x: number;
   y: number;
-  selected: boolean;
+  focused: boolean;
+  isAncre: boolean;
   highlighted?: boolean;
   parentsAilleurs?: ParentsAilleursRef;
-  onHighlight: (id: string) => void;
-  onRecenter: (id: string) => void;
+  onFocus: (id: string) => void;
+  onAncre: (id: string) => void;
   onActeClick?: (type: "naissance" | "mariage" | "deces", url: string, label?: string) => void;
   onParentsRefClick?: (parentIds: string[]) => void;
 }
@@ -28,19 +32,23 @@ export function PersonNode({
   noeud,
   x,
   y,
-  selected,
+  focused,
+  isAncre,
   highlighted = false,
   parentsAilleurs,
-  onHighlight,
-  onRecenter,
+  onFocus,
+  onAncre,
   onActeClick,
   onParentsRefClick,
 }: PersonNodeProps) {
   const isMale = noeud.sexe === "M";
   const isFemale = noeud.sexe === "F";
+  const coarse = useCoarsePointer();
+  const [focusTipVisible, setFocusTipVisible] = useState(false);
+
   const accent = highlighted
     ? "ring-2 ring-amber-400 ring-offset-2"
-    : selected
+    : focused
       ? isFemale
         ? "ring-2 ring-rose-500 ring-offset-2"
         : isMale
@@ -63,28 +71,58 @@ export function PersonNode({
     : undefined;
   const hasRef = !!parentsAilleurs;
   const extraTop = hasRef ? REF_BADGE_H : 0;
-  const clickTimer = useRef<number | null>(null);
+  const awaitingFocusTap = useRef(false);
+  const tapRef = useRef<{ x: number; y: number } | null>(null);
 
-  const handleCellClick = () => {
-    if (clickTimer.current != null) {
-      window.clearTimeout(clickTimer.current);
-      clickTimer.current = null;
+  useEffect(() => {
+    if (focused) {
+      setFocusTipVisible(false);
+      awaitingFocusTap.current = false;
+    }
+  }, [focused]);
+
+  const handleCellFocus = () => {
+    if (coarse) {
+      if (awaitingFocusTap.current) {
+        awaitingFocusTap.current = false;
+        setFocusTipVisible(false);
+        onFocus(noeud.id_gedcom);
+      } else {
+        awaitingFocusTap.current = true;
+        setFocusTipVisible(true);
+      }
       return;
     }
-    clickTimer.current = window.setTimeout(() => {
-      onHighlight(noeud.id_gedcom);
-      clickTimer.current = null;
-    }, 250);
+    onFocus(noeud.id_gedcom);
   };
 
-  const handleCellDoubleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (clickTimer.current != null) {
-      window.clearTimeout(clickTimer.current);
-      clickTimer.current = null;
-    }
-    onRecenter(noeud.id_gedcom);
+  const stopTreePan = (e: React.PointerEvent | React.MouseEvent) => {
+    e.stopPropagation();
   };
+
+  const onCellPointerDown = (e: React.PointerEvent) => {
+    stopTreePan(e);
+    tapRef.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const onCellPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    stopTreePan(e);
+    if (
+      e.target !== e.currentTarget &&
+      e.target instanceof Element &&
+      e.target.closest("button")
+    ) {
+      return;
+    }
+    const start = tapRef.current;
+    tapRef.current = null;
+    if (!start) return;
+    const moved = Math.hypot(e.clientX - start.x, e.clientY - start.y);
+    if (moved > 8) return;
+    handleCellFocus();
+  };
+
+  const showFocusTooltip = coarse ? focusTipVisible : undefined;
 
   return (
     <foreignObject
@@ -93,6 +131,7 @@ export function PersonNode({
       width={NODE_W}
       height={NODE_H + extraTop}
       className="overflow-visible"
+      data-tree-interactive
     >
       <div className="flex h-full flex-col">
         {parentsAilleurs && (
@@ -136,43 +175,82 @@ export function PersonNode({
             </span>
           </div>
         )}
-        <button
-          type="button"
-          onClick={handleCellClick}
-          onDoubleClick={handleCellDoubleClick}
-          className={`flex min-h-0 flex-1 flex-col overflow-visible rounded-xl border-2 bg-white p-2 text-left shadow-sm transition hover:shadow-md ${border} ${accent}`}
+        <div
+          className={`relative flex min-h-0 flex-1 flex-col overflow-visible rounded-xl border-2 bg-white shadow-sm transition hover:shadow-md ${border} ${accent}`}
         >
-          <span className="group/name relative flex min-w-0 items-baseline gap-0.5">
-            <span className="truncate text-xs font-bold leading-tight text-slate-900">
-              {displayName}
-            </span>
-            {extraPrenoms && (
-              <span
-                className="shrink-0 text-[11px] leading-none text-slate-500"
-                aria-hidden="true"
-              >
-                *
-              </span>
-            )}
+          <div
+            role="button"
+            tabIndex={0}
+            onPointerDown={onCellPointerDown}
+            onPointerUp={onCellPointerUp}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                handleCellFocus();
+              }
+            }}
+            className="group/focus relative flex min-h-0 flex-1 cursor-pointer flex-col p-2 pr-7 text-left outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-1"
+          >
             <span
               role="tooltip"
-              className="pointer-events-none absolute bottom-full left-0 z-50 mb-1 hidden max-w-[220px] whitespace-normal rounded-md bg-slate-800 px-2 py-1 text-[10px] font-normal leading-snug text-white shadow-md group-hover/name:block"
+              className={`pointer-events-none absolute bottom-full left-1/2 z-40 mb-1 -translate-x-1/2 rounded-md bg-slate-800 px-2 py-1 text-[10px] text-white shadow-md group-has-[.group\\/acte:hover]:hidden group-has-[.group\\/prenoms:hover]:hidden group-has-[.group\\/sexe:hover]:hidden group-has-[.group\\/warn:hover]:hidden ${
+                coarse
+                  ? showFocusTooltip
+                    ? "block"
+                    : "hidden"
+                  : "hidden group-hover/focus:block"
+              }`}
             >
-              {fullName}
+              Focus
             </span>
-          </span>
-          <EvenementsList
-            evenements={noeud.evenements ?? []}
-            onActeClick={handleActeClick}
-            size="compact"
-            className="mt-0.5"
-          />
-          {noeud.profession && (
-            <span className="mt-0.5 truncate text-[10px] leading-tight italic text-slate-400">
-              {noeud.profession}
+            <span className="min-w-0">
+              <span className="flex min-w-0 items-center gap-1">
+                <SexeIcon sexe={noeud.sexe} className="shrink-0" />
+                <span className="flex min-w-0 items-baseline gap-0.5">
+                  <span className="truncate text-xs font-bold leading-tight text-slate-900">
+                    {displayName}
+                  </span>
+                  {extraPrenoms && (
+                    <span
+                      className="group/prenoms relative shrink-0 text-[11px] leading-none text-slate-500"
+                      aria-hidden="true"
+                    >
+                      *
+                      <span
+                        role="tooltip"
+                        className="pointer-events-none absolute bottom-full left-0 z-50 mb-1 hidden max-w-[220px] whitespace-normal rounded-md bg-slate-800 px-2 py-1 text-[10px] font-normal leading-snug text-white shadow-md group-hover/prenoms:block"
+                      >
+                        {fullName}
+                      </span>
+                    </span>
+                  )}
+                </span>
+              </span>
             </span>
-          )}
-        </button>
+            <div className="mt-1.5">
+              <EvenementsList
+                evenements={noeud.evenements ?? []}
+                onActeClick={handleActeClick}
+                size="compact"
+              />
+            </div>
+            {noeud.profession && (
+              <span className="mt-0.5 truncate text-[10px] leading-tight italic text-slate-400">
+                {noeud.profession}
+              </span>
+            )}
+          </div>
+          <div
+            className="absolute right-1 top-1 z-10"
+            data-tree-interactive
+          >
+            <AncreButton
+              active={isAncre}
+              onAncre={() => onAncre(noeud.id_gedcom)}
+              size="sm"
+            />
+          </div>
+        </div>
       </div>
     </foreignObject>
   );

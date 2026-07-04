@@ -59,8 +59,9 @@ export function SettingsPage() {
       <section className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
         <h2 className="mb-2 font-semibold text-slate-800">Navigation (écran Arbre)</h2>
         <ul className="space-y-1 text-xs leading-relaxed">
-          <li>↑↓←→ : surligner une personne</li>
-          <li>Double clic / double tap : centrer la vue</li>
+          <li>↑ père (ou mère) · ↓ enfant aîné · ←→ même génération</li>
+          <li>Icône ancre : centre de l&apos;arbre (reload)</li>
+          <li>Clic cellule = focus · chevrons en bas à droite</li>
           <li>Molette : zoom · glisser : déplacer</li>
         </ul>
       </section>

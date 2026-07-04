@@ -1,5 +1,6 @@
 import type { ActeType, EvenementArbre, PersonneDetail, RelationResume } from "../types/api";
 import { formatNom } from "../utils/format";
+import { AncreButton } from "./AncreButton";
 import { EvenementsList, normalizeEvenements } from "./EvenementsList";
 import { RelationPersonLabel } from "./RelationPersonLabel";
 import { PersonName } from "./SexeIcon";
@@ -7,6 +8,8 @@ import { PersonName } from "./SexeIcon";
 interface PersonPanelProps {
   personne: PersonneDetail | null;
   loading: boolean;
+  ancrePersonneId: string;
+  onAncre: (id: string) => void;
   onActeClick: (type: "naissance" | "mariage" | "deces", url: string, label?: string) => void;
   onNavigate: (id: string) => void;
 }
@@ -14,6 +17,8 @@ interface PersonPanelProps {
 export function PersonPanel({
   personne,
   loading,
+  ancrePersonneId,
+  onAncre,
   onActeClick,
   onNavigate,
 }: PersonPanelProps) {
@@ -42,13 +47,20 @@ export function PersonPanel({
   return (
     <aside className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <header className="border-b border-slate-100 pb-3">
-        <h2 className="text-lg font-bold text-slate-900">
-          <PersonName
-            nom={personne.nom}
-            prenoms={personne.prenoms}
-            sexe={personne.sexe}
+        <div className="flex items-start justify-between gap-2">
+          <h2 className="min-w-0 text-lg font-bold text-slate-900">
+            <PersonName
+              nom={personne.nom}
+              prenoms={personne.prenoms}
+              sexe={personne.sexe}
+            />
+          </h2>
+          <AncreButton
+            active={personne.id_gedcom === ancrePersonneId}
+            onAncre={() => onAncre(personne.id_gedcom)}
+            size="md"
           />
-        </h2>
+        </div>
         {personne.profession && (
           <p className="text-sm text-slate-600">{personne.profession}</p>
         )}

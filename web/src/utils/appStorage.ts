@@ -1,7 +1,9 @@
 import { normalizeGedcomId } from "./format";
 
 const KEYS = {
-  personneId: "gwriziou.personneId",
+  ancrePersonneId: "gwriziou.ancrePersonneId",
+  /** @deprecated migré vers ancrePersonneId */
+  personneIdLegacy: "gwriziou.personneId",
   ancetres: "gwriziou.ancetres",
   descendants: "gwriziou.descendants",
   derniereVue: "gwriziou.derniereVue",
@@ -24,18 +26,26 @@ function readInt(key: string, fallback: number, min: number, max: number): numbe
   }
 }
 
-export function loadPersonneId(fallback: string): string {
+export function loadAncrePersonneId(fallback: string): string {
   try {
-    const raw = localStorage.getItem(KEYS.personneId);
+    const raw =
+      localStorage.getItem(KEYS.ancrePersonneId) ??
+      localStorage.getItem(KEYS.personneIdLegacy);
+    if (raw && !localStorage.getItem(KEYS.ancrePersonneId)) {
+      const normalized = normalizeGedcomId(raw);
+      localStorage.setItem(KEYS.ancrePersonneId, normalized);
+      localStorage.removeItem(KEYS.personneIdLegacy);
+      return normalized;
+    }
     return raw ? normalizeGedcomId(raw) : fallback;
   } catch {
     return fallback;
   }
 }
 
-export function savePersonneId(id: string): void {
+export function saveAncrePersonneId(id: string): void {
   try {
-    localStorage.setItem(KEYS.personneId, normalizeGedcomId(id));
+    localStorage.setItem(KEYS.ancrePersonneId, normalizeGedcomId(id));
   } catch {
     /* quota / private mode */
   }

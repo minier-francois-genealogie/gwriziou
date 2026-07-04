@@ -13,19 +13,21 @@ import { UnionNode } from "./UnionNode";
 
 export interface TreeViewHandle {
   recenterOn: (nodeId: string) => void;
+  panTo: (nodeId: string) => void;
   fitAll: () => void;
 }
 
 interface TreeViewProps {
   arbre: ArbreResponse;
-  selectedId: string;
-  onHighlight: (id: string) => void;
-  onRecenter: (id: string) => void;
+  focusId: string;
+  ancreId: string;
+  onFocus: (id: string) => void;
+  onAncre: (id: string) => void;
   onActeClick: (type: "naissance" | "mariage" | "deces", url: string, label?: string) => void;
 }
 
 export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeView(
-  { arbre, selectedId, onHighlight, onRecenter, onActeClick },
+  { arbre, focusId, ancreId, onFocus, onAncre, onActeClick },
   ref,
 ) {
   const [highlightIds, setHighlightIds] = useState<ReadonlySet<string>>(
@@ -53,7 +55,8 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
   const {
     containerRef,
     viewBoxString,
-    recenterOn: panRecenter,
+    recenterOn: panRecenterWithZoom,
+    panTo: panRecenter,
     fitAll,
     onWheel,
     onPointerDown,
@@ -68,6 +71,15 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
     (nodeId: string) => {
       const node = nodeMap.get(nodeId);
       if (!node) return;
+      panRecenterWithZoom(node.x, node.y);
+    },
+    [nodeMap, panRecenterWithZoom],
+  );
+
+  const panToNode = useCallback(
+    (nodeId: string) => {
+      const node = nodeMap.get(nodeId);
+      if (!node) return;
       panRecenter(node.x, node.y);
     },
     [nodeMap, panRecenter],
@@ -75,6 +87,7 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
 
   useImperativeHandle(ref, () => ({
     recenterOn: recenterOnNode,
+    panTo: panToNode,
     fitAll,
   }));
 
@@ -82,14 +95,6 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
     setHighlightIds(new Set(parentIds));
     window.setTimeout(() => setHighlightIds(new Set()), 2500);
   }, []);
-
-  const handleRecenter = useCallback(
-    (id: string) => {
-      onRecenter(id);
-      recenterOnNode(id);
-    },
-    [onRecenter, recenterOnNode],
-  );
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
@@ -164,11 +169,12 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
                 noeud={node.noeud}
                 x={node.x}
                 y={node.y}
-                selected={node.id === selectedId}
+                focused={node.id === focusId}
+                isAncre={node.id === ancreId}
                 highlighted={highlightIds.has(node.id)}
                 parentsAilleurs={node.parentsAilleurs}
-                onHighlight={onHighlight}
-                onRecenter={handleRecenter}
+                onFocus={onFocus}
+                onAncre={onAncre}
                 onActeClick={onActeClick}
                 onParentsRefClick={handleParentsRefClick}
               />
@@ -176,15 +182,7 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
           </g>
         </svg>
       </div>
-      <div className="pointer-events-none absolute bottom-2 right-2 flex gap-1">
-        <button
-          type="button"
-          onClick={() => recenterOnNode(selectedId)}
-          className="pointer-events-auto rounded-lg border border-slate-200 bg-white/90 px-2 py-1 text-xs text-slate-600 shadow-sm backdrop-blur"
-          title="Centrer sur la sélection"
-        >
-          ⌖
-        </button>
+      <div className="pointer-events-none absolute bottom-2 left-2 flex gap-1">
         <button
           type="button"
           onClick={fitAll}

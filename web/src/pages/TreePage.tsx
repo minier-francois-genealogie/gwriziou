@@ -1,23 +1,35 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api/client";
 import { ActeModal } from "../components/ActeModal";
+import { TreeNavPad } from "../components/TreeNavPad";
 import { TreeView, type TreeViewHandle } from "../components/TreeView";
 import { useApp } from "../context/AppContext";
 import { useAsync } from "../hooks/useApi";
-import { pickNavTarget, useKeyboardNav } from "../hooks/useKeyboardNav";
-import type { ActeType, ArbreResponse, PersonneDetail } from "../types/api";
+import { useKeyboardNav } from "../hooks/useKeyboardNav";
+import type { ActeType, ArbreResponse } from "../types/api";
+import { layoutTree } from "../utils/treeLayout";
+import { buildTreeNavIndex, type TreeNavDirection } from "../utils/treeNav";
 
 const NAV_MESSAGE = "Navigation uniquement sur l'arbre chargé";
 
 export function TreePage() {
-  const { personneId, setPersonneId, ancetres, descendants } = useApp();
-  const [siblingIdx, setSiblingIdx] = useState(0);
-  const [toast, setToast] = useState<string | null>(null);
+  const {
+    ancrePersonneId,
+    setAncrePersonneId,
+    focusPersonneId,
+    setFocusPersonneId,
+    ancetres,
+    descendants,
+  } = useApp();
+
   const [fetchKey, setFetchKey] = useState(0);
-  const fetchCentreRef = useRef(personneId);
-  fetchCentreRef.current = personneId;
+  const fetchAncreRef = useRef(ancrePersonneId);
+  fetchAncreRef.current = ancrePersonneId;
+
+  const [toast, setToast] = useState<string | null>(null);
   const treeRef = useRef<TreeViewHandle>(null);
-  const mountedRef = useRef(false);
+  const skipFocusPanRef = useRef(false);
+
   const [acteModal, setActeModal] = useState<{
     type: ActeType;
     url: string;
@@ -26,28 +38,34 @@ export function TreePage() {
 
   useEffect(() => {
     setFetchKey((k) => k + 1);
-    mountedRef.current = true;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (!mountedRef.current) return;
-    setFetchKey((k) => k + 1);
-  }, [ancetres, descendants]);
+  }, [ancrePersonneId, ancetres, descendants]);
 
   const { data: arbre, loading: arbreLoading, error: arbreError } = useAsync(
-    () => api.arbre(fetchCentreRef.current, ancetres, descendants),
+    () => api.arbre(fetchAncreRef.current, ancetres, descendants),
     [fetchKey, ancetres, descendants],
   );
 
-  const { data: personne } = useAsync(
-    () => api.personne(personneId),
-    [personneId],
+  const layout = useMemo(
+    () =>
+      arbre
+        ? layoutTree(
+            arbre.centre,
+            arbre.noeuds,
+            arbre.unions ?? [],
+            arbre.aretes,
+            arbre.ancetres,
+            arbre.descendants,
+          )
+        : null,
+    [arbre],
   );
 
-  const graphIds = useMemo(
-    () => new Set((arbre?.noeuds ?? []).map((n) => n.id_gedcom)),
-    [arbre],
+  const navIndex = useMemo(
+    () =>
+      layout && arbre
+        ? buildTreeNavIndex(layout, arbre.aretes, arbre.noeuds)
+        : null,
+    [layout, arbre],
   );
 
   const showToast = useCallback((msg: string) => {
@@ -55,66 +73,56 @@ export function TreePage() {
     window.setTimeout(() => setToast(null), 2800);
   }, []);
 
-  const trySelect = useCallback(
-    (id: string): boolean => {
-      if (!graphIds.has(id)) {
+  const tryFocus = useCallback(
+    (id: string) => {
+      if (!navIndex?.graphIds.has(id)) {
         showToast(NAV_MESSAGE);
-        return false;
+        return;
       }
-      setPersonneId(id);
-      return true;
+      setFocusPersonneId(id);
     },
-    [graphIds, setPersonneId, showToast],
+    [navIndex, setFocusPersonneId, showToast],
   );
 
-  const handleHighlight = useCallback(
+  const handleAncre = useCallback(
     (id: string) => {
-      trySelect(id);
+      if (id === ancrePersonneId) return;
+      setAncrePersonneId(id);
     },
-    [trySelect],
+    [ancrePersonneId, setAncrePersonneId],
   );
 
-  const handleRecenter = useCallback(
-    (id: string) => {
-      trySelect(id);
+  const tryMove = useCallback(
+    (direction: TreeNavDirection) => {
+      const next = navIndex?.move(focusPersonneId, direction);
+      if (next) setFocusPersonneId(next);
     },
-    [trySelect],
+    [navIndex, focusPersonneId, setFocusPersonneId],
   );
 
   useEffect(() => {
-    if (!arbre || !graphIds.has(personneId)) return;
-    treeRef.current?.recenterOn(personneId);
+    if (!arbre || !navIndex?.graphIds.has(ancrePersonneId)) return;
+    skipFocusPanRef.current = true;
+    setFocusPersonneId(ancrePersonneId);
+    requestAnimationFrame(() => {
+      treeRef.current?.recenterOn(ancrePersonneId);
+      skipFocusPanRef.current = false;
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [arbre]);
 
   useEffect(() => {
-    setSiblingIdx(0);
-  }, [personneId]);
-
-  const tryNav = useCallback(
-    (direction: "parent" | "child" | "siblingPrev" | "siblingNext" | "spouse") => {
-      const next = pickNavTarget(
-        personne as PersonneDetail | null,
-        direction,
-        siblingIdx,
-      );
-      if (!next) return;
-      if (!trySelect(next)) return;
-      if (direction === "siblingPrev") setSiblingIdx((i) => i - 1);
-      if (direction === "siblingNext") setSiblingIdx((i) => i + 1);
-    },
-    [personne, siblingIdx, trySelect],
-  );
+    if (skipFocusPanRef.current) return;
+    if (!arbre || !navIndex?.graphIds.has(focusPersonneId)) return;
+    treeRef.current?.panTo(focusPersonneId);
+  }, [focusPersonneId, arbre, navIndex]);
 
   useKeyboardNav({
-    onHome: () => {
-      if (arbre?.centre) trySelect(arbre.centre);
-    },
-    onParent: () => tryNav("parent"),
-    onChild: () => tryNav("child"),
-    onSiblingPrev: () => tryNav("siblingPrev"),
-    onSiblingNext: () => tryNav("siblingNext"),
-    onSpouseNext: () => tryNav("spouse"),
+    onHome: () => tryFocus(ancrePersonneId),
+    onParent: () => tryMove("up"),
+    onChild: () => tryMove("down"),
+    onSiblingPrev: () => tryMove("left"),
+    onSiblingNext: () => tryMove("right"),
   });
 
   const handleActeClick = useCallback(
@@ -123,6 +131,11 @@ export function TreePage() {
     },
     [],
   );
+
+  const canUp = navIndex?.canMove(focusPersonneId, "up") ?? false;
+  const canDown = navIndex?.canMove(focusPersonneId, "down") ?? false;
+  const canLeft = navIndex?.canMove(focusPersonneId, "left") ?? false;
+  const canRight = navIndex?.canMove(focusPersonneId, "right") ?? false;
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
@@ -145,14 +158,26 @@ export function TreePage() {
       )}
 
       {arbre && (
-        <TreeView
-          ref={treeRef}
-          arbre={arbre as ArbreResponse}
-          selectedId={personneId}
-          onHighlight={handleHighlight}
-          onRecenter={handleRecenter}
-          onActeClick={handleActeClick}
-        />
+        <>
+          <TreeView
+            ref={treeRef}
+            arbre={arbre as ArbreResponse}
+            focusId={focusPersonneId}
+            ancreId={ancrePersonneId}
+            onFocus={tryFocus}
+            onAncre={handleAncre}
+            onActeClick={handleActeClick}
+          />
+          <div className="pointer-events-none absolute bottom-3 right-3 z-40">
+            <TreeNavPad
+              canUp={canUp}
+              canDown={canDown}
+              canLeft={canLeft}
+              canRight={canRight}
+              onMove={tryMove}
+            />
+          </div>
+        </>
       )}
 
       {acteModal && (

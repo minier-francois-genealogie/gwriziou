@@ -9,7 +9,8 @@ import { useAsync } from "../hooks/useApi";
 import type { ActeType, PersonneResume } from "../types/api";
 
 export function SearchPage() {
-  const { personneId, setPersonneId } = useApp();
+  const { ancrePersonneId, setAncrePersonneId } = useApp();
+  const [fichePersonneId, setFichePersonneId] = useState(ancrePersonneId);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
@@ -26,8 +27,8 @@ export function SearchPage() {
   );
 
   const { data: personne, loading: personneLoading } = useAsync(
-    () => api.personne(personneId),
-    [personneId],
+    () => api.personne(fichePersonneId),
+    [fichePersonneId],
   );
 
   useEffect(() => {
@@ -43,7 +44,7 @@ export function SearchPage() {
   };
 
   const selectPerson = (person: PersonneResume) => {
-    setPersonneId(person.id_gedcom);
+    setFichePersonneId(person.id_gedcom);
     setSuggestionsOpen(false);
   };
 
@@ -113,7 +114,7 @@ export function SearchPage() {
                       type="button"
                       onClick={() => selectPerson(person)}
                       className={`flex w-full flex-col px-3 py-2 text-left text-sm hover:bg-sky-50 ${
-                        person.id_gedcom === personneId ? "bg-sky-100 font-medium" : ""
+                        person.id_gedcom === fichePersonneId ? "bg-sky-100 font-medium" : ""
                       }`}
                     >
                       <PersonName
@@ -192,8 +193,10 @@ export function SearchPage() {
         <PersonPanel
           personne={personne ?? null}
           loading={personneLoading}
+          ancrePersonneId={ancrePersonneId}
+          onAncre={setAncrePersonneId}
           onActeClick={handleActeClick}
-          onNavigate={setPersonneId}
+          onNavigate={setFichePersonneId}
         />
       </div>
 

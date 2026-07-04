@@ -8,17 +8,20 @@ import {
 } from "react";
 import {
   loadAncetres,
+  loadAncrePersonneId,
   loadDescendants,
-  loadPersonneId,
   saveAncetres,
+  saveAncrePersonneId,
   saveDescendants,
-  savePersonneId,
 } from "../utils/appStorage";
 import { normalizeGedcomId } from "../utils/format";
 
 interface AppContextValue {
-  personneId: string;
-  setPersonneId: (id: string) => void;
+  ancrePersonneId: string;
+  setAncrePersonneId: (id: string) => void;
+  focusPersonneId: string;
+  setFocusPersonneId: (id: string) => void;
+  resetFocusToAncre: () => void;
   ancetres: number;
   descendants: number;
   setAncetres: (n: number) => void;
@@ -26,32 +29,43 @@ interface AppContextValue {
   menuOpen: boolean;
   setMenuOpen: (open: boolean) => void;
   toggleMenu: () => void;
-  initPersonneId: (rootId: string) => void;
+  initAncrePersonneId: (rootId: string) => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [personneId, setPersonneIdState] = useState("@655@");
+  const [ancrePersonneId, setAncrePersonneIdState] = useState("@655@");
+  const [focusPersonneId, setFocusPersonneIdState] = useState("@655@");
   const [initialized, setInitialized] = useState(false);
   const [ancetres, setAncetresState] = useState(loadAncetres);
   const [descendants, setDescendantsState] = useState(loadDescendants);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const initPersonneId = useCallback(
+  const initAncrePersonneId = useCallback(
     (rootId: string) => {
       if (initialized) return;
-      setPersonneIdState(loadPersonneId(rootId));
+      const id = loadAncrePersonneId(rootId);
+      setAncrePersonneIdState(id);
+      setFocusPersonneIdState(id);
       setInitialized(true);
     },
     [initialized],
   );
 
-  const setPersonneId = useCallback((id: string) => {
+  const setAncrePersonneId = useCallback((id: string) => {
     const normalized = normalizeGedcomId(id);
-    setPersonneIdState(normalized);
-    savePersonneId(normalized);
+    setAncrePersonneIdState(normalized);
+    saveAncrePersonneId(normalized);
   }, []);
+
+  const setFocusPersonneId = useCallback((id: string) => {
+    setFocusPersonneIdState(normalizeGedcomId(id));
+  }, []);
+
+  const resetFocusToAncre = useCallback(() => {
+    setFocusPersonneIdState(ancrePersonneId);
+  }, [ancrePersonneId]);
 
   const setAncetres = useCallback((n: number) => {
     setAncetresState(n);
@@ -67,8 +81,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({
-      personneId,
-      setPersonneId,
+      ancrePersonneId,
+      setAncrePersonneId,
+      focusPersonneId,
+      setFocusPersonneId,
+      resetFocusToAncre,
       ancetres,
       descendants,
       setAncetres,
@@ -76,18 +93,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
       menuOpen,
       setMenuOpen,
       toggleMenu,
-      initPersonneId,
+      initAncrePersonneId,
     }),
     [
-      personneId,
-      setPersonneId,
+      ancrePersonneId,
+      setAncrePersonneId,
+      focusPersonneId,
+      setFocusPersonneId,
+      resetFocusToAncre,
       ancetres,
       descendants,
       setAncetres,
       setDescendants,
       menuOpen,
       toggleMenu,
-      initPersonneId,
+      initAncrePersonneId,
     ],
   );
 

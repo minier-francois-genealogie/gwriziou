@@ -53,6 +53,19 @@ export function useSvgViewport({
     [contentWidth, contentHeight],
   );
 
+  const panTo = useCallback(
+    (cx: number, cy: number) => {
+      setViewBox((vb) =>
+        clampViewBox({
+          ...vb,
+          x: cx - vb.w / 2,
+          y: cy - vb.h / 2,
+        }),
+      );
+    },
+    [clampViewBox],
+  );
+
   const recenterOn = useCallback(
     (cx: number, cy: number, zoomFactor = 0.55) => {
       const el = containerRef.current;
@@ -107,6 +120,10 @@ export function useSvgViewport({
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
       if (!enabled) return;
+      const target = e.target;
+      if (target instanceof Element && target.closest("[data-tree-interactive]")) {
+        return;
+      }
       pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (pointersRef.current.size === 1 && e.button === 0) {
         (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -189,6 +206,7 @@ export function useSvgViewport({
     viewBox,
     viewBoxString,
     recenterOn,
+    panTo,
     fitAll,
     onWheel,
     onPointerDown,
