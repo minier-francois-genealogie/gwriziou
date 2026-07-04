@@ -82,6 +82,7 @@ export interface RelationResume {
   role: string | null;
   naissance?: EvenementResume | null;
   deces?: EvenementResume | null;
+  photos?: boolean;
 }
 
 export interface RelationsPersonne {

@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api/client";
 import { ActeModal } from "../components/ActeModal";
+import { PhotoModal } from "../components/PhotoModal";
 import { TreeNavPad } from "../components/TreeNavPad";
 import { TreeView, type TreeViewHandle } from "../components/TreeView";
 import { useApp } from "../context/AppContext";
 import { useAsync } from "../hooks/useApi";
 import { useKeyboardNav } from "../hooks/useKeyboardNav";
+import { usePhotoModal } from "../hooks/usePhotoModal";
 import type { ActeType, ArbreResponse } from "../types/api";
 import { layoutTree } from "../utils/treeLayout";
 import { buildTreeNavIndex, type TreeNavDirection } from "../utils/treeNav";
@@ -35,6 +37,8 @@ export function TreePage() {
     url: string;
     name: string;
   } | null>(null);
+
+  const { photoModal, openPhotosForPerson, closePhotos } = usePhotoModal();
 
   useEffect(() => {
     setFetchKey((k) => k + 1);
@@ -132,6 +136,13 @@ export function TreePage() {
     [],
   );
 
+  const handlePhotoClick = useCallback(
+    (id: string, nom: string, prenoms: string | null) => {
+      void openPhotosForPerson(id, nom, prenoms);
+    },
+    [openPhotosForPerson],
+  );
+
   const canUp = navIndex?.canMove(focusPersonneId, "up") ?? false;
   const canDown = navIndex?.canMove(focusPersonneId, "down") ?? false;
   const canLeft = navIndex?.canMove(focusPersonneId, "left") ?? false;
@@ -167,6 +178,7 @@ export function TreePage() {
             onFocus={tryFocus}
             onAncre={handleAncre}
             onActeClick={handleActeClick}
+            onPhotoClick={handlePhotoClick}
           />
           <div className="pointer-events-none absolute bottom-3 right-3 z-40">
             <TreeNavPad
@@ -186,6 +198,14 @@ export function TreePage() {
           url={acteModal.url}
           personName={acteModal.name}
           onClose={() => setActeModal(null)}
+        />
+      )}
+
+      {photoModal && (
+        <PhotoModal
+          photos={photoModal.photos}
+          personName={photoModal.personName}
+          onClose={closePhotos}
         />
       )}
     </div>

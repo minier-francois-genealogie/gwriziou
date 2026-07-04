@@ -1,4 +1,4 @@
-import type { ActeType, EvenementArbre, PersonneDetail, RelationResume } from "../types/api";
+import type { ActeType, EvenementArbre, PersonneDetail, PhotoPersonne, RelationResume } from "../types/api";
 import { formatNom } from "../utils/format";
 import { AncreButton } from "./AncreButton";
 import { EvenementsList, normalizeEvenements } from "./EvenementsList";
@@ -12,6 +12,8 @@ interface PersonPanelProps {
   onAncre: (id: string) => void;
   onActeClick: (type: "naissance" | "mariage" | "deces", url: string, label?: string) => void;
   onNavigate: (id: string) => void;
+  onPhotoClick: (photos: PhotoPersonne[], personName: string) => void;
+  onRelationPhotoClick: (id: string, nom: string, prenoms: string | null) => void;
 }
 
 export function PersonPanel({
@@ -21,6 +23,8 @@ export function PersonPanel({
   onAncre,
   onActeClick,
   onNavigate,
+  onPhotoClick,
+  onRelationPhotoClick,
 }: PersonPanelProps) {
   if (loading) {
     return (
@@ -53,6 +57,9 @@ export function PersonPanel({
               nom={personne.nom}
               prenoms={personne.prenoms}
               sexe={personne.sexe}
+              photos={personne.photos.length > 0}
+              photoCount={personne.photos.length}
+              onPhotoClick={() => onPhotoClick(personne.photos, name)}
             />
           </h2>
           <AncreButton
@@ -82,16 +89,19 @@ export function PersonPanel({
         title="Parent(s)"
         items={personne.relations.parents}
         onNavigate={onNavigate}
+        onRelationPhotoClick={onRelationPhotoClick}
       />
       <RelationList
         title="Conjoint(s)"
         items={personne.relations.conjoints}
         onNavigate={onNavigate}
+        onRelationPhotoClick={onRelationPhotoClick}
       />
       <RelationList
         title="Enfant(s)"
         items={personne.relations.enfants}
         onNavigate={onNavigate}
+        onRelationPhotoClick={onRelationPhotoClick}
       />
       <RelationList
         title="Fratrie(s)"
@@ -99,31 +109,8 @@ export function PersonPanel({
           (f) => f.id_gedcom !== personne.id_gedcom,
         )}
         onNavigate={onNavigate}
+        onRelationPhotoClick={onRelationPhotoClick}
       />
-
-      {personne.photos.length > 0 && (
-        <div className="mt-4 border-t border-slate-100 pt-3">
-          <h3 className="mb-2 text-sm font-medium text-slate-500">Photos</h3>
-          <div className="flex flex-wrap gap-2">
-            {personne.photos.map((photo) => (
-              <a
-                key={photo.url}
-                href={photo.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block overflow-hidden rounded-lg border border-slate-200"
-              >
-                <img
-                  src={photo.url}
-                  alt={photo.suffixe ?? "Photo"}
-                  className="h-16 w-16 object-cover"
-                  loading="lazy"
-                />
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
     </aside>
   );
 }
@@ -174,10 +161,12 @@ function RelationList({
   title,
   items,
   onNavigate,
+  onRelationPhotoClick,
 }: {
   title: string;
   items: RelationResume[];
   onNavigate: (id: string) => void;
+  onRelationPhotoClick: (id: string, nom: string, prenoms: string | null) => void;
 }) {
   if (items.length === 0) return null;
   return (
@@ -199,6 +188,10 @@ function RelationList({
                 sexe={item.sexe}
                 naissance={item.naissance}
                 deces={item.deces}
+                photos={item.photos ?? false}
+                onPhotoClick={() =>
+                  onRelationPhotoClick(item.id_gedcom, item.nom, item.prenoms)
+                }
               />
             </button>
           </li>

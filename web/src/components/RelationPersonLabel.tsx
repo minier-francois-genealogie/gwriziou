@@ -36,6 +36,8 @@ interface RelationPersonLabelProps {
   sexe?: string | null;
   naissance?: EvenementResume | null;
   deces?: EvenementResume | null;
+  photos?: boolean;
+  onPhotoClick?: () => void;
 }
 
 export function RelationPersonLabel({
@@ -44,10 +46,19 @@ export function RelationPersonLabel({
   sexe,
   naissance,
   deces,
+  photos = false,
+  onPhotoClick,
 }: RelationPersonLabelProps) {
   return (
     <span className="inline-flex flex-wrap items-baseline gap-x-1 text-left">
-      <PersonName nom={nom} prenoms={prenoms} sexe={sexe} />
+      <PersonName
+        nom={nom}
+        prenoms={prenoms}
+        sexe={sexe}
+        photos={photos}
+        onPhotoClick={onPhotoClick}
+        photoSize="xs"
+      />
       <span className="inline-flex items-center gap-x-1 text-slate-500">
         (<EventPartWithIcon type="naissance" evt={naissance} />
         <span aria-hidden="true">,</span>

@@ -24,10 +24,11 @@ interface TreeViewProps {
   onFocus: (id: string) => void;
   onAncre: (id: string) => void;
   onActeClick: (type: "naissance" | "mariage" | "deces", url: string, label?: string) => void;
+  onPhotoClick: (id: string, nom: string, prenoms: string | null) => void;
 }
 
 export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeView(
-  { arbre, focusId, ancreId, onFocus, onAncre, onActeClick },
+  { arbre, focusId, ancreId, onFocus, onAncre, onActeClick, onPhotoClick },
   ref,
 ) {
   const [highlightIds, setHighlightIds] = useState<ReadonlySet<string>>(
@@ -176,6 +177,7 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
                 onFocus={onFocus}
                 onAncre={onAncre}
                 onActeClick={onActeClick}
+                onPhotoClick={onPhotoClick}
                 onParentsRefClick={handleParentsRefClick}
               />
             ))}

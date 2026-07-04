@@ -1,4 +1,5 @@
 import { formatNom } from "../utils/format";
+import { PhotoIcon } from "./PhotoIcon";
 
 const ICON_CLASS = "h-3.5 w-3.5 shrink-0";
 
@@ -91,12 +92,31 @@ interface PersonNameProps {
   prenoms: string | null;
   sexe?: string | null;
   className?: string;
+  photos?: boolean;
+  photoCount?: number;
+  onPhotoClick?: () => void;
+  photoSize?: "xs" | "sm";
 }
 
-export function PersonName({ nom, prenoms, sexe, className = "" }: PersonNameProps) {
+export function PersonName({
+  nom,
+  prenoms,
+  sexe,
+  className = "",
+  photos = false,
+  photoCount,
+  onPhotoClick,
+  photoSize = "sm",
+}: PersonNameProps) {
   return (
-    <span className={`inline-flex items-center gap-1.5 ${className}`}>
+    <span className={`inline-flex items-center gap-1 ${className}`}>
       <SexeIcon sexe={sexe} />
+      <PhotoIcon
+        hasPhotos={photos}
+        photoCount={photoCount}
+        onClick={onPhotoClick}
+        size={photoSize}
+      />
       <span>{formatNom(nom, prenoms)}</span>
     </span>
   );

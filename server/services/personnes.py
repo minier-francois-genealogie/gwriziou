@@ -48,6 +48,7 @@ def _relation_row(conn: sqlite3.Connection, row: sqlite3.Row) -> RelationResume:
         role=row["role"] if "role" in row.keys() else None,
         naissance=_fetch_evenement(conn, id_gedcom, "NAISSANCE"),
         deces=_fetch_evenement(conn, id_gedcom, "DECES"),
+        photos=_has_photos(conn, id_gedcom),
     )
 
 

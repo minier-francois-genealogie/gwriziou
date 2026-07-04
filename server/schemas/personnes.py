@@ -49,6 +49,7 @@ class RelationResume(BaseModel):
     role: str | None = None
     naissance: EvenementResume | None = None
     deces: EvenementResume | None = None
+    photos: bool = False
 
 
 class EvenementArbre(BaseModel):

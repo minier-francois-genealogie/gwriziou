@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import { ActeModal } from "../components/ActeModal";
+import { PhotoModal } from "../components/PhotoModal";
 import { PersonPanel } from "../components/PersonPanel";
 import { PersonVieResume } from "../components/PersonVieResume";
 import { PersonName } from "../components/SexeIcon";
 import { useApp } from "../context/AppContext";
 import { useAsync } from "../hooks/useApi";
+import { usePhotoModal } from "../hooks/usePhotoModal";
 import type { ActeType, PersonneResume } from "../types/api";
 
 export function SearchPage() {
@@ -19,6 +21,8 @@ export function SearchPage() {
     url: string;
     name: string;
   } | null>(null);
+
+  const { photoModal, openPhotos, openPhotosForPerson, closePhotos } = usePhotoModal();
 
   const trimmed = query.trim();
   const { data, loading, error } = useAsync(
@@ -197,6 +201,10 @@ export function SearchPage() {
           onAncre={setAncrePersonneId}
           onActeClick={handleActeClick}
           onNavigate={setFichePersonneId}
+          onPhotoClick={openPhotos}
+          onRelationPhotoClick={(id, nom, prenoms) => {
+            void openPhotosForPerson(id, nom, prenoms);
+          }}
         />
       </div>
 
@@ -206,6 +214,14 @@ export function SearchPage() {
           url={acteModal.url}
           personName={acteModal.name}
           onClose={() => setActeModal(null)}
+        />
+      )}
+
+      {photoModal && (
+        <PhotoModal
+          photos={photoModal.photos}
+          personName={photoModal.personName}
+          onClose={closePhotos}
         />
       )}
     </div>

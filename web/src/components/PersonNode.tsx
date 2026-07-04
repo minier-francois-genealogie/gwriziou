@@ -1,6 +1,5 @@
 import type { ActeType, NoeudArbre } from "../types/api";
-import { useEffect, useRef, useState } from "react";
-import { useCoarsePointer } from "../hooks/useCoarsePointer";
+import { useRef } from "react";
 import type { ParentsAilleursRef } from "../utils/treeLayout";
 import {
   formatNom,
@@ -10,6 +9,7 @@ import {
 import { NODE_H, NODE_W } from "../utils/treeLayout";
 import { AncreButton } from "./AncreButton";
 import { EvenementsList } from "./EvenementsList";
+import { PhotoIcon } from "./PhotoIcon";
 import { SexeIcon } from "./SexeIcon";
 
 const REF_BADGE_H = 26;
@@ -25,6 +25,7 @@ interface PersonNodeProps {
   onFocus: (id: string) => void;
   onAncre: (id: string) => void;
   onActeClick?: (type: "naissance" | "mariage" | "deces", url: string, label?: string) => void;
+  onPhotoClick?: (id: string, nom: string, prenoms: string | null) => void;
   onParentsRefClick?: (parentIds: string[]) => void;
 }
 
@@ -39,12 +40,11 @@ export function PersonNode({
   onFocus,
   onAncre,
   onActeClick,
+  onPhotoClick,
   onParentsRefClick,
 }: PersonNodeProps) {
   const isMale = noeud.sexe === "M";
   const isFemale = noeud.sexe === "F";
-  const coarse = useCoarsePointer();
-  const [focusTipVisible, setFocusTipVisible] = useState(false);
 
   const accent = highlighted
     ? "ring-2 ring-amber-400 ring-offset-2"
@@ -71,28 +71,9 @@ export function PersonNode({
     : undefined;
   const hasRef = !!parentsAilleurs;
   const extraTop = hasRef ? REF_BADGE_H : 0;
-  const awaitingFocusTap = useRef(false);
   const tapRef = useRef<{ x: number; y: number } | null>(null);
 
-  useEffect(() => {
-    if (focused) {
-      setFocusTipVisible(false);
-      awaitingFocusTap.current = false;
-    }
-  }, [focused]);
-
   const handleCellFocus = () => {
-    if (coarse) {
-      if (awaitingFocusTap.current) {
-        awaitingFocusTap.current = false;
-        setFocusTipVisible(false);
-        onFocus(noeud.id_gedcom);
-      } else {
-        awaitingFocusTap.current = true;
-        setFocusTipVisible(true);
-      }
-      return;
-    }
     onFocus(noeud.id_gedcom);
   };
 
@@ -121,8 +102,6 @@ export function PersonNode({
     if (moved > 8) return;
     handleCellFocus();
   };
-
-  const showFocusTooltip = coarse ? focusTipVisible : undefined;
 
   return (
     <foreignObject
@@ -189,23 +168,18 @@ export function PersonNode({
                 handleCellFocus();
               }
             }}
-            className="group/focus relative flex min-h-0 flex-1 cursor-pointer flex-col p-2 pr-7 text-left outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-1"
+            className="relative flex min-h-0 flex-1 cursor-pointer flex-col p-2 pr-7 text-left outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-1"
           >
-            <span
-              role="tooltip"
-              className={`pointer-events-none absolute bottom-full left-1/2 z-40 mb-1 -translate-x-1/2 rounded-md bg-slate-800 px-2 py-1 text-[10px] text-white shadow-md group-has-[.group\\/acte:hover]:hidden group-has-[.group\\/prenoms:hover]:hidden group-has-[.group\\/sexe:hover]:hidden group-has-[.group\\/warn:hover]:hidden ${
-                coarse
-                  ? showFocusTooltip
-                    ? "block"
-                    : "hidden"
-                  : "hidden group-hover/focus:block"
-              }`}
-            >
-              Focus
-            </span>
             <span className="min-w-0">
               <span className="flex min-w-0 items-center gap-1">
                 <SexeIcon sexe={noeud.sexe} className="shrink-0" />
+                <PhotoIcon
+                  hasPhotos={noeud.photos}
+                  size="xs"
+                  onClick={() =>
+                    onPhotoClick?.(noeud.id_gedcom, noeud.nom, noeud.prenoms)
+                  }
+                />
                 <span className="flex min-w-0 items-baseline gap-0.5">
                   <span className="truncate text-xs font-bold leading-tight text-slate-900">
                     {displayName}
