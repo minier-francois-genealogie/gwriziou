@@ -7,7 +7,7 @@
 
 services:
   - type: web
-    name: genealogie-api
+    name: gwriziou-api
     runtime: docker
     dockerfilePath: ./Dockerfile
     plan: free

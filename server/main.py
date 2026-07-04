@@ -52,4 +52,4 @@ app.include_router(api_router)
 
 @app.get("/")
 def root():
-    return {"service": "genealogie-api", "docs": "/docs"}
+    return {"service": "gwriziou-api", "docs": "/docs"}
