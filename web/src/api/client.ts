@@ -10,7 +10,10 @@ const API_BASE = (() => {
   const raw = (import.meta.env.VITE_API_URL ?? "").trim().replace(/\/$/, "");
   if (!raw) return "";
   if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
-  return `https://${raw}`;
+  // Hostname complet (ex. api.example.com) ou localhost:8000
+  if (raw.includes(".") || raw.includes(":")) return `https://${raw}`;
+  // Nom de service Render seul (ex. gwriziou-api via fromService)
+  return `https://${raw}.onrender.com`;
 })();
 
 class ApiError extends Error {
@@ -24,13 +27,23 @@ class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...init,
-    headers: {
-      Accept: "application/json",
-      ...(init?.headers ?? {}),
-    },
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      ...init,
+      headers: {
+        Accept: "application/json",
+        ...(init?.headers ?? {}),
+      },
+    });
+  } catch {
+    throw new ApiError(
+      API_BASE
+        ? `Impossible de joindre l'API (${API_BASE})`
+        : "Impossible de joindre l'API (VITE_API_URL non configuré)",
+      0,
+    );
+  }
 
   if (!response.ok) {
     let detail = response.statusText;

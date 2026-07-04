@@ -31,8 +31,4 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_URL
-        fromService:
-          name: gwriziou-api
-          type: web
-          property: host
-        # Render injecte le hostname seul ; le client préfixe https:// si besoin
+        value: https://gwriziou-api.onrender.com
