@@ -68,6 +68,8 @@ Root directory `web` — `netlify.toml` et `public/_redirects` gèrent build + r
 
 ## Fonctionnalités (MVP)
 
+- **Application installable (PWA)** — plein écran via « Installer » (Chrome/Android) ou « Sur l’écran d’accueil » (iPhone/iPad)
+
 - **Arbre généalogique** — ancêtres/descendants configurables, clic pour recentrer
 - **Navigation clavier** — ↑↓ parents/enfants, ←→ fratrie, Home = souche
 - **Fiche personne** — événements, relations, photos

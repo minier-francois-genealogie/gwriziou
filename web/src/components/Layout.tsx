@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { useStatus } from "../hooks/useApi";
+import { InstallPrompt } from "./InstallPrompt";
 import { RefreshButton } from "./RefreshButton";
 
 export function Layout() {
@@ -14,6 +15,7 @@ export function Layout() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-slate-100">
+      <InstallPrompt />
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-3 py-2 sm:px-4">
           <NavLink to="/" className="flex items-center gap-2 font-bold text-sky-900">
