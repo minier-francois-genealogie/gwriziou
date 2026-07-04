@@ -768,7 +768,6 @@ export function layoutTree(
 
   const layoutUnions: TreeLayoutUnion[] = unionLayouts.map(({ union }) => {
     const rawX = positions.get(union.id_famille) ?? 0;
-    const gen = generations.get(union.id_famille) ?? -1;
     return {
       union,
       x: toPixelX(rawX),
@@ -798,7 +797,6 @@ export function layoutTree(
     const parIds = unionParents.get(unionId) ?? [];
     const refLabel = parentLabel(parIds, byId);
 
-    const gen0Plus = sorted.filter((c) => c.generation >= 0);
     const ancestorChildren = sorted.filter((c) => c.generation < 0);
     const nearAncestors = ancestorChildren.filter(
       (c) => !isDistantFiliation(ux, c.x),
@@ -806,8 +804,7 @@ export function layoutTree(
     const farAncestors = ancestorChildren.filter((c) =>
       isDistantFiliation(ux, c.x),
     );
-    const far =
-      nearAncestors.length > 0 ? farAncestors : [];
+    const far = nearAncestors.length > 0 ? farAncestors : [];
 
     for (const child of far) {
       parentsAilleursByChild.set(child.id, {
@@ -884,8 +881,6 @@ export function layoutTree(
     const ux = unionNode.x;
     const stemTop = unionNode.y + UNION_R;
     const stemBottom = stemTop + UNION_DESC_STEM;
-    const parIds = unionParents.get(unionId) ?? [];
-    const refLabel = parentLabel(parIds, byId);
 
     const gen0Plus = sorted.filter((c) => c.generation >= 0);
     const ancestorChildren = sorted.filter((c) => c.generation < 0);
@@ -959,7 +954,7 @@ export function layoutTree(
       edges.push(
         edgeLine(
           "parents_ref_stub",
-          { x: child.x, y: top - PARENTS_REF_STUB },
+          { x: child.x, y: top.y - PARENTS_REF_STUB },
           top,
         ),
       );

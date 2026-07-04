@@ -6,15 +6,20 @@ import type {
   StatusResponse,
 } from "../types/api";
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "";
+const API_BASE = (() => {
+  const raw = (import.meta.env.VITE_API_URL ?? "").trim().replace(/\/$/, "");
+  if (!raw) return "";
+  if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+  return `https://${raw}`;
+})();
 
 class ApiError extends Error {
-  constructor(
-    message: string,
-    readonly status: number,
-  ) {
+  status: number;
+
+  constructor(message: string, status: number) {
     super(message);
     this.name = "ApiError";
+    this.status = status;
   }
 }
 
