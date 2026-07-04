@@ -1,1 +1,5 @@
 bdd/genealogie.sqlite
+__pycache__/
+*.py[cod]
+*.pyo
+.env
