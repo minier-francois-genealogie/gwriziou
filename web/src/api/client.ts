@@ -4,6 +4,8 @@ import type {
   RafraichirResponse,
   RechercheResponse,
   StatusResponse,
+  WarningsListResponse,
+  WarningsStatsResponse,
 } from "../types/api";
 
 const API_BASE = (() => {
@@ -78,6 +80,21 @@ export const api = {
   recherche: (q: string, page = 1, limit = 20) =>
     request<RechercheResponse>(
       `/api/recherche?q=${encodeURIComponent(q)}&page=${page}&limit=${limit}`,
+    ),
+
+  warningsStats: (ancre: string, ancetres: number, descendants: number) =>
+    request<WarningsStatsResponse>(
+      `/api/warnings/stats?ancre=${encodeURIComponent(ancre)}&ancetres=${ancetres}&descendants=${descendants}`,
+    ),
+
+  warnings: (
+    ancre: string,
+    ancetres: number,
+    descendants: number,
+    zone = false,
+  ) =>
+    request<WarningsListResponse>(
+      `/api/warnings?ancre=${encodeURIComponent(ancre)}&ancetres=${ancetres}&descendants=${descendants}&zone=${zone}`,
     ),
 };
 

@@ -247,3 +247,8 @@ export function normalizeGedcomId(id: string): string {
   const num = trimmed.replace(/^@|@$/g, "");
   return `@${num}@`;
 }
+
+/** Détail warning GEDCOM vs acte — saut de ligne entre les deux sources. */
+export function formatWarningDetail(detail: string): string {
+  return detail.replace(/\s—\s(?=Acte\s:)/, "\n");
+}

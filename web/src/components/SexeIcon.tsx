@@ -96,6 +96,7 @@ interface PersonNameProps {
   photoCount?: number;
   onPhotoClick?: () => void;
   photoSize?: "xs" | "sm";
+  showPhoto?: boolean;
 }
 
 export function PersonName({
@@ -107,16 +108,19 @@ export function PersonName({
   photoCount,
   onPhotoClick,
   photoSize = "sm",
+  showPhoto = true,
 }: PersonNameProps) {
   return (
     <span className={`inline-flex items-center gap-1 ${className}`}>
       <SexeIcon sexe={sexe} />
-      <PhotoIcon
-        hasPhotos={photos}
-        photoCount={photoCount}
-        onClick={onPhotoClick}
-        size={photoSize}
-      />
+      {showPhoto && (
+        <PhotoIcon
+          hasPhotos={photos}
+          photoCount={photoCount}
+          onClick={onPhotoClick}
+          size={photoSize}
+        />
+      )}
       <span>{formatNom(nom, prenoms)}</span>
     </span>
   );

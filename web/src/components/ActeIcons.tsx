@@ -1,5 +1,6 @@
 import type { ActeResume, ActeType, ActesPersonne } from "../types/api";
 import { formatActeTooltipLines } from "../utils/format";
+import { ICON_ABSENT_BTN } from "../utils/iconStyles";
 import { EvenementIcon } from "./GenealogyIcons";
 
 const ACTE_META: Record<
@@ -23,10 +24,11 @@ const ACTE_META: Record<
   },
 };
 
-const ACTE_ICON_SIZE: Record<"xs" | "sm" | "md", "xs" | "sm" | "md"> = {
-  xs: "xs",
-  sm: "sm",
-  md: "md",
+/** Symbole plus grand que le disque ne le suggère (disque inchangé). */
+const ACTE_ICON_SIZE: Record<"xs" | "sm" | "md", "xs" | "sm" | "md" | "lg"> = {
+  xs: "sm",
+  sm: "md",
+  md: "lg",
 };
 
 interface ActeIconsProps {
@@ -58,7 +60,7 @@ export function ActeIconSingle({
   const ariaLabel = lines.join(" — ");
 
   return (
-    <span className="group/acte relative z-50 inline-flex justify-center">
+    <span className="group/acte relative inline-flex justify-center">
       <button
         type="button"
         aria-disabled={!canOpen}
@@ -74,7 +76,7 @@ export function ActeIconSingle({
             ? canOpen
               ? meta.activeClass
               : `${meta.activeClass} cursor-default opacity-90`
-            : "cursor-default bg-slate-200 text-slate-400"
+            : ICON_ABSENT_BTN
         }`}
         aria-label={ariaLabel}
       >

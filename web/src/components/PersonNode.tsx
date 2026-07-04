@@ -206,6 +206,7 @@ export function PersonNode({
                 evenements={noeud.evenements ?? []}
                 onActeClick={handleActeClick}
                 size="compact"
+                hideMissingActeWarnings
               />
             </div>
             {noeud.profession && (

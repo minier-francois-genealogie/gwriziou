@@ -319,7 +319,10 @@ def get_personne(conn: sqlite3.Connection, id_gedcom: str) -> PersonneDetail | N
         mariages=_fetch_mariages(conn, id_gedcom),
         actes=_fetch_actes(conn, id_gedcom),
         evenements=_build_evenements_arbre(
-            conn, id_gedcom, include_naissances_enfants=True
+            conn,
+            id_gedcom,
+            include_naissances_enfants=True,
+            exclude_warning_codes=_UI_EXCLUDED_WARNING_CODES,
         ),
         photos=_fetch_photos(conn, id_gedcom),
         relations=_fetch_relations(conn, id_gedcom),
@@ -363,46 +366,43 @@ def _format_date_jjmmaaaa(
     return date_brute.strip() if date_brute else date_iso
 
 
-def _gedcom_has_date(date_iso: str | None, date_brute: str | None) -> bool:
-    return bool(date_iso or (date_brute and date_brute.strip()))
+# Warnings masqués dans l'arbre et la fiche (icône d'acte grisée = signal visuel).
+_UI_EXCLUDED_WARNING_CODES = frozenset({"MANQUE_ACTE"})
 
 
-def _dates_coherent(date_iso: str | None, acte_date: str | None) -> bool:
-    if not date_iso or not acte_date:
-        return False
-    if date_iso == acte_date:
-        return True
-    if acte_date.startswith(date_iso):
-        return len(date_iso) >= len(acte_date)
-    return False
+def _warnings_key(type_arbre: str, id_famille: str | None = None) -> tuple[str, str]:
+    mapping = {"naissance": "NAISSANCE", "deces": "DECES", "mariage": "MARIAGE"}
+    return mapping.get(type_arbre, type_arbre.upper()), id_famille or ""
 
 
-def _compute_warnings(
-    date_iso: str | None,
-    date_brute: str | None,
-    acte: ActeResume | None,
-) -> list[WarningEvenement]:
-    if not acte:
-        return []
-    gedcom_label = _format_date_jjmmaaaa(date_iso, date_brute) or "?"
-    acte_label = _format_date_jjmmaaaa(acte.date, acte.date_brute) or "?"
-    if not _gedcom_has_date(date_iso, date_brute):
-        return [
+def _fetch_warnings_map(
+    conn: sqlite3.Connection,
+    id_gedcom: str,
+    *,
+    exclude_codes: frozenset[str] | None = None,
+) -> dict[tuple[str, str], list[WarningEvenement]]:
+    rows = conn.execute(
+        """
+        SELECT type_evenement, id_famille, code, message, detail
+        FROM warnings
+        WHERE id_gedcom = ?
+        ORDER BY type_evenement, code
+        """,
+        (id_gedcom,),
+    )
+    out: dict[tuple[str, str], list[WarningEvenement]] = {}
+    for row in rows:
+        if exclude_codes and row["code"] in exclude_codes:
+            continue
+        key = (row["type_evenement"], row["id_famille"] or "")
+        out.setdefault(key, []).append(
             WarningEvenement(
-                code="DATE_GEDCOM_MANQUANTE",
-                message="Date GEDCOM manquante",
-                detail=f"GEDCOM : ? — Acte : {acte_label}",
+                code=row["code"],
+                message=row["message"],
+                detail=row["detail"],
             )
-        ]
-    if acte.date and not _dates_coherent(date_iso, acte.date):
-        return [
-            WarningEvenement(
-                code="DATE_ACTE_DIVERGENTE",
-                message="Date GEDCOM ≠ date de l'acte",
-                detail=f"GEDCOM : {gedcom_label} — Acte : {acte_label}",
-            )
-        ]
-    return []
+        )
+    return out
 
 
 def _evenement_from_resume(
@@ -413,6 +413,7 @@ def _evenement_from_resume(
     id_famille: str | None = None,
     conjoint: RelationResume | None = None,
     enfant: RelationResume | None = None,
+    warnings_map: dict[tuple[str, str], list[WarningEvenement]] | None = None,
 ) -> EvenementArbre | None:
     date_iso = evt.date if evt else None
     date_brute = evt.date_brute if evt else None
@@ -420,6 +421,8 @@ def _evenement_from_resume(
     departement = evt.departement if evt else None
     if not (date_iso or date_brute or lieu or acte):
         return None
+    evt_key = _warnings_key(type_, id_famille)
+    warnings = list((warnings_map or {}).get(evt_key, []))
     return EvenementArbre(
         type=type_,
         date=date_iso,
@@ -427,7 +430,7 @@ def _evenement_from_resume(
         lieu=lieu,
         departement=departement,
         acte=acte,
-        warnings=_compute_warnings(date_iso, date_brute, acte),
+        warnings=warnings,
         id_famille=id_famille,
         conjoint=conjoint,
         enfant=enfant,
@@ -443,13 +446,19 @@ def _build_evenements_arbre(
     id_gedcom: str,
     *,
     include_naissances_enfants: bool = False,
+    exclude_warning_codes: frozenset[str] | None = None,
 ) -> list[EvenementArbre]:
     actes = _fetch_actes(conn, id_gedcom)
+    warnings_map = _fetch_warnings_map(
+        conn, id_gedcom, exclude_codes=exclude_warning_codes
+    )
     evenements: list[EvenementArbre] = []
 
     naissance = _fetch_evenement(conn, id_gedcom, "NAISSANCE")
     evenements.append(
-        _evenement_from_resume("naissance", naissance, actes.naissance)
+        _evenement_from_resume(
+            "naissance", naissance, actes.naissance, warnings_map=warnings_map
+        )
         or _empty_evenement("naissance")
     )
 
@@ -489,6 +498,7 @@ def _build_evenements_arbre(
             acte_m,
             id_famille=row["id_famille"],
             conjoint=conjoint,
+            warnings_map=warnings_map,
         )
         if evt_m:
             mariages.append(evt_m)
@@ -525,7 +535,9 @@ def _build_evenements_arbre(
 
     deces = _fetch_evenement(conn, id_gedcom, "DECES")
     evenements.append(
-        _evenement_from_resume("deces", deces, actes.deces)
+        _evenement_from_resume(
+            "deces", deces, actes.deces, warnings_map=warnings_map
+        )
         or _empty_evenement("deces")
     )
 
@@ -554,7 +566,11 @@ def _noeud_arbre(conn: sqlite3.Connection, id_gedcom: str) -> NoeudArbre | None:
         profession=row["profession"],
         naissance_tri=naissance_tri,
         photos=_has_photos(conn, id_gedcom),
-        evenements=_build_evenements_arbre(conn, id_gedcom),
+        evenements=_build_evenements_arbre(
+            conn,
+            id_gedcom,
+            exclude_warning_codes=_UI_EXCLUDED_WARNING_CODES,
+        ),
     )
 
 

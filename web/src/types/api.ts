@@ -159,3 +159,28 @@ export interface RafraichirResponse {
 }
 
 export type ActeType = "naissance" | "mariage" | "deces";
+
+export interface WarningsStatsResponse {
+  nombre_warning_total: number;
+  nombre_warning_zone: number;
+}
+
+export interface WarningLigne {
+  id_gedcom: string;
+  nom: string;
+  prenoms: string | null;
+  sexe?: string | null;
+  type_evenement: string;
+  evenement_label: string;
+  evenement_date?: string | null;
+  evenement_lieu?: string | null;
+  code: string;
+  message: string;
+  detail?: string | null;
+}
+
+export interface WarningsListResponse {
+  lignes: WarningLigne[];
+  nombre_warning_total: number;
+  nombre_warning_zone: number;
+}

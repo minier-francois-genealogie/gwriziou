@@ -1,3 +1,5 @@
+import { ICON_ABSENT_BTN } from "../utils/iconStyles";
+
 function CameraIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -38,9 +40,9 @@ export function PhotoIcon({
   size = "sm",
   className = "",
 }: PhotoIconProps) {
-  const dim = size === "xs" ? "h-3.5 w-3.5" : "h-4 w-4";
+  const dim = size === "xs" ? "h-3 w-3" : "h-3.5 w-3.5";
+  const btnDim = size === "xs" ? "h-4 w-4" : "h-5 w-5";
   const tooltip = photoTooltip(hasPhotos, photoCount);
-  const color = hasPhotos ? "text-slate-900" : "text-slate-400";
 
   return (
     <span className={`group/photo relative inline-flex shrink-0 justify-center ${className}`}>
@@ -55,8 +57,10 @@ export function PhotoIcon({
         }}
         onPointerDown={(e) => e.stopPropagation()}
         onPointerUp={(e) => e.stopPropagation()}
-        className={`inline-flex items-center justify-center rounded-full transition-colors ${dim} ${color} ${
-          hasPhotos ? "hover:bg-slate-100" : "cursor-default"
+        className={`inline-flex items-center justify-center rounded-full transition-colors ${btnDim} ${
+          hasPhotos
+            ? `text-slate-900 hover:bg-slate-100`
+            : ICON_ABSENT_BTN
         }`}
       >
         <CameraIcon className={dim} />

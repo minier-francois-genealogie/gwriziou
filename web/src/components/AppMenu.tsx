@@ -1,7 +1,9 @@
 import { useEffect, useRef } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { api } from "../api/client";
 import { useApp } from "../context/AppContext";
-import { saveDerniereVue } from "../utils/appStorage";
+import { useAsync } from "../hooks/useApi";
+import { saveDerniereVue, type AppView } from "../utils/appStorage";
 
 const MENU_EASE = "duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]";
 
@@ -9,11 +11,13 @@ function NavItem({
   to,
   label,
   icon,
+  badge,
   onNavigate,
 }: {
   to: string;
   label: string;
   icon: React.ReactNode;
+  badge?: string;
   onNavigate: () => void;
 }) {
   return (
@@ -31,18 +35,29 @@ function NavItem({
       <span className="flex h-5 w-5 shrink-0 items-center justify-center" aria-hidden="true">
         {icon}
       </span>
-      {label}
+      <span className="min-w-0 flex-1">{label}</span>
+      {badge && (
+        <span className="shrink-0 rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-amber-900 [.bg-sky-700_&]:bg-white/20 [.bg-sky-700_&]:text-white">
+          {badge}
+        </span>
+      )}
     </NavLink>
   );
 }
 
 export function AppMenu() {
-  const { menuOpen, setMenuOpen, toggleMenu } = useApp();
+  const { menuOpen, setMenuOpen, toggleMenu, ancrePersonneId, ancetres, descendants } =
+    useApp();
   const navigate = useNavigate();
   const location = useLocation();
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const closeAndGo = (view: "recherche" | "arbre" | "parametres", path: string) => {
+  const { data: warningStats } = useAsync(
+    () => api.warningsStats(ancrePersonneId, ancetres, descendants),
+    [ancrePersonneId, ancetres, descendants],
+  );
+
+  const closeAndGo = (view: AppView, path: string) => {
     saveDerniereVue(view);
     setMenuOpen(false);
     if (location.pathname !== path) navigate(path);
@@ -58,6 +73,10 @@ export function AppMenu() {
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
   }, [menuOpen, setMenuOpen]);
+
+  const warningBadge = warningStats
+    ? `${warningStats.nombre_warning_zone} / ${warningStats.nombre_warning_total}`
+    : undefined;
 
   return (
     <div
@@ -125,6 +144,18 @@ export function AppMenu() {
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="11" cy="11" r="7" />
                   <path d="m20 20-3.5-3.5" />
+                </svg>
+              }
+            />
+            <NavItem
+              to="/warnings"
+              label="Warnings"
+              badge={warningBadge}
+              onNavigate={() => closeAndGo("warnings", "/warnings")}
+              icon={
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <path d="M12 9v4M12 17h.01" />
                 </svg>
               }
             />

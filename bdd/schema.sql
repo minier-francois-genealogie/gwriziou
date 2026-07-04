@@ -1,7 +1,7 @@
 -- Schéma SQLite — index généalogique
 -- Référence : bdd/SCHEMA_BDD.md
 -- Base dérivée, reconstruite à chaque import GEDCOM + actes.
--- version_schema : 3 — table photos (type P dans actes/)
+-- version_schema : 4 — table warnings (GEDCOM vs acte)
 
 PRAGMA foreign_keys = ON;
 
@@ -164,3 +164,21 @@ CREATE TABLE photos (
 
 CREATE INDEX idx_photos_id_gedcom ON photos (id_gedcom);
 CREATE INDEX idx_photos_cle_personne ON photos (cle_personne);
+
+-- ---------------------------------------------------------------------------
+-- Warnings (GEDCOM vs acte, recalculés à l'import)
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE warnings (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_gedcom       TEXT NOT NULL REFERENCES personnes (id_gedcom),
+    type_evenement  TEXT NOT NULL CHECK (type_evenement IN ('NAISSANCE', 'DECES', 'MARIAGE')),
+    id_famille      TEXT NOT NULL DEFAULT '',
+    code            TEXT NOT NULL,
+    message         TEXT NOT NULL,
+    detail          TEXT,
+    UNIQUE (id_gedcom, type_evenement, id_famille, code)
+);
+
+CREATE INDEX idx_warnings_personne ON warnings (id_gedcom);
+CREATE INDEX idx_warnings_type ON warnings (type_evenement);

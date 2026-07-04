@@ -25,7 +25,9 @@ export function Layout() {
         ? "arbre"
         : location.pathname === "/parametres"
           ? "parametres"
-          : "recherche";
+          : location.pathname === "/warnings"
+            ? "warnings"
+            : "recherche";
     saveDerniereVue(view);
   }, [location.pathname]);
 

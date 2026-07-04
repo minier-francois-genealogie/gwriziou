@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { ActeModal } from "../components/ActeModal";
 import { PhotoModal } from "../components/PhotoModal";
@@ -12,6 +13,8 @@ import type { ActeType, PersonneResume } from "../types/api";
 
 export function SearchPage() {
   const { ancrePersonneId, setAncrePersonneId } = useApp();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [fichePersonneId, setFichePersonneId] = useState(ancrePersonneId);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
@@ -34,6 +37,14 @@ export function SearchPage() {
     () => api.personne(fichePersonneId),
     [fichePersonneId],
   );
+
+  useEffect(() => {
+    const state = location.state as { fichePersonneId?: string } | null;
+    if (state?.fichePersonneId) {
+      setFichePersonneId(state.fichePersonneId);
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.pathname, location.state, navigate]);
 
   useEffect(() => {
     setPage(1);
@@ -61,7 +72,7 @@ export function SearchPage() {
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="relative z-30 shrink-0 border-b border-slate-200 bg-white pb-3 pr-3 pt-3 pl-[calc(env(safe-area-inset-left,0px)+3.75rem)]">
+      <div className="relative isolate z-40 shrink-0 border-b border-slate-200 bg-white pb-3 pr-3 pt-3 pl-[calc(env(safe-area-inset-left,0px)+3.75rem)]">
         <form onSubmit={submit} className="flex gap-2">
           <input
             type="search"
@@ -101,7 +112,7 @@ export function SearchPage() {
         </form>
 
         {showSuggestions && (
-          <div className="absolute inset-x-0 top-full z-40 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+          <div className="absolute inset-x-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
             {loading && (
               <p className="px-3 py-2 text-sm text-slate-500">Recherche…</p>
             )}

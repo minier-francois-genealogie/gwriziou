@@ -82,6 +82,7 @@ export function PersonPanel({
           onActeClick={handleActeClick}
           size="comfortable"
           showNaissancesEnfants
+          hideMissingActeWarnings
         />
       </div>
 

@@ -1,5 +1,5 @@
 import type { ActeType, EvenementArbre, WarningEvenement } from "../types/api";
-import { formatDateJJMMAAAA, formatNaissanceEnfantLabel } from "../utils/format";
+import { formatDateJJMMAAAA, formatNaissanceEnfantLabel, formatWarningDetail } from "../utils/format";
 import { ActeIconSingle } from "./ActeIcons";
 import { WarningIcon } from "./GenealogyIcons";
 const EVENT_ACTE_TYPE: Record<string, ActeType> = {
@@ -42,17 +42,22 @@ export function normalizeEvenements(
 function EventWarnings({
   warnings,
   size,
+  hideMissingActeWarnings = false,
 }: {
   warnings: WarningEvenement[];
   size: "compact" | "comfortable";
+  hideMissingActeWarnings?: boolean;
 }) {
   const iconSize = size === "compact" ? "xs" : "sm";
-  if (warnings.length === 0) {
+  const visible = hideMissingActeWarnings
+    ? warnings.filter((w) => w.code !== "MANQUE_ACTE")
+    : warnings;
+  if (visible.length === 0) {
     return <span className="inline-block w-3" aria-hidden="true" />;
   }
   return (
     <span className="inline-flex justify-end gap-0.5">
-      {warnings.map((w, i) => (
+      {visible.map((w, i) => (
         <span key={`${w.code}-${i}`} className="group/warn relative inline-flex">
           <span aria-label={w.message}>
             <WarningIcon size={iconSize} />
@@ -61,7 +66,7 @@ function EventWarnings({
             className="pointer-events-none absolute bottom-full right-0 z-50 mb-1 hidden min-w-[120px] max-w-[220px] whitespace-pre-line rounded-md bg-slate-800 px-2 py-1 text-left text-[10px] font-normal leading-snug text-white shadow-md group-hover/warn:block"
           >
             {w.message}
-            {w.detail ? `\n${w.detail}` : ""}
+            {w.detail ? `\n${formatWarningDetail(w.detail)}` : ""}
           </span>
         </span>
       ))}
@@ -74,11 +79,13 @@ function EventRow({
   onActeClick,
   size,
   individuNaissance,
+  hideMissingActeWarnings = false,
 }: {
   evt: EvenementArbre;
   onActeClick?: (type: ActeType, url: string) => void;
   size: "compact" | "comfortable";
   individuNaissance?: EvenementArbre;
+  hideMissingActeWarnings?: boolean;
 }) {
   const date = formatDateJJMMAAAA(evt.date, evt.date_brute);
   const isNaissanceEnfant = evt.type === "naissance_enfant";
@@ -115,7 +122,11 @@ function EventRow({
       )}
       <span className="truncate tabular-nums">{date ?? ""}</span>
       <span className="truncate">{detail}</span>
-      <EventWarnings warnings={evt.warnings} size={size} />
+      <EventWarnings
+        warnings={evt.warnings}
+        size={size}
+        hideMissingActeWarnings={hideMissingActeWarnings}
+      />
     </div>
   );
 }
@@ -127,6 +138,8 @@ interface EvenementsListProps {
   className?: string;
   /** Naissances d'enfants : fiche individu uniquement. */
   showNaissancesEnfants?: boolean;
+  /** Arbre : l'icône d'acte grisée suffit pour signaler l'absence d'acte. */
+  hideMissingActeWarnings?: boolean;
 }
 
 export function EvenementsList({
@@ -135,6 +148,7 @@ export function EvenementsList({
   size = "compact",
   className = "",
   showNaissancesEnfants = false,
+  hideMissingActeWarnings = false,
 }: EvenementsListProps) {
   const rows = normalizeEvenements(evenements, showNaissancesEnfants);
   const individuNaissance = rows.find((e) => e.type === "naissance");
@@ -152,6 +166,7 @@ export function EvenementsList({
           onActeClick={onActeClick}
           size={size}
           individuNaissance={individuNaissance}
+          hideMissingActeWarnings={hideMissingActeWarnings}
         />
       ))}
     </div>

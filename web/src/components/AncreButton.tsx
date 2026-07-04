@@ -1,3 +1,5 @@
+import { ICON_ABSENT_BTN, ICON_ABSENT_BTN_HOVER } from "../utils/iconStyles";
+
 interface AncreButtonProps {
   active: boolean;
   onAncre: () => void;
@@ -35,10 +37,10 @@ export function AncreButton({
           if (!active) onAncre();
         }}
         onPointerDown={(e) => e.stopPropagation()}
-        className={`inline-flex ${SIZE[size]} items-center justify-center rounded-md border transition ${
+        className={`inline-flex ${SIZE[size]} items-center justify-center transition ${
           active
-            ? "cursor-default border-slate-800 bg-slate-900 text-white"
-            : "border-slate-300 bg-slate-100 text-slate-400 hover:border-slate-400 hover:bg-slate-200 hover:text-slate-600"
+            ? "cursor-default rounded-md border border-slate-800 bg-slate-900 text-white"
+            : `${ICON_ABSENT_BTN} ${ICON_ABSENT_BTN_HOVER}`
         }`}
       >
         <svg

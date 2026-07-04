@@ -34,9 +34,13 @@ export function UnionNode({ union, x, y, onActeClick }: UnionNodeProps) {
         cx={0}
         cy={0}
         r={UNION_R}
-        className={union.acte_m ? "fill-amber-500" : "fill-slate-300"}
+        className={union.acte_m ? "fill-amber-500" : "fill-icon-absent-bg"}
       />
-      <EvenementIconG type="mariage" size={16} className="text-white" />
+      <EvenementIconG
+        type="mariage"
+        size={16}
+        className={union.acte_m ? "text-white" : "text-icon-absent"}
+      />
     </g>
   );
 }

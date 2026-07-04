@@ -7,6 +7,7 @@ from server.gedcom_id import normalize_gedcom_id
 from server.import_service import run_import
 from server.schemas.status import RafraichirResponse, StatusResponse
 from server.services.personnes import get_arbre, get_personne, rechercher_personnes
+from server.services.warnings import get_warnings_stats, list_warnings
 
 router = APIRouter(prefix="/api", tags=["api"])
 
@@ -120,3 +121,40 @@ def api_recherche(
         "limit": limit,
         "resultats": resultats,
     }
+
+
+@router.get("/warnings/stats")
+def api_warnings_stats(
+    ancre: str = Query(..., description="Id GEDCOM ancre pour le périmètre zone"),
+    ancetres: int = Query(4, ge=0, le=20),
+    descendants: int = Query(2, ge=0, le=20),
+):
+    try:
+        gid = normalize_gedcom_id(ancre)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    with connection(read_only=True) as conn:
+        return get_warnings_stats(conn, gid, ancetres, descendants)
+
+
+@router.get("/warnings")
+def api_warnings(
+    zone: bool = Query(False, description="Limiter au périmètre arbre (ancre + profondeur)"),
+    ancre: str = Query(..., description="Id GEDCOM ancre"),
+    ancetres: int = Query(4, ge=0, le=20),
+    descendants: int = Query(2, ge=0, le=20),
+):
+    try:
+        gid = normalize_gedcom_id(ancre)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    with connection(read_only=True) as conn:
+        return list_warnings(
+            conn,
+            zone=zone,
+            ancre=gid,
+            ancetres=ancetres,
+            descendants=descendants,
+        )
