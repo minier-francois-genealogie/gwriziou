@@ -556,6 +556,8 @@ function placeAncestorBranch(
     return cursor;
   }
 
+  const parentsAlreadyPlaced = par.every((p) => positions.has(p));
+
   let cursor = left;
   for (const pid of par) {
     cursor = placeAncestorBranch(
@@ -572,12 +574,12 @@ function placeAncestorBranch(
     );
   }
   if (!(skipSelfAtGen0 && gen === 0)) {
-    const parentsAlreadyPlaced = par.every((p) => positions.has(p));
     if (parentsAlreadyPlaced) {
-      // Ex. frère/sœur sur branche maternelle alors que les parents sont déjà
-      // positionnés côté paternel : rester dans la colonne courante de la branche.
+      // Parents déjà sur l'arbre via une autre branche (ex. @185@, sœur de @54@) :
+      // rester dans la colonne courante, pas au barycentre lointain.
       positions.set(id, left + 0.5);
     } else {
+      // Enfant centré sous l'union de ses parents.
       positions.set(
         id,
         (positions.get(par[0]!)! + positions.get(par[par.length - 1]!)!) / 2,
