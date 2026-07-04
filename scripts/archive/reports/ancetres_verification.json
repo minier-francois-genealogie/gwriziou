@@ -1,0 +1,80 @@
+{
+  "at": "2026-07-04T00:03:18.428347",
+  "source": "C:\\Projet\\Perso\\genealogie\\data\\ancetres.xls",
+  "output": "C:\\Projet\\Perso\\genealogie\\data\\ancetres_corrige.xlsx",
+  "rows_total": 1933,
+  "rows_filled": 1470,
+  "rows_collapse_empty": 463,
+  "gedcom_mismatches": 2,
+  "with_actes": 135,
+  "dates_filled_red": {
+    "naissance": 20,
+    "mariage": 1,
+    "deces": 0
+  },
+  "dates_filled_total": 21,
+  "issue_count": 10,
+  "issues_by_type": {
+    "XLS_ACTE_N_BUT_NO_FILE": 5,
+    "XLS_ACTE_D_BUT_NO_FILE": 3,
+    "GEDCOM_MISMATCH": 2
+  },
+  "issues_sample": [
+    {
+      "sosa": 21,
+      "type": "XLS_ACTE_N_BUT_NO_FILE",
+      "name": "Marie CHOTARD"
+    },
+    {
+      "sosa": 49,
+      "type": "XLS_ACTE_N_BUT_NO_FILE",
+      "name": "Anne-Marie Marie, Mathurine DELTÉ"
+    },
+    {
+      "sosa": 49,
+      "type": "XLS_ACTE_D_BUT_NO_FILE",
+      "name": "Anne-Marie Marie, Mathurine DELTÉ"
+    },
+    {
+      "sosa": 55,
+      "type": "XLS_ACTE_N_BUT_NO_FILE",
+      "name": "Mathurine DREAN"
+    },
+    {
+      "sosa": 99,
+      "type": "XLS_ACTE_N_BUT_NO_FILE",
+      "name": "Charlotte VILLEROY"
+    },
+    {
+      "sosa": 99,
+      "type": "XLS_ACTE_D_BUT_NO_FILE",
+      "name": "Charlotte VILLEROY"
+    },
+    {
+      "sosa": 127,
+      "type": "XLS_ACTE_N_BUT_NO_FILE",
+      "name": "Jacquette MAHE"
+    },
+    {
+      "sosa": 127,
+      "type": "XLS_ACTE_D_BUT_NO_FILE",
+      "name": "Jacquette MAHE"
+    },
+    {
+      "sosa": 959,
+      "type": "GEDCOM_MISMATCH",
+      "details": [
+        "prénom: X vs "
+      ],
+      "name": "LOUISE"
+    },
+    {
+      "sosa": 8526,
+      "type": "GEDCOM_MISMATCH",
+      "details": [
+        "naissance: 22/07/1604 vs ABT 1565"
+      ],
+      "name": "Michel BARRE"
+    }
+  ]
+}

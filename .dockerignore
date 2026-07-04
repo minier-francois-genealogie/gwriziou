@@ -1,0 +1,12 @@
+.git
+.gitignore
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+bdd/genealogie.sqlite
+scripts/archive
+scripts/*.json
+scripts/*.xlsx
+github/
+*.md
+!server/README.md

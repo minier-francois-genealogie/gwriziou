@@ -1,0 +1,21 @@
+# Blueprint Render — déploiement API seule (plan gratuit)
+# https://render.com/docs/blueprint-spec
+#
+# New → Blueprint → connecter le repo GitHub.
+# Au 1er démarrage : téléchargement GEDCOM + index actes GitHub (~20 s).
+# Cold start Render : re-import si la base éphémère a été effacée.
+
+services:
+  - type: web
+    name: genealogie-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: AUTO_IMPORT
+        value: "true"
+      - key: SQLITE_PATH
+        value: /data/genealogie.sqlite
+      - key: CORS_ORIGINS
+        value: "*"
