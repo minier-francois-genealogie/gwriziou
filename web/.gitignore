@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+dist/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+
+# Editor
+.vscode/
+.idea/
+
+# PWA dev
+dev-dist/

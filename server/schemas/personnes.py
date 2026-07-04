@@ -25,10 +25,36 @@ class EvenementResume(BaseModel):
     departement: str | None = None
 
 
+class ActeResume(BaseModel):
+    url: str
+    type: str
+    date: str | None = None
+    date_brute: str | None = None
+    lieu: str | None = None
+
+
+class WarningEvenement(BaseModel):
+    code: str
+    message: str
+    detail: str | None = None
+
+
+class EvenementArbre(BaseModel):
+    type: str
+    date: str | None = None
+    date_brute: str | None = None
+    lieu: str | None = None
+    departement: str | None = None
+    acte: ActeResume | None = None
+    warnings: list[WarningEvenement] = Field(default_factory=list)
+    id_famille: str | None = None
+    conjoint: RelationResume | None = None
+
+
 class ActesPersonne(BaseModel):
-    naissance_url: str | None = None
-    mariage_url: str | None = None
-    deces_url: str | None = None
+    naissance: ActeResume | None = None
+    mariage: ActeResume | None = None
+    deces: ActeResume | None = None
 
 
 class PhotoPersonne(BaseModel):
@@ -40,6 +66,7 @@ class RelationResume(BaseModel):
     id_gedcom: str
     nom: str
     prenoms: str | None = None
+    sexe: str | None = None
     role: str | None = None
 
 
@@ -67,6 +94,7 @@ class PersonneDetail(BaseModel):
     deces: EvenementResume | None = None
     mariages: list[MariageResume] = Field(default_factory=list)
     actes: ActesPersonne
+    evenements: list[EvenementArbre] = Field(default_factory=list)
     photos: list[PhotoPersonne] = Field(default_factory=list)
     relations: RelationsPersonne
 
@@ -77,9 +105,18 @@ class NoeudArbre(BaseModel):
     prenoms: str | None = None
     sexe: str | None = None
     profession: str | None = None
-    naissance: str | None = None
-    deces: str | None = None
-    actes: dict[str, bool]
+    naissance_tri: str | None = None
+    photos: bool = False
+    evenements: list[EvenementArbre] = Field(default_factory=list)
+
+
+class NoeudUnion(BaseModel):
+    id_famille: str
+    date: str | None = None
+    date_brute: str | None = None
+    lieu: str | None = None
+    acte_m: bool = False
+    acte: ActeResume | None = None
 
 
 class AreteArbre(BaseModel):
@@ -93,4 +130,5 @@ class ArbreResponse(BaseModel):
     ancetres: int
     descendants: int
     noeuds: list[NoeudArbre]
+    unions: list[NoeudUnion] = Field(default_factory=list)
     aretes: list[AreteArbre]
