@@ -38,13 +38,16 @@ def _evenement_row(row: sqlite3.Row | None) -> EvenementResume | None:
     )
 
 
-def _relation_row(row: sqlite3.Row) -> RelationResume:
+def _relation_row(conn: sqlite3.Connection, row: sqlite3.Row) -> RelationResume:
+    id_gedcom = row["id_gedcom"]
     return RelationResume(
-        id_gedcom=row["id_gedcom"],
+        id_gedcom=id_gedcom,
         nom=row["nom"],
         prenoms=row["prenoms"],
         sexe=row["sexe"] if "sexe" in row.keys() else None,
         role=row["role"] if "role" in row.keys() else None,
+        naissance=_fetch_evenement(conn, id_gedcom, "NAISSANCE"),
+        deces=_fetch_evenement(conn, id_gedcom, "DECES"),
     )
 
 
@@ -124,6 +127,22 @@ def _fetch_mariage_acte_union(
     return _acte_row(row) if row else None
 
 
+def _fetch_acte(
+    conn: sqlite3.Connection, id_gedcom: str, type_acte: str
+) -> ActeResume | None:
+    row = conn.execute(
+        """
+        SELECT type, url, date_acte_iso, commune, nom_fichier
+        FROM actes
+        WHERE id_gedcom = ? AND type = ?
+        ORDER BY id
+        LIMIT 1
+        """,
+        (id_gedcom, type_acte),
+    ).fetchone()
+    return _acte_row(row) if row else None
+
+
 def _fetch_actes(conn: sqlite3.Connection, id_gedcom: str) -> ActesPersonne:
     actes = ActesPersonne()
     mapping = {"N": "naissance", "M": "mariage", "D": "deces"}
@@ -192,7 +211,7 @@ def _fetch_relations(conn: sqlite3.Connection, id_gedcom: str) -> RelationsPerso
             """,
             (famc,),
         ):
-            relations.parents.append(_relation_row(row))
+            relations.parents.append(_relation_row(conn, row))
 
         for row in conn.execute(
             """
@@ -209,7 +228,7 @@ def _fetch_relations(conn: sqlite3.Connection, id_gedcom: str) -> RelationsPerso
             """,
             (famc, id_gedcom),
         ):
-            relations.fratrie.append(_relation_row(row))
+            relations.fratrie.append(_relation_row(conn, row))
 
     for row in conn.execute(
         """
@@ -227,7 +246,7 @@ def _fetch_relations(conn: sqlite3.Connection, id_gedcom: str) -> RelationsPerso
         """,
         (id_gedcom,),
     ):
-        relations.enfants.append(_relation_row(row))
+        relations.enfants.append(_relation_row(conn, row))
 
     for row in conn.execute(
         """
@@ -240,7 +259,7 @@ def _fetch_relations(conn: sqlite3.Connection, id_gedcom: str) -> RelationsPerso
         """,
         (id_gedcom, id_gedcom),
     ):
-        relations.conjoints.append(_relation_row(row))
+        relations.conjoints.append(_relation_row(conn, row))
 
     return relations
 
@@ -268,7 +287,7 @@ def _fetch_mariages(conn: sqlite3.Connection, id_gedcom: str) -> list[MariageRes
             """,
             (row["id_famille"], id_gedcom),
         ).fetchone()
-        conjoint = _relation_row(conjoint_row) if conjoint_row else None
+        conjoint = _relation_row(conn, conjoint_row) if conjoint_row else None
         mariages.append(
             MariageResume(
                 date=row["date_iso"],
@@ -298,7 +317,9 @@ def get_personne(conn: sqlite3.Connection, id_gedcom: str) -> PersonneDetail | N
         deces=_fetch_evenement(conn, id_gedcom, "DECES"),
         mariages=_fetch_mariages(conn, id_gedcom),
         actes=_fetch_actes(conn, id_gedcom),
-        evenements=_build_evenements_arbre(conn, id_gedcom),
+        evenements=_build_evenements_arbre(
+            conn, id_gedcom, include_naissances_enfants=True
+        ),
         photos=_fetch_photos(conn, id_gedcom),
         relations=_fetch_relations(conn, id_gedcom),
     )
@@ -390,6 +411,7 @@ def _evenement_from_resume(
     *,
     id_famille: str | None = None,
     conjoint: RelationResume | None = None,
+    enfant: RelationResume | None = None,
 ) -> EvenementArbre | None:
     date_iso = evt.date if evt else None
     date_brute = evt.date_brute if evt else None
@@ -407,6 +429,7 @@ def _evenement_from_resume(
         warnings=_compute_warnings(date_iso, date_brute, acte),
         id_famille=id_famille,
         conjoint=conjoint,
+        enfant=enfant,
     )
 
 
@@ -415,7 +438,10 @@ def _empty_evenement(type_: str) -> EvenementArbre:
 
 
 def _build_evenements_arbre(
-    conn: sqlite3.Connection, id_gedcom: str
+    conn: sqlite3.Connection,
+    id_gedcom: str,
+    *,
+    include_naissances_enfants: bool = False,
 ) -> list[EvenementArbre]:
     actes = _fetch_actes(conn, id_gedcom)
     evenements: list[EvenementArbre] = []
@@ -448,7 +474,7 @@ def _build_evenements_arbre(
             """,
             (row["id_famille"], id_gedcom),
         ).fetchone()
-        conjoint = _relation_row(conjoint_row) if conjoint_row else None
+        conjoint = _relation_row(conn, conjoint_row) if conjoint_row else None
         mariage_evt = EvenementResume(
             date=row["date_iso"],
             date_brute=row["date_brute"],
@@ -466,6 +492,35 @@ def _build_evenements_arbre(
         if evt_m:
             mariages.append(evt_m)
     evenements.extend(mariages if mariages else [_empty_evenement("mariage")])
+
+    if include_naissances_enfants:
+        for row in conn.execute(
+            """
+            SELECT p.id_gedcom, p.nom, p.prenoms, p.sexe
+            FROM personne_unions pu
+            JOIN famille_enfants fe ON fe.id_famille = pu.id_famille
+            JOIN personnes p ON p.id_gedcom = fe.id_enfant
+            LEFT JOIN evenements e ON e.id_personne = fe.id_enfant AND e.type = 'NAISSANCE'
+            WHERE pu.id_personne = ?
+            GROUP BY p.id_gedcom
+            ORDER BY MIN(CASE WHEN e.date_tri IS NULL THEN 1 ELSE 0 END),
+                     MIN(e.date_tri),
+                     MIN(fe.ordre),
+                     p.id_gedcom
+            """,
+            (id_gedcom,),
+        ):
+            enfant = _relation_row(conn, row)
+            acte_n = _fetch_acte(conn, enfant.id_gedcom, "N")
+            evt_e = _evenement_from_resume(
+                "naissance_enfant",
+                enfant.naissance,
+                acte_n,
+                enfant=enfant,
+            )
+            evenements.append(
+                evt_e or EvenementArbre(type="naissance_enfant", enfant=enfant)
+            )
 
     deces = _fetch_evenement(conn, id_gedcom, "DECES")
     evenements.append(
@@ -799,10 +854,15 @@ def rechercher_personnes(
     for row in conn.execute(
         """
         SELECT p.id_gedcom, p.nom, p.prenoms, p.sexe, p.profession,
-               e.date_iso AS naissance_iso, l.commune AS lieu_naissance
+               en.date_iso AS naissance_iso, en.date_brute AS naissance_brute,
+               ln.commune AS lieu_naissance,
+               ed.date_iso AS deces_iso, ed.date_brute AS deces_brute,
+               ld.commune AS lieu_deces
         FROM personnes p
-        LEFT JOIN evenements e ON e.id_personne = p.id_gedcom AND e.type = 'NAISSANCE'
-        LEFT JOIN lieux l ON l.id = e.id_lieu
+        LEFT JOIN evenements en ON en.id_personne = p.id_gedcom AND en.type = 'NAISSANCE'
+        LEFT JOIN lieux ln ON ln.id = en.id_lieu
+        LEFT JOIN evenements ed ON ed.id_personne = p.id_gedcom AND ed.type = 'DECES'
+        LEFT JOIN lieux ld ON ld.id = ed.id_lieu
         WHERE p.texte_recherche LIKE ?
         ORDER BY p.nom, p.prenoms
         LIMIT ? OFFSET ?
@@ -816,8 +876,12 @@ def rechercher_personnes(
                 prenoms=row["prenoms"],
                 sexe=row["sexe"],
                 profession=row["profession"],
-                naissance=_annee(row["naissance_iso"]),
+                naissance=_format_date_jjmmaaaa(
+                    row["naissance_iso"], row["naissance_brute"]
+                ),
                 lieu_naissance=row["lieu_naissance"],
+                deces=_format_date_jjmmaaaa(row["deces_iso"], row["deces_brute"]),
+                lieu_deces=row["lieu_deces"],
             )
         )
     return total, resultats

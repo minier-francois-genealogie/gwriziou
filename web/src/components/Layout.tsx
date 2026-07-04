@@ -1,54 +1,47 @@
-import { NavLink, Outlet } from "react-router-dom";
-import { useStatus } from "../hooks/useApi";
-import { InstallPrompt } from "./InstallPrompt";
-import { RefreshButton } from "./RefreshButton";
+import { useEffect } from "react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { AppMenu } from "../components/AppMenu";
+import { InstallPrompt } from "../components/InstallPrompt";
+import { useApp } from "../context/AppContext";
+import { api } from "../api/client";
+import { useAsync } from "../hooks/useApi";
+import { saveDerniereVue } from "../utils/appStorage";
 
 export function Layout() {
-  const { data: status, reload } = useStatus();
+  const { initPersonneId } = useApp();
+  const { data: status } = useAsync(() => api.status(), []);
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  const navClass = ({ isActive }: { isActive: boolean }) =>
-    `rounded-lg px-3 py-2 text-sm font-medium transition ${
-      isActive
-        ? "bg-sky-700 text-white"
-        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-    }`;
+  useEffect(() => {
+    if (status?.id_gedcom_racine) {
+      initPersonneId(status.id_gedcom_racine);
+    }
+  }, [status?.id_gedcom_racine, initPersonneId]);
+
+  useEffect(() => {
+    const view =
+      location.pathname === "/arbre"
+        ? "arbre"
+        : location.pathname === "/parametres"
+          ? "parametres"
+          : "recherche";
+    saveDerniereVue(view);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (location.pathname === "/tree") {
+      navigate("/arbre", { replace: true });
+    }
+  }, [location.pathname, navigate]);
 
   return (
-    <div className="flex min-h-dvh flex-col bg-slate-100">
+    <div className="relative flex h-dvh flex-col overflow-hidden bg-slate-100">
       <InstallPrompt />
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center gap-3 px-3 py-2 sm:px-4">
-          <NavLink to="/" className="flex items-center gap-2 font-bold text-sky-900">
-            <img src="/favicon.svg" alt="" className="h-8 w-8" />
-            <span className="hidden sm:inline">Gwriziou</span>
-          </NavLink>
-
-          <nav className="flex flex-1 gap-1">
-            <NavLink to="/" end className={navClass}>
-              Arbre
-            </NavLink>
-            <NavLink to="/recherche" className={navClass}>
-              Recherche
-            </NavLink>
-          </nav>
-
-          <RefreshButton onDone={reload} />
-
-          {status?.nb_personnes != null && (
-            <span className="hidden text-xs text-slate-400 md:inline">
-              {status.nb_personnes} personnes
-            </span>
-          )}
-        </div>
-      </header>
-
-      <main className="mx-auto w-full max-w-7xl flex-1 p-3 sm:p-4">
-        <Outlet context={{ status, reloadStatus: reload }} />
+      <AppMenu />
+      <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <Outlet />
       </main>
-
-      <footer className="border-t border-slate-200 py-2 text-center text-xs text-slate-400">
-        Flèches : parents ↑ enfants ↓ fratrie ←→ · Home : souche
-      </footer>
     </div>
   );
 }

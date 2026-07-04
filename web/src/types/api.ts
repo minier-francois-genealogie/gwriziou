@@ -18,6 +18,8 @@ export interface PersonneResume {
   profession: string | null;
   naissance: string | null;
   lieu_naissance: string | null;
+  deces: string | null;
+  lieu_deces: string | null;
 }
 
 export interface RechercheResponse {
@@ -49,7 +51,7 @@ export interface WarningEvenement {
 }
 
 export interface EvenementArbre {
-  type: "naissance" | "mariage" | "deces";
+  type: "naissance" | "mariage" | "deces" | "naissance_enfant";
   date: string | null;
   date_brute: string | null;
   lieu: string | null;
@@ -58,6 +60,7 @@ export interface EvenementArbre {
   warnings: WarningEvenement[];
   id_famille?: string | null;
   conjoint?: RelationResume | null;
+  enfant?: RelationResume | null;
 }
 
 export interface ActesPersonne {
@@ -77,6 +80,8 @@ export interface RelationResume {
   prenoms: string | null;
   sexe?: string | null;
   role: string | null;
+  naissance?: EvenementResume | null;
+  deces?: EvenementResume | null;
 }
 
 export interface RelationsPersonne {

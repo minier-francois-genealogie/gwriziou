@@ -1,4 +1,5 @@
 import type { ActeType, NoeudArbre } from "../types/api";
+import { useRef } from "react";
 import type { ParentsAilleursRef } from "../utils/treeLayout";
 import {
   formatNom,
@@ -17,7 +18,8 @@ interface PersonNodeProps {
   selected: boolean;
   highlighted?: boolean;
   parentsAilleurs?: ParentsAilleursRef;
-  onSelect: (id: string) => void;
+  onHighlight: (id: string) => void;
+  onRecenter: (id: string) => void;
   onActeClick?: (type: "naissance" | "mariage" | "deces", url: string, label?: string) => void;
   onParentsRefClick?: (parentIds: string[]) => void;
 }
@@ -29,7 +31,8 @@ export function PersonNode({
   selected,
   highlighted = false,
   parentsAilleurs,
-  onSelect,
+  onHighlight,
+  onRecenter,
   onActeClick,
   onParentsRefClick,
 }: PersonNodeProps) {
@@ -60,6 +63,28 @@ export function PersonNode({
     : undefined;
   const hasRef = !!parentsAilleurs;
   const extraTop = hasRef ? REF_BADGE_H : 0;
+  const clickTimer = useRef<number | null>(null);
+
+  const handleCellClick = () => {
+    if (clickTimer.current != null) {
+      window.clearTimeout(clickTimer.current);
+      clickTimer.current = null;
+      return;
+    }
+    clickTimer.current = window.setTimeout(() => {
+      onHighlight(noeud.id_gedcom);
+      clickTimer.current = null;
+    }, 250);
+  };
+
+  const handleCellDoubleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (clickTimer.current != null) {
+      window.clearTimeout(clickTimer.current);
+      clickTimer.current = null;
+    }
+    onRecenter(noeud.id_gedcom);
+  };
 
   return (
     <foreignObject
@@ -113,7 +138,8 @@ export function PersonNode({
         )}
         <button
           type="button"
-          onClick={() => onSelect(noeud.id_gedcom)}
+          onClick={handleCellClick}
+          onDoubleClick={handleCellDoubleClick}
           className={`flex min-h-0 flex-1 flex-col overflow-visible rounded-xl border-2 bg-white p-2 text-left shadow-sm transition hover:shadow-md ${border} ${accent}`}
         >
           <span className="group/name relative flex min-w-0 items-baseline gap-0.5">

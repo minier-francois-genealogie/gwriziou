@@ -62,6 +62,82 @@ export function formatDateJJMMAAAA(
   return dateBrute?.trim() || dateIso || null;
 }
 
+type DateParts = { year: number; month?: number; day?: number };
+
+function parseDateForAge(
+  dateIso: string | null | undefined,
+  dateBrute: string | null | undefined,
+): DateParts | null {
+  if (dateIso) {
+    const full = dateIso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (full) {
+      return { year: Number(full[1]), month: Number(full[2]), day: Number(full[3]) };
+    }
+    const ym = dateIso.match(/^(\d{4})-(\d{2})$/);
+    if (ym) return { year: Number(ym[1]), month: Number(ym[2]) };
+    const y = dateIso.match(/^(\d{4})$/);
+    if (y) return { year: Number(y[1]) };
+  }
+  if (dateBrute) {
+    const dmy = dateBrute.match(/^(\d{1,2})\s+([A-Z]{3})\s+(\d{4})$/i);
+    if (dmy) {
+      const month = GEDCOM_MONTHS[dmy[2]!.toUpperCase()];
+      if (month) {
+        return {
+          year: Number(dmy[3]),
+          month: Number(month),
+          day: Number(dmy[1]),
+        };
+      }
+    }
+    const yOnly = dateBrute.match(/^(\d{4})$/);
+    if (yOnly) return { year: Number(yOnly[1]) };
+  }
+  return null;
+}
+
+/** Âge atteint (ou estimé si dates partielles) à une date donnée. */
+export function ageAt(
+  birth: { date?: string | null; date_brute?: string | null },
+  at: { date?: string | null; date_brute?: string | null },
+): number | null {
+  const b = parseDateForAge(birth.date, birth.date_brute);
+  const a = parseDateForAge(at.date, at.date_brute);
+  if (!b || !a) return null;
+  let age = a.year - b.year;
+  if (b.month !== undefined && a.month !== undefined) {
+    if (
+      a.month < b.month ||
+      (a.month === b.month &&
+        b.day !== undefined &&
+        a.day !== undefined &&
+        a.day < b.day)
+    ) {
+      age -= 1;
+    }
+  }
+  return age >= 0 ? age : null;
+}
+
+export function premierPrenom(prenoms: string | null | undefined): string | null {
+  const parts = splitPrenoms(prenoms);
+  return parts[0] ?? null;
+}
+
+export function formatNaissanceEnfantLabel(
+  prenoms: string | null | undefined,
+  individuNaissance: { date?: string | null; date_brute?: string | null } | null | undefined,
+  enfantNaissance: { date?: string | null; date_brute?: string | null },
+): string {
+  const prenom = premierPrenom(prenoms) ?? "…";
+  const age =
+    individuNaissance != null
+      ? ageAt(individuNaissance, enfantNaissance)
+      : null;
+  const agePart = age !== null ? ` (${age} ans)` : "";
+  return `Naissance : ${prenom}${agePart}`;
+}
+
 export function formatEvenement(
   date: string | null | undefined,
   dateBrute: string | null | undefined,

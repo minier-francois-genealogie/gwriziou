@@ -1,6 +1,6 @@
 import type { ActeType } from "../types/api";
 
-export type EvenementType = ActeType;
+export type EvenementType = ActeType | "naissance_enfant";
 
 const VIEWBOX = "0 0 24 24";
 const STROKE = {
@@ -36,10 +36,22 @@ function DecesShape() {
   return <path d="M12 4v16M8 8h8" {...STROKE} strokeWidth={2.25} />;
 }
 
+/** Naissance d'un enfant : silhouette enfant. */
+function NaissanceEnfantShape() {
+  return (
+    <>
+      <circle cx="12" cy="8" r="3" {...STROKE} />
+      <path d="M12 11v6M8.5 14.5h7" {...STROKE} />
+    </>
+  );
+}
+
 function shapeFor(type: EvenementType | string) {
   switch (type) {
     case "naissance":
       return <NaissanceShape />;
+    case "naissance_enfant":
+      return <NaissanceEnfantShape />;
     case "mariage":
       return <MariageShape />;
     case "deces":

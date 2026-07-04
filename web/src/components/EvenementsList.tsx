@@ -1,5 +1,5 @@
 import type { ActeType, EvenementArbre, WarningEvenement } from "../types/api";
-import { formatDateJJMMAAAA } from "../utils/format";
+import { formatDateJJMMAAAA, formatNaissanceEnfantLabel } from "../utils/format";
 import { ActeIconSingle } from "./ActeIcons";
 import { WarningIcon } from "./GenealogyIcons";
 const EVENT_ACTE_TYPE: Record<string, ActeType> = {
@@ -18,16 +18,23 @@ const EMPTY_EVENEMENT = (type: EvenementArbre["type"]): EvenementArbre => ({
   warnings: [],
 });
 
-/** Au minimum une ligne naissance, mariage, décès. */
-export function normalizeEvenements(evenements: EvenementArbre[]): EvenementArbre[] {
+/** Au minimum une ligne naissance, mariage, décès ; naissances d'enfants si demandé. */
+export function normalizeEvenements(
+  evenements: EvenementArbre[],
+  includeNaissancesEnfants = false,
+): EvenementArbre[] {
   const naissance =
     evenements.find((e) => e.type === "naissance") ?? EMPTY_EVENEMENT("naissance");
   const mariages = evenements.filter((e) => e.type === "mariage");
+  const naissancesEnfants = includeNaissancesEnfants
+    ? evenements.filter((e) => e.type === "naissance_enfant")
+    : [];
   const deces =
     evenements.find((e) => e.type === "deces") ?? EMPTY_EVENEMENT("deces");
   return [
     naissance,
     ...(mariages.length > 0 ? mariages : [EMPTY_EVENEMENT("mariage")]),
+    ...naissancesEnfants,
     deces,
   ];
 }
@@ -66,15 +73,25 @@ function EventRow({
   evt,
   onActeClick,
   size,
+  individuNaissance,
 }: {
   evt: EvenementArbre;
   onActeClick?: (type: ActeType, url: string) => void;
   size: "compact" | "comfortable";
+  individuNaissance?: EvenementArbre;
 }) {
   const date = formatDateJJMMAAAA(evt.date, evt.date_brute);
-  const lieu = evt.lieu?.trim();
-  const acteType = EVENT_ACTE_TYPE[evt.type];
+  const isNaissanceEnfant = evt.type === "naissance_enfant";
+  const acteType = isNaissanceEnfant ? undefined : EVENT_ACTE_TYPE[evt.type];
   const acteSize = size === "compact" ? "xs" : "sm";
+  const detail =
+    isNaissanceEnfant && evt.enfant
+      ? formatNaissanceEnfantLabel(
+          evt.enfant.prenoms,
+          individuNaissance,
+          { date: evt.date, date_brute: evt.date_brute },
+        )
+      : (evt.lieu?.trim() ?? "");
   const gridClass =
     size === "compact"
       ? "grid-cols-[1.25rem_minmax(3.25rem,auto)_1fr_0.75rem]"
@@ -84,7 +101,9 @@ function EventRow({
     <div
       className={`grid ${gridClass} items-center gap-x-1.5 leading-tight text-slate-500`}
     >
-      {acteType ? (
+      {isNaissanceEnfant ? (
+        <span className="inline-block w-4" aria-hidden="true" />
+      ) : acteType ? (
         <ActeIconSingle
           type={acteType}
           acte={evt.acte}
@@ -95,8 +114,9 @@ function EventRow({
         <span className="inline-block w-4" aria-hidden="true" />
       )}
       <span className="truncate tabular-nums">{date ?? ""}</span>
-      <span className="truncate">{lieu ?? ""}</span>
-      <EventWarnings warnings={evt.warnings} size={size} />    </div>
+      <span className="truncate">{detail}</span>
+      <EventWarnings warnings={evt.warnings} size={size} />
+    </div>
   );
 }
 
@@ -105,6 +125,8 @@ interface EvenementsListProps {
   onActeClick?: (type: ActeType, url: string) => void;
   size?: "compact" | "comfortable";
   className?: string;
+  /** Naissances d'enfants : fiche individu uniquement. */
+  showNaissancesEnfants?: boolean;
 }
 
 export function EvenementsList({
@@ -112,8 +134,10 @@ export function EvenementsList({
   onActeClick,
   size = "compact",
   className = "",
+  showNaissancesEnfants = false,
 }: EvenementsListProps) {
-  const rows = normalizeEvenements(evenements);
+  const rows = normalizeEvenements(evenements, showNaissancesEnfants);
+  const individuNaissance = rows.find((e) => e.type === "naissance");
   const textClass = size === "compact" ? "text-[10px]" : "text-sm";
 
   return (
@@ -123,10 +147,11 @@ export function EvenementsList({
     >
       {rows.map((evt, i) => (
         <EventRow
-          key={`${evt.type}-${evt.id_famille ?? i}`}
+          key={`${evt.type}-${evt.enfant?.id_gedcom ?? evt.id_famille ?? i}`}
           evt={evt}
           onActeClick={onActeClick}
           size={size}
+          individuNaissance={individuNaissance}
         />
       ))}
     </div>

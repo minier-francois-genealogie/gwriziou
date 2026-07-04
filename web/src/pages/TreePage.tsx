@@ -1,89 +1,120 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api/client";
 import { ActeModal } from "../components/ActeModal";
-import { PersonPanel } from "../components/PersonPanel";
-import { TreeView } from "../components/TreeView";
+import { TreeView, type TreeViewHandle } from "../components/TreeView";
+import { useApp } from "../context/AppContext";
 import { useAsync } from "../hooks/useApi";
 import { pickNavTarget, useKeyboardNav } from "../hooks/useKeyboardNav";
 import type { ActeType, ArbreResponse, PersonneDetail } from "../types/api";
-import { decodeGedcomId, normalizeGedcomId } from "../utils/format";
 
-const DEFAULT_ANCETRES = 4;
-const DEFAULT_DESCENDANTS = 2;
+const NAV_MESSAGE = "Navigation uniquement sur l'arbre chargé";
 
 export function TreePage() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [ancetres, setAncetres] = useState(DEFAULT_ANCETRES);
-  const [descendants, setDescendants] = useState(DEFAULT_DESCENDANTS);
+  const { personneId, setPersonneId, ancetres, descendants } = useApp();
   const [siblingIdx, setSiblingIdx] = useState(0);
+  const [toast, setToast] = useState<string | null>(null);
+  const [fetchKey, setFetchKey] = useState(0);
+  const fetchCentreRef = useRef(personneId);
+  fetchCentreRef.current = personneId;
+  const treeRef = useRef<TreeViewHandle>(null);
+  const mountedRef = useRef(false);
   const [acteModal, setActeModal] = useState<{
     type: ActeType;
     url: string;
     name: string;
   } | null>(null);
 
-  const { data: status } = useAsync(() => api.status(), []);
-  const rootId = status?.id_gedcom_racine ?? "@655@";
+  useEffect(() => {
+    setFetchKey((k) => k + 1);
+    mountedRef.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const paramId = decodeGedcomId(searchParams.get("id"));
-  const currentId = normalizeGedcomId(paramId ?? rootId);
+  useEffect(() => {
+    if (!mountedRef.current) return;
+    setFetchKey((k) => k + 1);
+  }, [ancetres, descendants]);
 
   const { data: arbre, loading: arbreLoading, error: arbreError } = useAsync(
-    () => api.arbre(currentId, ancetres, descendants),
-    [currentId, ancetres, descendants],
+    () => api.arbre(fetchCentreRef.current, ancetres, descendants),
+    [fetchKey, ancetres, descendants],
   );
 
-  const { data: personne, loading: personneLoading } = useAsync(
-    () => api.personne(currentId),
-    [currentId],
+  const { data: personne } = useAsync(
+    () => api.personne(personneId),
+    [personneId],
   );
 
-  const goToPerson = useCallback(
-    (id: string) => {
-      setSearchParams({ id: normalizeGedcomId(id) }, { replace: false });
+  const graphIds = useMemo(
+    () => new Set((arbre?.noeuds ?? []).map((n) => n.id_gedcom)),
+    [arbre],
+  );
+
+  const showToast = useCallback((msg: string) => {
+    setToast(msg);
+    window.setTimeout(() => setToast(null), 2800);
+  }, []);
+
+  const trySelect = useCallback(
+    (id: string): boolean => {
+      if (!graphIds.has(id)) {
+        showToast(NAV_MESSAGE);
+        return false;
+      }
+      setPersonneId(id);
+      return true;
     },
-    [setSearchParams],
+    [graphIds, setPersonneId, showToast],
+  );
+
+  const handleHighlight = useCallback(
+    (id: string) => {
+      trySelect(id);
+    },
+    [trySelect],
+  );
+
+  const handleRecenter = useCallback(
+    (id: string) => {
+      trySelect(id);
+    },
+    [trySelect],
   );
 
   useEffect(() => {
-    if (!paramId && status?.id_gedcom_racine) {
-      setSearchParams({ id: status.id_gedcom_racine }, { replace: true });
-    }
-  }, [paramId, status?.id_gedcom_racine, setSearchParams]);
+    if (!arbre || !graphIds.has(personneId)) return;
+    treeRef.current?.recenterOn(personneId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [arbre]);
 
   useEffect(() => {
     setSiblingIdx(0);
-  }, [currentId]);
+  }, [personneId]);
+
+  const tryNav = useCallback(
+    (direction: "parent" | "child" | "siblingPrev" | "siblingNext" | "spouse") => {
+      const next = pickNavTarget(
+        personne as PersonneDetail | null,
+        direction,
+        siblingIdx,
+      );
+      if (!next) return;
+      if (!trySelect(next)) return;
+      if (direction === "siblingPrev") setSiblingIdx((i) => i - 1);
+      if (direction === "siblingNext") setSiblingIdx((i) => i + 1);
+    },
+    [personne, siblingIdx, trySelect],
+  );
 
   useKeyboardNav({
-    onHome: () => goToPerson(rootId),
-    onParent: () => {
-      const next = pickNavTarget(personne, "parent");
-      if (next) goToPerson(next);
+    onHome: () => {
+      if (arbre?.centre) trySelect(arbre.centre);
     },
-    onChild: () => {
-      const next = pickNavTarget(personne, "child");
-      if (next) goToPerson(next);
-    },
-    onSiblingPrev: () => {
-      const next = pickNavTarget(personne, "siblingPrev", siblingIdx);
-      if (next) {
-        goToPerson(next);
-        setSiblingIdx((i) => i - 1);
-      }
-    },
-    onSiblingNext: () => {
-      const next = pickNavTarget(personne, "siblingNext", siblingIdx);
-      if (next) {
-        goToPerson(next);
-        setSiblingIdx((i) => i + 1);
-      }
-    },
-    onSpouseNext: () => {
-      const next = pickNavTarget(personne, "spouse");
-      if (next) goToPerson(next);
-    },
+    onParent: () => tryNav("parent"),
+    onChild: () => tryNav("child"),
+    onSiblingPrev: () => tryNav("siblingPrev"),
+    onSiblingNext: () => tryNav("siblingNext"),
+    onSpouseNext: () => tryNav("spouse"),
   });
 
   const handleActeClick = useCallback(
@@ -93,77 +124,35 @@ export function TreePage() {
     [],
   );
 
-  const controls = useMemo(
-    () => (
-      <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm">
-        <label className="flex items-center gap-2">
-          <span className="text-slate-500">Ancêtres</span>
-          <input
-            type="range"
-            min={0}
-            max={8}
-            value={ancetres}
-            onChange={(e) => setAncetres(Number(e.target.value))}
-            className="w-24"
-          />
-          <span className="w-4 font-medium">{ancetres}</span>
-        </label>
-        <label className="flex items-center gap-2">
-          <span className="text-slate-500">Descendants</span>
-          <input
-            type="range"
-            min={0}
-            max={6}
-            value={descendants}
-            onChange={(e) => setDescendants(Number(e.target.value))}
-            className="w-24"
-          />
-          <span className="w-4 font-medium">{descendants}</span>
-        </label>
-        <button
-          type="button"
-          onClick={() => goToPerson(rootId)}
-          className="ml-auto rounded-lg bg-sky-700 px-3 py-1.5 text-white hover:bg-sky-800"
-          title="Retour à la souche"
-        >
-          ⌂ Souche
-        </button>
-      </div>
-    ),
-    [ancetres, descendants, goToPerson, rootId],
-  );
-
   return (
-    <div className="space-y-3">
-      {controls}
+    <div className="relative flex min-h-0 flex-1 flex-col">
+      {toast && (
+        <div className="absolute left-1/2 top-2 z-50 -translate-x-1/2 rounded-lg bg-slate-800 px-3 py-2 text-sm text-white shadow-lg">
+          {toast}
+        </div>
+      )}
 
       {arbreLoading && (
-        <p className="rounded-xl border border-slate-200 bg-white p-6 text-center text-slate-500">
-          Chargement de l'arbre…
+        <p className="flex flex-1 items-center justify-center text-slate-500">
+          Chargement de l&apos;arbre…
         </p>
       )}
 
       {arbreError && (
-        <p className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
+        <p className="m-4 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
           {arbreError}
         </p>
       )}
 
       {arbre && (
-        <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-          <TreeView
-            arbre={arbre as ArbreResponse}
-            selectedId={currentId}
-            onSelect={goToPerson}
-            onActeClick={handleActeClick}
-          />
-          <PersonPanel
-            personne={personne as PersonneDetail | null}
-            loading={personneLoading}
-            onActeClick={handleActeClick}
-            onNavigate={goToPerson}
-          />
-        </div>
+        <TreeView
+          ref={treeRef}
+          arbre={arbre as ArbreResponse}
+          selectedId={personneId}
+          onHighlight={handleHighlight}
+          onRecenter={handleRecenter}
+          onActeClick={handleActeClick}
+        />
       )}
 
       {acteModal && (

@@ -1,6 +1,7 @@
-import type { ActeType, EvenementArbre, PersonneDetail } from "../types/api";
+import type { ActeType, EvenementArbre, PersonneDetail, RelationResume } from "../types/api";
 import { formatNom } from "../utils/format";
 import { EvenementsList, normalizeEvenements } from "./EvenementsList";
+import { RelationPersonLabel } from "./RelationPersonLabel";
 import { PersonName } from "./SexeIcon";
 
 interface PersonPanelProps {
@@ -27,7 +28,7 @@ export function PersonPanel({
   if (!personne) {
     return (
       <aside className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-500">
-        Sélectionnez une personne dans l'arbre ou via la recherche.
+        Sélectionnez une personne via la recherche.
       </aside>
     );
   }
@@ -61,6 +62,7 @@ export function PersonPanel({
           evenements={evenements}
           onActeClick={handleActeClick}
           size="comfortable"
+          showNaissancesEnfants
         />
       </div>
 
@@ -153,7 +155,7 @@ function evenementsFromPersonneDetail(personne: PersonneDetail): EvenementArbre[
       warnings: [],
     });
   }
-  return normalizeEvenements(rows);
+  return normalizeEvenements(rows, true);
 }
 
 function RelationList({
@@ -162,12 +164,7 @@ function RelationList({
   onNavigate,
 }: {
   title: string;
-  items: Array<{
-    id_gedcom: string;
-    nom: string;
-    prenoms: string | null;
-    sexe?: string | null;
-  }>;
+  items: RelationResume[];
   onNavigate: (id: string) => void;
 }) {
   if (items.length === 0) return null;
@@ -184,10 +181,12 @@ function RelationList({
               className="text-sm text-sky-700 hover:underline"
               onClick={() => onNavigate(item.id_gedcom)}
             >
-              <PersonName
+              <RelationPersonLabel
                 nom={item.nom}
                 prenoms={item.prenoms}
                 sexe={item.sexe}
+                naissance={item.naissance}
+                deces={item.deces}
               />
             </button>
           </li>

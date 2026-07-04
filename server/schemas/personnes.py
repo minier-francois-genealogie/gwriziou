@@ -9,6 +9,8 @@ class PersonneResume(BaseModel):
     profession: str | None = None
     naissance: str | None = None
     lieu_naissance: str | None = None
+    deces: str | None = None
+    lieu_deces: str | None = None
 
 
 class RechercheResponse(BaseModel):
@@ -45,6 +47,8 @@ class RelationResume(BaseModel):
     prenoms: str | None = None
     sexe: str | None = None
     role: str | None = None
+    naissance: EvenementResume | None = None
+    deces: EvenementResume | None = None
 
 
 class EvenementArbre(BaseModel):
@@ -57,6 +61,7 @@ class EvenementArbre(BaseModel):
     warnings: list[WarningEvenement] = Field(default_factory=list)
     id_famille: str | None = None
     conjoint: RelationResume | None = None
+    enfant: RelationResume | None = None
 
 
 class ActesPersonne(BaseModel):

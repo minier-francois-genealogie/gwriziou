@@ -1,21 +1,23 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
+import { ActeModal } from "../components/ActeModal";
+import { PersonPanel } from "../components/PersonPanel";
+import { PersonVieResume } from "../components/PersonVieResume";
+import { PersonName } from "../components/SexeIcon";
+import { useApp } from "../context/AppContext";
 import { useAsync } from "../hooks/useApi";
-import type { PersonneResume } from "../types/api";
-import { formatDates, formatNom } from "../utils/format";
+import type { ActeType, PersonneResume } from "../types/api";
 
 export function SearchPage() {
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const initialQ = searchParams.get("q") ?? "";
-  const [query, setQuery] = useState(initialQ);
+  const { personneId, setPersonneId } = useApp();
+  const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
-
-  useEffect(() => {
-    setQuery(initialQ);
-    setPage(1);
-  }, [initialQ]);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [acteModal, setActeModal] = useState<{
+    type: ActeType;
+    url: string;
+    name: string;
+  } | null>(null);
 
   const trimmed = query.trim();
   const { data, loading, error } = useAsync(
@@ -23,101 +25,185 @@ export function SearchPage() {
     [trimmed, page],
   );
 
+  const { data: personne, loading: personneLoading } = useAsync(
+    () => api.personne(personneId),
+    [personneId],
+  );
+
+  useEffect(() => {
+    setPage(1);
+    if (trimmed.length >= 1) setSuggestionsOpen(true);
+    else setSuggestionsOpen(false);
+  }, [trimmed]);
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSearchParams(query.trim() ? { q: query.trim() } : {});
     setPage(1);
+    if (trimmed.length >= 1) setSuggestionsOpen(true);
   };
 
-  const goToTree = (person: PersonneResume) => {
-    navigate(`/tree?id=${encodeURIComponent(person.id_gedcom)}`);
+  const selectPerson = (person: PersonneResume) => {
+    setPersonneId(person.id_gedcom);
+    setSuggestionsOpen(false);
   };
 
   const totalPages = data ? Math.ceil(data.total / data.limit) : 0;
+  const showSuggestions = suggestionsOpen && trimmed.length >= 1;
+
+  const handleActeClick = (type: ActeType, url: string, name = "Personne") => {
+    setActeModal({ type, url, name });
+  };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
-      <form onSubmit={submit} className="flex gap-2">
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Nom, prénom, profession…"
-          className="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-base shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
-          autoFocus
-        />
-        <button
-          type="submit"
-          className="rounded-xl bg-sky-700 px-5 py-3 font-medium text-white hover:bg-sky-800"
-        >
-          Chercher
-        </button>
-      </form>
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="relative z-30 shrink-0 border-b border-slate-200 bg-white pb-3 pr-3 pt-3 pl-[calc(env(safe-area-inset-left,0px)+3.75rem)]">
+        <form onSubmit={submit} className="flex gap-2">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => {
+              if (trimmed.length >= 1) setSuggestionsOpen(true);
+            }}
+            placeholder="Nom, prénom…"
+            className="min-w-0 flex-1 rounded-xl border border-slate-300 px-4 py-2.5 text-base shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
+          />
+          <span className="group/search relative inline-flex shrink-0">
+            <button
+              type="submit"
+              aria-label="Chercher"
+              className="inline-flex h-[42px] w-[42px] items-center justify-center rounded-xl bg-sky-700 text-white transition hover:bg-sky-800"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" />
+              </svg>
+            </button>
+            <span
+              role="tooltip"
+              className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1 hidden -translate-x-1/2 rounded-md bg-slate-800 px-2 py-1 text-xs text-white shadow-md group-hover/search:block group-focus-within/search:block"
+            >
+              Chercher
+            </span>
+          </span>
+        </form>
 
-      {loading && (
-        <p className="text-center text-slate-500">Recherche en cours…</p>
-      )}
-
-      {error && (
-        <p className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
-          {error}
-        </p>
-      )}
-
-      {data && data.total === 0 && trimmed && (
-        <p className="text-center text-slate-500">Aucun résultat pour « {trimmed} ».</p>
-      )}
-
-      {data && data.total > 0 && (
-        <>
-          <p className="text-sm text-slate-500">
-            {data.total} résultat{data.total > 1 ? "s" : ""}
-          </p>
-          <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-            {data.resultats.map((person) => (
-              <li key={person.id_gedcom}>
+        {showSuggestions && (
+          <div className="absolute inset-x-0 top-full z-40 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+            {loading && (
+              <p className="px-3 py-2 text-sm text-slate-500">Recherche…</p>
+            )}
+            {error && (
+              <p className="border-b border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {error}
+              </p>
+            )}
+            {data && data.total > 0 && (
+              <ul className="max-h-[min(50vh,18rem)] overflow-y-auto bg-slate-50">
+                {data.resultats.map((person) => (
+                  <li key={person.id_gedcom}>
+                    <button
+                      type="button"
+                      onClick={() => selectPerson(person)}
+                      className={`flex w-full flex-col px-3 py-2 text-left text-sm hover:bg-sky-50 ${
+                        person.id_gedcom === personneId ? "bg-sky-100 font-medium" : ""
+                      }`}
+                    >
+                      <PersonName
+                        nom={person.nom}
+                        prenoms={person.prenoms}
+                        sexe={person.sexe}
+                      />
+                      <PersonVieResume
+                        naissance={person.naissance}
+                        lieuNaissance={person.lieu_naissance}
+                        deces={person.deces}
+                        lieuDeces={person.lieu_deces}
+                      />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {data && data.total === 0 && !loading && (
+              <p className="px-3 py-2 text-sm text-slate-500">
+                Aucun résultat pour « {trimmed} ».
+              </p>
+            )}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 border-t border-slate-200 bg-white px-3 py-2 text-sm">
                 <button
                   type="button"
-                  onClick={() => goToTree(person)}
-                  className="flex w-full flex-col px-4 py-3 text-left hover:bg-sky-50 sm:flex-row sm:items-center sm:justify-between"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => p - 1)}
+                  aria-label="Page précédente"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
                 >
-                  <span className="font-medium text-slate-900">
-                    {formatNom(person.nom, person.prenoms)}
-                  </span>
-                  <span className="text-sm text-slate-500">
-                    {[formatDates(person.naissance, null), person.lieu_naissance, person.profession]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m15 18-6-6 6-6" />
+                  </svg>
                 </button>
-              </li>
-            ))}
-          </ul>
+                <span className="text-slate-500">
+                  {page}/{totalPages}
+                </span>
+                <button
+                  type="button"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                  aria-label="Page suivante"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-3">
-              <button
-                type="button"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => p - 1)}
-                className="rounded-lg border border-slate-300 px-3 py-1 disabled:opacity-40"
-              >
-                ← Préc.
-              </button>
-              <span className="text-sm text-slate-500">
-                Page {page} / {totalPages}
-              </span>
-              <button
-                type="button"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => p + 1)}
-                className="rounded-lg border border-slate-300 px-3 py-1 disabled:opacity-40"
-              >
-                Suiv. →
-              </button>
-            </div>
-          )}
-        </>
+      <div className="min-h-0 flex-1 overflow-y-auto p-3">
+        <PersonPanel
+          personne={personne ?? null}
+          loading={personneLoading}
+          onActeClick={handleActeClick}
+          onNavigate={setPersonneId}
+        />
+      </div>
+
+      {acteModal && (
+        <ActeModal
+          type={acteModal.type}
+          url={acteModal.url}
+          personName={acteModal.name}
+          onClose={() => setActeModal(null)}
+        />
       )}
     </div>
   );
