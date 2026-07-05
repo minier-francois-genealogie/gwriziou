@@ -11,6 +11,8 @@ import { useAsync } from "../hooks/useApi";
 import { usePhotoModal } from "../hooks/usePhotoModal";
 import type { ActeType, PersonneResume } from "../types/api";
 
+const PAGE_GUTTER = "pl-[calc(env(safe-area-inset-left,0px)+3.75rem)]";
+
 export function SearchPage() {
   const { ancrePersonneId, setAncrePersonneId } = useApp();
   const location = useLocation();
@@ -52,12 +54,6 @@ export function SearchPage() {
     else setSuggestionsOpen(false);
   }, [trimmed]);
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPage(1);
-    if (trimmed.length >= 1) setSuggestionsOpen(true);
-  };
-
   const selectPerson = (person: PersonneResume) => {
     setFichePersonneId(person.id_gedcom);
     setSuggestionsOpen(false);
@@ -72,47 +68,32 @@ export function SearchPage() {
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="relative isolate z-40 shrink-0 border-b border-slate-200 bg-white pb-3 pr-3 pt-3 pl-[calc(env(safe-area-inset-left,0px)+3.75rem)]">
-        <form onSubmit={submit} className="flex gap-2">
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => {
-              if (trimmed.length >= 1) setSuggestionsOpen(true);
-            }}
-            placeholder="Nom, prénom…"
-            className="min-w-0 flex-1 rounded-xl border border-slate-300 px-4 py-2.5 text-base shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
-          />
-          <span className="group/search relative inline-flex shrink-0">
-            <button
-              type="submit"
-              aria-label="Chercher"
-              className="inline-flex h-[42px] w-[42px] items-center justify-center rounded-xl bg-sky-700 text-white transition hover:bg-sky-800"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                aria-hidden="true"
-              >
-                <circle cx="11" cy="11" r="7" />
-                <path d="m20 20-3.5-3.5" />
-              </svg>
-            </button>
-            <span
-              role="tooltip"
-              className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1 hidden -translate-x-1/2 rounded-md bg-slate-800 px-2 py-1 text-xs text-white shadow-md group-hover/search:block group-focus-within/search:block"
-            >
-              Chercher
-            </span>
-          </span>
-        </form>
+      <div
+        className={`relative isolate z-40 shrink-0 bg-slate-100 pb-3 pr-3 pt-3 ${PAGE_GUTTER}`}
+      >
+        <input
+          type="text"
+          inputMode="search"
+          enterKeyHint="search"
+          autoComplete="off"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={showSuggestions}
+          aria-controls={showSuggestions ? "search-person-suggestions" : undefined}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => {
+            if (trimmed.length >= 1) setSuggestionsOpen(true);
+          }}
+          placeholder="Nom, prénom…"
+          className="min-w-0 w-full cursor-text rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-base shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
+        />
 
         {showSuggestions && (
-          <div className="absolute inset-x-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+          <div
+            id="search-person-suggestions"
+            className="absolute inset-x-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg"
+          >
             {loading && (
               <p className="px-3 py-2 text-sm text-slate-500">Recherche…</p>
             )}
@@ -122,7 +103,7 @@ export function SearchPage() {
               </p>
             )}
             {data && data.total > 0 && (
-              <ul className="max-h-[min(50vh,18rem)] overflow-y-auto bg-slate-50">
+              <ul className="max-h-[min(50vh,18rem)] overflow-y-auto bg-white">
                 {data.resultats.map((person) => (
                   <li key={person.id_gedcom}>
                     <button
@@ -164,7 +145,7 @@ export function SearchPage() {
               </p>
             )}
             {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 border-t border-slate-200 bg-white px-3 py-2 text-sm">
+              <div className="flex items-center justify-center gap-2 border-t border-slate-300 bg-white px-3 py-2 text-sm">
                 <button
                   type="button"
                   disabled={page <= 1}
@@ -214,7 +195,7 @@ export function SearchPage() {
         )}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-3">
+      <div className="flex min-h-0 flex-1 flex-col p-3">
         <PersonPanel
           personne={personne ?? null}
           loading={personneLoading}

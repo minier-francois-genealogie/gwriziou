@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CircleMarker, MapContainer, TileLayer, Tooltip, useMap } from "react-leaflet";
+import { CircleMarker, MapContainer, TileLayer, Tooltip, ZoomControl, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { api } from "../api/client";
@@ -64,7 +64,9 @@ export function GeolocPage() {
         zoom={DEFAULT_ZOOM}
         className="h-full w-full flex-1"
         scrollWheelZoom
+        zoomControl={false}
       >
+        <ZoomControl position="topright" />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -93,7 +95,7 @@ export function GeolocPage() {
         ))}
       </MapContainer>
 
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-[1000] pl-[calc(env(safe-area-inset-left,0px)+3.75rem)] pr-3 pt-3">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-[500] pl-[calc(env(safe-area-inset-left,0px)+3.75rem)] pr-3 pt-3">
         <div className="pointer-events-auto inline-flex max-w-full flex-col gap-1 rounded-xl border border-slate-200/90 bg-white/95 px-3 py-2 shadow-md backdrop-blur-sm">
           <h1 className="text-sm font-bold text-slate-900">Géoloc</h1>
           {loading && !data && (
@@ -112,7 +114,7 @@ export function GeolocPage() {
         </div>
       </div>
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1000] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pl-[calc(env(safe-area-inset-left,0px)+0.75rem)]">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[500] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pl-[calc(env(safe-area-inset-left,0px)+0.75rem)]">
         <div className="pointer-events-auto rounded-xl border border-slate-200/90 bg-white/95 px-4 py-3 shadow-md backdrop-blur-sm">
           <div className="mb-2 flex items-center justify-between gap-3">
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">

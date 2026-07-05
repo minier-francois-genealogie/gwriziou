@@ -13,7 +13,7 @@ export function VieDateTooltip({
   return (
     <span
       className={`group/viedate relative inline-flex max-w-full cursor-help ${className}`}
-      title={tooltip}
+      tabIndex={0}
     >
       {children}
       <span

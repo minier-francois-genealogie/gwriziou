@@ -3,7 +3,7 @@ import {
   regleDecesMaxLabel,
   regleNaissanceMinLabel,
 } from "../content/vieDatesRegles";
-import { formatDateJJMMAAAA, formatVieDateDisplay } from "../utils/format";
+import { formatDateJJMMAAAA, formatVieDateDisplay, isProbablyAlive } from "../utils/format";
 import { EvenementIcon } from "./GenealogyIcons";
 import { VieDateTooltip } from "./VieDateTooltip";
 
@@ -79,7 +79,7 @@ export function PersonVieResume({
 
   const deathGedcom = deces_gedcom ? deces?.trim() : null;
   const deathEstime =
-    !deces_gedcom && date_deces_max
+    !deces_gedcom && date_deces_max && !isProbablyAlive(date_deces_max)
       ? formatVieDateDisplay(date_deces_max, date_deces_max_approximation)
       : null;
   const deathDate = deathGedcom ?? deathEstime;
@@ -142,6 +142,9 @@ export function resolveEventDateDisplay(
     }
   }
   if (type === "deces" && vieDates && !vieDates.deces_gedcom) {
+    if (isProbablyAlive(vieDates.date_deces_max)) {
+      return { text: null, estimated: false, regleTooltip: null };
+    }
     const est = formatVieDateDisplay(
       vieDates.date_deces_max,
       vieDates.date_deces_max_approximation,

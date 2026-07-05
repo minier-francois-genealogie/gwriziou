@@ -253,6 +253,16 @@ export function formatWarningDetail(detail: string): string {
   return detail.replace(/\s—\s(?=Acte\s:)/, "\n");
 }
 
+/** Borne décès max dans le futur → personne probablement encore vivante. */
+export function isProbablyAlive(dateDecesMax: string | null | undefined): boolean {
+  if (!dateDecesMax?.trim()) return false;
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = String(today.getMonth() + 1).padStart(2, "0");
+  const d = String(today.getDate()).padStart(2, "0");
+  return dateDecesMax.trim() > `${y}-${m}-${d}`;
+}
+
 /** Date estimée avec préfixe d'approximation (~, >, <). */
 export function formatVieDateDisplay(
   dateIso: string | null | undefined,

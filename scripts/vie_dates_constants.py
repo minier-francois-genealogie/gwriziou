@@ -5,6 +5,7 @@ from __future__ import annotations
 import calendar
 import re
 from dataclasses import dataclass
+from datetime import date
 from typing import Literal
 
 from gedcom_dates import is_full_gedcom_date, year_from_iso
@@ -235,3 +236,22 @@ def _compute_date_deces_max(
         return None, None, None
     best_date, best_regle = min(candidates, key=lambda item: item[0])
     return best_date, "INFERIEUR_A", best_regle
+
+
+def is_probably_alive(
+    date_deces_max: str | None, *, today: date | None = None
+) -> bool:
+    """Borne décès dans le futur → personne probablement encore vivante."""
+    if not date_deces_max:
+        return False
+    ref = (today or date.today()).isoformat()
+    return date_deces_max > ref
+
+
+def should_warn_manque_borne_deces(
+    calc: VieDatesCalc, *, today: date | None = None
+) -> bool:
+    """Pas de warning décès si la borne calculée est dans le futur."""
+    if is_probably_alive(calc.date_deces_max, today=today):
+        return False
+    return calc.date_deces_max is None

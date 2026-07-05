@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import sqlite3
 import sys
+from datetime import date
 from pathlib import Path
 
 BDD_DIR = Path(__file__).resolve().parent.parent
@@ -15,7 +16,7 @@ sys.path.insert(0, str(WS_ROOT))
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 from gedcom_dates import year_from_iso  # noqa: E402
-from vie_dates_constants import compute_vie_dates  # noqa: E402
+from vie_dates_constants import compute_vie_dates, should_warn_manque_borne_deces  # noqa: E402
 
 DEFAULT_DB = BDD_DIR / "genealogie.sqlite"
 
@@ -132,6 +133,7 @@ def import_dates_vie(conn: sqlite3.Connection) -> int:
         "SELECT id_gedcom, sexe FROM personnes ORDER BY id_gedcom"
     ).fetchall()
     updated = 0
+    today = date.today()
 
     for row in personnes:
         pid = row["id_gedcom"]
@@ -182,7 +184,7 @@ def import_dates_vie(conn: sqlite3.Connection) -> int:
                 """,
                 (pid,),
             )
-        if calc.date_deces_max is None:
+        if should_warn_manque_borne_deces(calc, today=today):
             conn.execute(
                 """
                 INSERT OR IGNORE INTO warnings (
@@ -192,6 +194,19 @@ def import_dates_vie(conn: sqlite3.Connection) -> int:
                 """,
                 (pid,),
             )
+
+    today_iso = today.isoformat()
+    conn.execute(
+        """
+        DELETE FROM warnings
+        WHERE code = 'MANQUE_BORNE_DECES'
+          AND id_gedcom IN (
+            SELECT id_gedcom FROM personnes
+            WHERE date_deces_max IS NOT NULL AND date_deces_max > ?
+          )
+        """,
+        (today_iso,),
+    )
 
     conn.commit()
     return updated

@@ -137,6 +137,25 @@ const WARNING_SIZE = {
   sm: "h-3.5 w-3.5",
 } as const;
 
+/** Chêne : houppier en nuage + long tronc (menu navigation arbre). */
+export function TreeMenuIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg
+      viewBox={VIEWBOX}
+      className={`inline-block shrink-0 ${className}`}
+      aria-hidden="true"
+      {...STROKE}
+    >
+      <circle cx="12" cy="5.5" r="4" />
+      <circle cx="7.5" cy="8.5" r="3.5" />
+      <circle cx="16.5" cy="8.5" r="3.5" />
+      <circle cx="10" cy="11" r="3" />
+      <circle cx="14" cy="11" r="3" />
+      <path d="M12 12v10" />
+    </svg>
+  );
+}
+
 /** Triangle d'avertissement (alerte sur un événement). */
 export function WarningIcon({
   size = "xs",
@@ -155,10 +174,8 @@ export function WarningIcon({
         fill="currentColor"
         d="M12 2.2 2.2 20.8c-.3.5.1 1.2.8 1.2h18c.7 0 1.1-.7.8-1.2L12 2.2z"
       />
-      <path
-        fill="white"
-        d="M12 8.5c.5 0 .9.4.9.9V14c0 .5-.4.9-.9.9s-.9-.4-.9-.9V9.4c0-.5.4-.9.9-.9zm0 7.8c.6 0 1.1.5 1.1 1.1S12.6 18.5 12 18.5s-1.1-.5-1.1-1.1.5-1.1 1.1-1.1z"
-      />
+      <rect x="11" y="8.5" width="2" height="5.5" rx="1" fill="white" />
+      <circle cx="12" cy="17" r="1.35" fill="white" />
     </svg>
   );
 }

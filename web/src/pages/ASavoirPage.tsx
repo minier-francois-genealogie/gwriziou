@@ -19,14 +19,14 @@ function RulesTable({ rules }: { rules: Record<string, string> }) {
     <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
       <table className="w-full min-w-[28rem] text-left text-sm">
         <thead>
-          <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+          <tr className="border-b border-slate-300 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
             <th className="px-3 py-2 font-medium">Code</th>
             <th className="px-3 py-2 font-medium">Signification</th>
           </tr>
         </thead>
         <tbody>
           {Object.entries(rules).map(([code, label]) => (
-            <tr key={code} className="border-b border-slate-100 last:border-0">
+            <tr key={code} className="border-b border-slate-300 last:border-0">
               <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-sky-800">
                 {code}
               </td>
@@ -42,7 +42,7 @@ function RulesTable({ rules }: { rules: Record<string, string> }) {
 export function ASavoirPage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <header className="shrink-0 border-b border-slate-200 bg-white px-4 py-3 pt-[calc(3.5rem+env(safe-area-inset-top,0px))]">
+      <header className="shrink-0 border-b border-slate-300 bg-white px-4 py-3 pt-[calc(3.5rem+env(safe-area-inset-top,0px))]">
         <h1 className="text-lg font-bold text-sky-900">À savoir</h1>
         <p className="mt-0.5 text-sm text-slate-500">
           Bornes de vie estimées, constantes et légende d&apos;affichage.
@@ -55,7 +55,7 @@ export function ASavoirPage() {
             <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
               <table className="w-full min-w-[20rem] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                  <tr className="border-b border-slate-300 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                     <th className="px-3 py-2 font-medium">Variable</th>
                     <th className="px-3 py-2 font-medium">Valeur</th>
                     <th className="px-3 py-2 font-medium">Description</th>
@@ -63,7 +63,7 @@ export function ASavoirPage() {
                 </thead>
                 <tbody>
                   {VIE_DATES_CONSTANTES.map((c) => (
-                    <tr key={c.nom} className="border-b border-slate-100 last:border-0">
+                    <tr key={c.nom} className="border-b border-slate-300 last:border-0">
                       <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-sky-800">
                         {c.nom}
                       </td>
