@@ -20,6 +20,14 @@ export interface PersonneResume {
   lieu_naissance: string | null;
   deces: string | null;
   lieu_deces: string | null;
+  date_naissance_min?: string | null;
+  date_naissance_min_approximation?: string | null;
+  date_naissance_min_regle?: string | null;
+  date_deces_max?: string | null;
+  date_deces_max_approximation?: string | null;
+  date_deces_max_regle?: string | null;
+  naissance_gedcom?: boolean;
+  deces_gedcom?: boolean;
 }
 
 export interface RechercheResponse {
@@ -107,11 +115,30 @@ export interface PersonneDetail {
   profession: string | null;
   naissance: EvenementResume | null;
   deces: EvenementResume | null;
+  date_naissance_min?: string | null;
+  date_naissance_min_approximation?: string | null;
+  date_naissance_min_regle?: string | null;
+  date_deces_max?: string | null;
+  date_deces_max_approximation?: string | null;
+  date_deces_max_regle?: string | null;
+  naissance_gedcom?: boolean;
+  deces_gedcom?: boolean;
   mariages: MariageResume[];
   actes: ActesPersonne;
   evenements: EvenementArbre[];
   photos: PhotoPersonne[];
   relations: RelationsPersonne;
+}
+
+export interface VieDatesAffichage {
+  date_naissance_min?: string | null;
+  date_naissance_min_approximation?: string | null;
+  date_naissance_min_regle?: string | null;
+  date_deces_max?: string | null;
+  date_deces_max_approximation?: string | null;
+  date_deces_max_regle?: string | null;
+  naissance_gedcom?: boolean;
+  deces_gedcom?: boolean;
 }
 
 export interface NoeudArbre {
@@ -123,6 +150,14 @@ export interface NoeudArbre {
   naissance_tri: string | null;
   photos: boolean;
   evenements: EvenementArbre[];
+  date_naissance_min?: string | null;
+  date_naissance_min_approximation?: string | null;
+  date_naissance_min_regle?: string | null;
+  date_deces_max?: string | null;
+  date_deces_max_approximation?: string | null;
+  date_deces_max_regle?: string | null;
+  naissance_gedcom?: boolean;
+  deces_gedcom?: boolean;
 }
 
 export interface AreteArbre {

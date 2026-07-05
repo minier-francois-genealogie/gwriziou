@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AppProvider } from "./context/AppContext";
 import { Layout } from "./components/Layout";
+import { ASavoirPage } from "./pages/ASavoirPage";
 import { GeolocPage } from "./pages/GeolocPage";
 import { SearchPage } from "./pages/SearchPage";
 import { SettingsPage } from "./pages/SettingsPage";
@@ -14,6 +15,7 @@ function LastViewRedirect() {
   if (last === "parametres") return <Navigate to="/parametres" replace />;
   if (last === "warnings") return <Navigate to="/warnings" replace />;
   if (last === "geoloc") return <Navigate to="/geoloc" replace />;
+  if (last === "a-savoir") return <Navigate to="/a-savoir" replace />;
   return <Navigate to="/recherche" replace />;
 }
 
@@ -30,6 +32,7 @@ export default function App() {
             <Route path="parametres" element={<SettingsPage />} />
             <Route path="warnings" element={<WarningsPage />} />
             <Route path="geoloc" element={<GeolocPage />} />
+            <Route path="a-savoir" element={<ASavoirPage />} />
             <Route path="*" element={<Navigate to="/recherche" replace />} />
           </Route>
         </Routes>

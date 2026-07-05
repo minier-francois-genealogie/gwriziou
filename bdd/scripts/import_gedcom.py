@@ -21,7 +21,7 @@ from paths import GEDCOM_PATH as DEFAULT_GEDCOM  # noqa: E402
 
 DEFAULT_DB = BDD_DIR / "genealogie.sqlite"
 SCHEMA_PATH = BDD_DIR / "schema.sql"
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 6
 
 from act_path_normalize import ascii_fold  # noqa: E402
 from analyze_ascendance import find_root  # noqa: E402

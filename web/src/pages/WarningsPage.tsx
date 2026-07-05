@@ -18,6 +18,8 @@ const WARNING_FILTERS = [
   { code: "MANQUE_GED", label: "Date/lieu GEDCOM manquant" },
   { code: "DATE_DIVERGENTE", label: "Date GEDCOM ≠ acte" },
   { code: "LIEU_DIVERGENTE", label: "Lieu GEDCOM ≠ acte" },
+  { code: "MANQUE_BORNE_NAISSANCE", label: "Borne naissance inestimable" },
+  { code: "MANQUE_BORNE_DECES", label: "Borne décès inestimable" },
 ] as const;
 
 function toggleSetValue(

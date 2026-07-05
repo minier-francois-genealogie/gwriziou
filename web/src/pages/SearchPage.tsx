@@ -142,6 +142,16 @@ export function SearchPage() {
                         lieuNaissance={person.lieu_naissance}
                         deces={person.deces}
                         lieuDeces={person.lieu_deces}
+                        date_naissance_min={person.date_naissance_min}
+                        date_naissance_min_approximation={
+                          person.date_naissance_min_approximation
+                        }
+                        date_naissance_min_regle={person.date_naissance_min_regle}
+                        date_deces_max={person.date_deces_max}
+                        date_deces_max_approximation={person.date_deces_max_approximation}
+                        date_deces_max_regle={person.date_deces_max_regle}
+                        naissance_gedcom={person.naissance_gedcom}
+                        deces_gedcom={person.deces_gedcom}
                       />
                     </button>
                   </li>

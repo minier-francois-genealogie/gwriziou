@@ -83,6 +83,16 @@ export function PersonPanel({
           size="comfortable"
           showNaissancesEnfants
           hideMissingActeWarnings
+          vieDates={{
+            date_naissance_min: personne.date_naissance_min,
+            date_naissance_min_approximation: personne.date_naissance_min_approximation,
+            date_naissance_min_regle: personne.date_naissance_min_regle,
+            date_deces_max: personne.date_deces_max,
+            date_deces_max_approximation: personne.date_deces_max_approximation,
+            date_deces_max_regle: personne.date_deces_max_regle,
+            naissance_gedcom: personne.naissance_gedcom,
+            deces_gedcom: personne.deces_gedcom,
+          }}
         />
       </div>
 

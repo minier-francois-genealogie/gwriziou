@@ -1,7 +1,9 @@
-import type { ActeType, EvenementArbre, WarningEvenement } from "../types/api";
-import { formatDateJJMMAAAA, formatNaissanceEnfantLabel, formatWarningDetail } from "../utils/format";
+import type { ActeType, EvenementArbre, VieDatesAffichage, WarningEvenement } from "../types/api";
+import { formatNaissanceEnfantLabel, formatWarningDetail } from "../utils/format";
 import { ActeIconSingle } from "./ActeIcons";
 import { WarningIcon } from "./GenealogyIcons";
+import { resolveEventDateDisplay } from "./PersonVieResume";
+import { VieDateTooltip } from "./VieDateTooltip";
 const EVENT_ACTE_TYPE: Record<string, ActeType> = {
   naissance: "naissance",
   mariage: "mariage",
@@ -80,17 +82,32 @@ function EventRow({
   size,
   individuNaissance,
   hideMissingActeWarnings = false,
+  vieDates,
 }: {
   evt: EvenementArbre;
   onActeClick?: (type: ActeType, url: string) => void;
   size: "compact" | "comfortable";
   individuNaissance?: EvenementArbre;
   hideMissingActeWarnings?: boolean;
+  vieDates?: VieDatesAffichage;
 }) {
-  const date = formatDateJJMMAAAA(evt.date, evt.date_brute);
   const isNaissanceEnfant = evt.type === "naissance_enfant";
   const acteType = isNaissanceEnfant ? undefined : EVENT_ACTE_TYPE[evt.type];
   const acteSize = size === "compact" ? "xs" : "sm";
+  let dateDisplay: string | null = null;
+  let dateEstimated = false;
+  let dateTooltip: string | null = null;
+  if (evt.type === "naissance" || evt.type === "deces") {
+    const resolved = resolveEventDateDisplay(
+      evt.type,
+      evt.date,
+      evt.date_brute,
+      vieDates,
+    );
+    dateDisplay = resolved.text;
+    dateEstimated = resolved.estimated;
+    dateTooltip = resolved.regleTooltip;
+  }
   const detail =
     isNaissanceEnfant && evt.enfant
       ? formatNaissanceEnfantLabel(
@@ -120,7 +137,15 @@ function EventRow({
       ) : (
         <span className="inline-block w-4" aria-hidden="true" />
       )}
-      <span className="truncate tabular-nums">{date ?? ""}</span>
+      {dateEstimated ? (
+        <VieDateTooltip tooltip={dateTooltip} className="min-w-0">
+          <span className="block truncate tabular-nums text-red-600">
+            {dateDisplay ?? ""}
+          </span>
+        </VieDateTooltip>
+      ) : (
+        <span className="truncate tabular-nums">{dateDisplay ?? ""}</span>
+      )}
       <span className="truncate">{detail}</span>
       <EventWarnings
         warnings={evt.warnings}
@@ -140,6 +165,7 @@ interface EvenementsListProps {
   showNaissancesEnfants?: boolean;
   /** Arbre : l'icône d'acte grisée suffit pour signaler l'absence d'acte. */
   hideMissingActeWarnings?: boolean;
+  vieDates?: VieDatesAffichage;
 }
 
 export function EvenementsList({
@@ -149,6 +175,7 @@ export function EvenementsList({
   className = "",
   showNaissancesEnfants = false,
   hideMissingActeWarnings = false,
+  vieDates,
 }: EvenementsListProps) {
   const rows = normalizeEvenements(evenements, showNaissancesEnfants);
   const individuNaissance = rows.find((e) => e.type === "naissance");
@@ -167,6 +194,7 @@ export function EvenementsList({
           size={size}
           individuNaissance={individuNaissance}
           hideMissingActeWarnings={hideMissingActeWarnings}
+          vieDates={vieDates}
         />
       ))}
     </div>

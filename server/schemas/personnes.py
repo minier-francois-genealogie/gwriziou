@@ -11,6 +11,13 @@ class PersonneResume(BaseModel):
     lieu_naissance: str | None = None
     deces: str | None = None
     lieu_deces: str | None = None
+    date_naissance_min_approximation: str | None = None
+    date_naissance_min_regle: str | None = None
+    date_deces_max: str | None = None
+    date_deces_max_approximation: str | None = None
+    date_deces_max_regle: str | None = None
+    naissance_gedcom: bool = False
+    deces_gedcom: bool = False
 
 
 class RechercheResponse(BaseModel):
@@ -98,6 +105,13 @@ class PersonneDetail(BaseModel):
     profession: str | None = None
     naissance: EvenementResume | None = None
     deces: EvenementResume | None = None
+    date_naissance_min_approximation: str | None = None
+    date_naissance_min_regle: str | None = None
+    date_deces_max: str | None = None
+    date_deces_max_approximation: str | None = None
+    date_deces_max_regle: str | None = None
+    naissance_gedcom: bool = False
+    deces_gedcom: bool = False
     mariages: list[MariageResume] = Field(default_factory=list)
     actes: ActesPersonne
     evenements: list[EvenementArbre] = Field(default_factory=list)
@@ -114,6 +128,13 @@ class NoeudArbre(BaseModel):
     naissance_tri: str | None = None
     photos: bool = False
     evenements: list[EvenementArbre] = Field(default_factory=list)
+    date_naissance_min_approximation: str | None = None
+    date_naissance_min_regle: str | None = None
+    date_deces_max: str | None = None
+    date_deces_max_approximation: str | None = None
+    date_deces_max_regle: str | None = None
+    naissance_gedcom: bool = False
+    deces_gedcom: bool = False
 
 
 class NoeudUnion(BaseModel):

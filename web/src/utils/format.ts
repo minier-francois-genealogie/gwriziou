@@ -252,3 +252,17 @@ export function normalizeGedcomId(id: string): string {
 export function formatWarningDetail(detail: string): string {
   return detail.replace(/\s—\s(?=Acte\s:)/, "\n");
 }
+
+/** Date estimée avec préfixe d'approximation (~, >, <). */
+export function formatVieDateDisplay(
+  dateIso: string | null | undefined,
+  approximation: string | null | undefined,
+): string | null {
+  if (!dateIso) return null;
+  const formatted = formatDateJJMMAAAA(dateIso, null);
+  if (!formatted) return null;
+  if (approximation === "ENVIRON") return `~ ${formatted}`;
+  if (approximation === "SUPERIEUR_A") return `> ${formatted}`;
+  if (approximation === "INFERIEUR_A") return `< ${formatted}`;
+  return formatted;
+}

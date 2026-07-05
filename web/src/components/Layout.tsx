@@ -29,7 +29,9 @@ export function Layout() {
             ? "warnings"
             : location.pathname === "/geoloc"
               ? "geoloc"
-              : "recherche";
+              : location.pathname === "/a-savoir"
+                ? "a-savoir"
+                : "recherche";
     saveDerniereVue(view);
   }, [location.pathname]);
 

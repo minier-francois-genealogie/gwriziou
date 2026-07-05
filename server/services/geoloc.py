@@ -5,7 +5,7 @@ from __future__ import annotations
 import sqlite3
 from datetime import date
 
-from gedcom_dates import is_full_gedcom_date, year_from_iso
+from gedcom_dates import year_from_iso
 
 from server.schemas.geoloc import GeolocCommune, GeolocResponse
 
@@ -18,19 +18,19 @@ def get_geoloc_bounds(conn: sqlite3.Connection) -> tuple[int, int]:
     annee_max = _current_year()
     rows = conn.execute(
         """
-        SELECT date_iso, date_brute
-        FROM evenements
-        WHERE type IN ('NAISSANCE', 'DECES')
-          AND date_iso IS NOT NULL
+        SELECT date_naissance_min, date_deces_max
+        FROM personnes
+        WHERE date_naissance_min IS NOT NULL AND date_deces_max IS NOT NULL
         """
     )
     years: list[int] = []
     for row in rows:
-        if not is_full_gedcom_date(row["date_brute"]):
-            continue
-        y = year_from_iso(row["date_iso"])
-        if y is not None:
-            years.append(y)
+        y_min = year_from_iso(row["date_naissance_min"])
+        y_max = year_from_iso(row["date_deces_max"])
+        if y_min is not None:
+            years.append(y_min)
+        if y_max is not None:
+            years.append(y_max)
     if not years:
         return annee_max, annee_max
     return min(years), annee_max
@@ -38,21 +38,16 @@ def get_geoloc_bounds(conn: sqlite3.Connection) -> tuple[int, int]:
 
 def _personne_vivante_en(
     annee: int,
-    birth_iso: str | None,
-    birth_brute: str | None,
-    death_iso: str | None,
-    death_brute: str | None,
+    birth_min: str | None,
+    death_max: str | None,
 ) -> bool:
-    if not is_full_gedcom_date(birth_brute):
+    if not birth_min or not death_max:
         return False
-    birth_year = year_from_iso(birth_iso)
-    if birth_year is None or birth_year > annee:
+    birth_y = year_from_iso(birth_min)
+    death_y = year_from_iso(death_max)
+    if birth_y is None or death_y is None:
         return False
-    if death_iso and is_full_gedcom_date(death_brute):
-        death_year = year_from_iso(death_iso)
-        if death_year is not None and death_year < annee:
-            return False
-    return True
+    return birth_y <= annee <= death_y
 
 
 def get_geoloc(conn: sqlite3.Connection, annee: int) -> GeolocResponse:
@@ -63,10 +58,8 @@ def get_geoloc(conn: sqlite3.Connection, annee: int) -> GeolocResponse:
         """
         SELECT
             p.id_gedcom,
-            eb.date_iso AS birth_iso,
-            eb.date_brute AS birth_brute,
-            ed.date_iso AS death_iso,
-            ed.date_brute AS death_brute,
+            p.date_naissance_min,
+            p.date_deces_max,
             l.id AS lieu_id,
             l.commune,
             l.departement,
@@ -75,8 +68,9 @@ def get_geoloc(conn: sqlite3.Connection, annee: int) -> GeolocResponse:
         FROM personnes p
         JOIN evenements eb ON eb.id_personne = p.id_gedcom AND eb.type = 'NAISSANCE'
         JOIN lieux l ON l.id = eb.id_lieu
-        LEFT JOIN evenements ed ON ed.id_personne = p.id_gedcom AND ed.type = 'DECES'
         WHERE l.latitude IS NOT NULL AND l.longitude IS NOT NULL
+          AND p.date_naissance_min IS NOT NULL
+          AND p.date_deces_max IS NOT NULL
         """
     )
 
@@ -85,10 +79,8 @@ def get_geoloc(conn: sqlite3.Connection, annee: int) -> GeolocResponse:
     for row in rows:
         if not _personne_vivante_en(
             annee,
-            row["birth_iso"],
-            row["birth_brute"],
-            row["death_iso"],
-            row["death_brute"],
+            row["date_naissance_min"],
+            row["date_deces_max"],
         ):
             continue
         nombre_personnes += 1

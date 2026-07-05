@@ -1,7 +1,7 @@
 -- Schéma SQLite — index généalogique
 -- Référence : bdd/SCHEMA_BDD.md
 -- Base dérivée, reconstruite à chaque import GEDCOM + actes.
--- version_schema : 4 — table warnings (GEDCOM vs acte)
+-- version_schema : 6 — bornes vie : approximation + règle renommées
 
 PRAGMA foreign_keys = ON;
 
@@ -36,14 +36,26 @@ CREATE TABLE familles (
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE personnes (
-    id_gedcom           TEXT PRIMARY KEY,
-    nom                 TEXT NOT NULL,
-    prenoms             TEXT,
-    sexe                TEXT CHECK (sexe IN ('M', 'F', 'U')),
-    profession          TEXT,
-    id_famille_enfant   TEXT REFERENCES familles (id_gedcom),
-    nom_tri             TEXT,
-    texte_recherche     TEXT
+    id_gedcom                       TEXT PRIMARY KEY,
+    nom                             TEXT NOT NULL,
+    prenoms                         TEXT,
+    sexe                            TEXT CHECK (sexe IN ('M', 'F', 'U')),
+    profession                      TEXT,
+    id_famille_enfant               TEXT REFERENCES familles (id_gedcom),
+    nom_tri                         TEXT,
+    texte_recherche                 TEXT,
+    date_naissance_min              TEXT,
+    date_naissance_min_approximation TEXT CHECK (
+        date_naissance_min_approximation IN ('EXACT', 'ENVIRON', 'SUPERIEUR_A')
+        OR date_naissance_min_approximation IS NULL
+    ),
+    date_naissance_min_regle        TEXT,
+    date_deces_max                  TEXT,
+    date_deces_max_approximation    TEXT CHECK (
+        date_deces_max_approximation IN ('EXACT', 'ENVIRON', 'INFERIEUR_A')
+        OR date_deces_max_approximation IS NULL
+    ),
+    date_deces_max_regle            TEXT
 );
 
 CREATE INDEX idx_personnes_nom ON personnes (nom);

@@ -207,6 +207,16 @@ export function PersonNode({
                 onActeClick={handleActeClick}
                 size="compact"
                 hideMissingActeWarnings
+                vieDates={{
+                  date_naissance_min: noeud.date_naissance_min,
+                  date_naissance_min_approximation: noeud.date_naissance_min_approximation,
+                  date_naissance_min_regle: noeud.date_naissance_min_regle,
+                  date_deces_max: noeud.date_deces_max,
+                  date_deces_max_approximation: noeud.date_deces_max_approximation,
+                  date_deces_max_regle: noeud.date_deces_max_regle,
+                  naissance_gedcom: noeud.naissance_gedcom,
+                  deces_gedcom: noeud.deces_gedcom,
+                }}
               />
             </div>
             {noeud.profession && (

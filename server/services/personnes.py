@@ -300,6 +300,44 @@ def _fetch_mariages(conn: sqlite3.Connection, id_gedcom: str) -> list[MariageRes
     return mariages
 
 
+def _has_gedcom_evt(evt: EvenementResume | None) -> bool:
+    if not evt:
+        return False
+    return bool(evt.date or evt.date_brute)
+
+
+def _fetch_vie_dates_row(
+    conn: sqlite3.Connection, id_gedcom: str
+) -> dict[str, object]:
+    row = conn.execute(
+        """
+        SELECT date_naissance_min, date_naissance_min_approximation,
+               date_naissance_min_regle,
+               date_deces_max, date_deces_max_approximation,
+               date_deces_max_regle
+        FROM personnes WHERE id_gedcom = ?
+        """,
+        (id_gedcom,),
+    ).fetchone()
+    if not row:
+        return {
+            "date_naissance_min": None,
+            "date_naissance_min_approximation": None,
+            "date_naissance_min_regle": None,
+            "date_deces_max": None,
+            "date_deces_max_approximation": None,
+            "date_deces_max_regle": None,
+        }
+    return {
+        "date_naissance_min": row["date_naissance_min"],
+        "date_naissance_min_approximation": row["date_naissance_min_approximation"],
+        "date_naissance_min_regle": row["date_naissance_min_regle"],
+        "date_deces_max": row["date_deces_max"],
+        "date_deces_max_approximation": row["date_deces_max_approximation"],
+        "date_deces_max_regle": row["date_deces_max_regle"],
+    }
+
+
 def get_personne(conn: sqlite3.Connection, id_gedcom: str) -> PersonneDetail | None:
     row = conn.execute(
         "SELECT id_gedcom, nom, prenoms, sexe, profession FROM personnes WHERE id_gedcom = ?",
@@ -308,14 +346,21 @@ def get_personne(conn: sqlite3.Connection, id_gedcom: str) -> PersonneDetail | N
     if not row:
         return None
 
+    naissance = _fetch_evenement(conn, id_gedcom, "NAISSANCE")
+    deces = _fetch_evenement(conn, id_gedcom, "DECES")
+    vie = _fetch_vie_dates_row(conn, id_gedcom)
+
     return PersonneDetail(
         id_gedcom=row["id_gedcom"],
         nom=row["nom"],
         prenoms=row["prenoms"],
         sexe=row["sexe"],
         profession=row["profession"],
-        naissance=_fetch_evenement(conn, id_gedcom, "NAISSANCE"),
-        deces=_fetch_evenement(conn, id_gedcom, "DECES"),
+        naissance=naissance,
+        deces=deces,
+        naissance_gedcom=_has_gedcom_evt(naissance),
+        deces_gedcom=_has_gedcom_evt(deces),
+        **vie,
         mariages=_fetch_mariages(conn, id_gedcom),
         actes=_fetch_actes(conn, id_gedcom),
         evenements=_build_evenements_arbre(
@@ -546,13 +591,24 @@ def _build_evenements_arbre(
 
 def _noeud_arbre(conn: sqlite3.Connection, id_gedcom: str) -> NoeudArbre | None:
     row = conn.execute(
-        "SELECT id_gedcom, nom, prenoms, sexe, profession FROM personnes WHERE id_gedcom = ?",
+        """
+        SELECT id_gedcom, nom, prenoms, sexe, profession,
+               date_naissance_min, date_naissance_min_approximation,
+               date_naissance_min_regle,
+               date_deces_max, date_deces_max_approximation,
+               date_deces_max_regle
+        FROM personnes WHERE id_gedcom = ?
+        """,
         (id_gedcom,),
     ).fetchone()
     if not row:
         return None
     naissance_row = conn.execute(
-        "SELECT date_tri, date_iso FROM evenements WHERE id_personne = ? AND type = 'NAISSANCE'",
+        "SELECT date_tri, date_iso, date_brute FROM evenements WHERE id_personne = ? AND type = 'NAISSANCE'",
+        (id_gedcom,),
+    ).fetchone()
+    deces_row = conn.execute(
+        "SELECT date_iso, date_brute FROM evenements WHERE id_personne = ? AND type = 'DECES'",
         (id_gedcom,),
     ).fetchone()
     naissance_tri = None
@@ -570,6 +626,19 @@ def _noeud_arbre(conn: sqlite3.Connection, id_gedcom: str) -> NoeudArbre | None:
             conn,
             id_gedcom,
             exclude_warning_codes=_UI_EXCLUDED_WARNING_CODES,
+        ),
+        date_naissance_min=row["date_naissance_min"],
+        date_naissance_min_approximation=row["date_naissance_min_approximation"],
+        date_naissance_min_regle=row["date_naissance_min_regle"],
+        date_deces_max=row["date_deces_max"],
+        date_deces_max_approximation=row["date_deces_max_approximation"],
+        date_deces_max_regle=row["date_deces_max_regle"],
+        naissance_gedcom=bool(
+            naissance_row
+            and (naissance_row["date_iso"] or naissance_row["date_brute"])
+        ),
+        deces_gedcom=bool(
+            deces_row and (deces_row["date_iso"] or deces_row["date_brute"])
         ),
     )
 
@@ -873,6 +942,10 @@ def rechercher_personnes(
     for row in conn.execute(
         """
         SELECT p.id_gedcom, p.nom, p.prenoms, p.sexe, p.profession,
+               p.date_naissance_min, p.date_naissance_min_approximation,
+               p.date_naissance_min_regle,
+               p.date_deces_max, p.date_deces_max_approximation,
+               p.date_deces_max_regle,
                en.date_iso AS naissance_iso, en.date_brute AS naissance_brute,
                ln.commune AS lieu_naissance,
                ed.date_iso AS deces_iso, ed.date_brute AS deces_brute,
@@ -901,6 +974,16 @@ def rechercher_personnes(
                 lieu_naissance=row["lieu_naissance"],
                 deces=_format_date_jjmmaaaa(row["deces_iso"], row["deces_brute"]),
                 lieu_deces=row["lieu_deces"],
+                date_naissance_min=row["date_naissance_min"],
+                date_naissance_min_approximation=row["date_naissance_min_approximation"],
+                date_naissance_min_regle=row["date_naissance_min_regle"],
+                date_deces_max=row["date_deces_max"],
+                date_deces_max_approximation=row["date_deces_max_approximation"],
+                date_deces_max_regle=row["date_deces_max_regle"],
+                naissance_gedcom=bool(
+                    row["naissance_iso"] or row["naissance_brute"]
+                ),
+                deces_gedcom=bool(row["deces_iso"] or row["deces_brute"]),
             )
         )
     return total, resultats
