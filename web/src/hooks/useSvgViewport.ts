@@ -29,6 +29,19 @@ export function useSvgViewport({
     null,
   );
   const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const viewBoxRef = useRef(viewBox);
+  const animFrameRef = useRef<number | null>(null);
+
+  viewBoxRef.current = viewBox;
+
+  const cancelPanAnimation = useCallback(() => {
+    if (animFrameRef.current != null) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => () => cancelPanAnimation(), [cancelPanAnimation]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -53,49 +66,93 @@ export function useSvgViewport({
     [contentWidth, contentHeight],
   );
 
+  const animateViewBox = useCallback(
+    (target: ViewBox, options?: { durationMs?: number; animate?: boolean }) => {
+      const clampedTarget = clampViewBox(target);
+
+      if (options?.animate === false) {
+        cancelPanAnimation();
+        setViewBox(clampedTarget);
+        return;
+      }
+
+      cancelPanAnimation();
+      const start = viewBoxRef.current;
+      const durationMs = options?.durationMs ?? 280;
+      const startTime = performance.now();
+      const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
+
+      const tick = (now: number) => {
+        const progress = Math.min(1, (now - startTime) / durationMs);
+        const eased = easeOutCubic(progress);
+        setViewBox(
+          clampViewBox({
+            x: start.x + (clampedTarget.x - start.x) * eased,
+            y: start.y + (clampedTarget.y - start.y) * eased,
+            w: start.w + (clampedTarget.w - start.w) * eased,
+            h: start.h + (clampedTarget.h - start.h) * eased,
+          }),
+        );
+        if (progress < 1) {
+          animFrameRef.current = requestAnimationFrame(tick);
+        } else {
+          animFrameRef.current = null;
+        }
+      };
+
+      animFrameRef.current = requestAnimationFrame(tick);
+    },
+    [cancelPanAnimation, clampViewBox],
+  );
+
   const panTo = useCallback(
-    (cx: number, cy: number) => {
-      setViewBox((vb) =>
-        clampViewBox({
-          ...vb,
-          x: cx - vb.w / 2,
-          y: cy - vb.h / 2,
-        }),
+    (cx: number, cy: number, options?: { animate?: boolean }) => {
+      const current = viewBoxRef.current;
+      animateViewBox(
+        {
+          ...current,
+          x: cx - current.w / 2,
+          y: cy - current.h / 2,
+        },
+        options,
       );
     },
-    [clampViewBox],
+    [animateViewBox],
   );
 
   const recenterOn = useCallback(
-    (cx: number, cy: number, zoomFactor = 0.55) => {
+    (cx: number, cy: number, zoomFactor = 0.55, options?: { animate?: boolean }) => {
       const el = containerRef.current;
       const aspect = el ? el.clientHeight / Math.max(el.clientWidth, 1) : 0.65;
       const w = contentWidth * zoomFactor;
       const h = w * aspect;
-      setViewBox(
-        clampViewBox({
+      animateViewBox(
+        {
           x: cx - w / 2,
           y: cy - h / 2,
           w,
           h,
-        }),
+        },
+        { ...options, durationMs: 380 },
       );
     },
-    [clampViewBox, contentWidth],
+    [animateViewBox, contentWidth],
   );
 
   const fitAll = useCallback(() => {
+    cancelPanAnimation();
     setViewBox({
       x: 0,
       y: 0,
       w: Math.max(contentWidth, 1),
       h: Math.max(contentHeight, 1),
     });
-  }, [contentWidth, contentHeight]);
+  }, [cancelPanAnimation, contentWidth, contentHeight]);
 
   const onWheel = useCallback(
     (e: React.WheelEvent) => {
       if (!enabled) return;
+      cancelPanAnimation();
       e.preventDefault();
       const el = containerRef.current;
       if (!el) return;
@@ -114,12 +171,13 @@ export function useSvgViewport({
         });
       });
     },
-    [clampViewBox, enabled, viewBox],
+    [cancelPanAnimation, clampViewBox, enabled, viewBox],
   );
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
       if (!enabled) return;
+      cancelPanAnimation();
       const target = e.target;
       if (target instanceof Element && target.closest("[data-tree-interactive]")) {
         return;
@@ -130,7 +188,7 @@ export function useSvgViewport({
         panRef.current = { x: e.clientX, y: e.clientY, vb: viewBox, pid: e.pointerId };
       }
     },
-    [enabled, viewBox],
+    [cancelPanAnimation, enabled, viewBox],
   );
 
   const onPointerMove = useCallback(

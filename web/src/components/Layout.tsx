@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AppMenu } from "../components/AppMenu";
 import { InstallPrompt } from "../components/InstallPrompt";
+import { MobilePwaGate } from "../components/MobilePwaGate";
 import { useApp } from "../context/AppContext";
 import { api } from "../api/client";
 import { useAsync } from "../hooks/useApi";
@@ -42,12 +43,14 @@ export function Layout() {
   }, [location.pathname, navigate]);
 
   return (
-    <div className="relative flex h-dvh flex-col overflow-hidden bg-slate-100">
-      <InstallPrompt />
-      <AppMenu />
-      <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <Outlet />
-      </main>
-    </div>
+    <MobilePwaGate>
+      <div className="relative flex h-dvh flex-col overflow-hidden bg-slate-100">
+        <InstallPrompt />
+        <AppMenu />
+        <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <Outlet />
+        </main>
+      </div>
+    </MobilePwaGate>
   );
 }

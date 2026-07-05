@@ -159,16 +159,9 @@ export function PersonNode({
         >
           <div
             role="button"
-            tabIndex={0}
             onPointerDown={onCellPointerDown}
             onPointerUp={onCellPointerUp}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                handleCellFocus();
-              }
-            }}
-            className="relative flex min-h-0 flex-1 cursor-pointer flex-col p-2 pr-7 text-left outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-1"
+            className="relative flex min-h-0 flex-1 cursor-pointer flex-col p-2 pr-7 text-left outline-none"
           >
             <span className="min-w-0">
               <span className="flex min-w-0 items-center gap-1">

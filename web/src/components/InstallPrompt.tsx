@@ -1,22 +1,9 @@
 import { useEffect, useState } from "react";
+import { isIos, isTouchDevice, isStandalone } from "../utils/pwaMode";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-}
-
-function isIos(): boolean {
-  return (
-    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
-  );
-}
-
-function isStandalone(): boolean {
-  return (
-    window.matchMedia("(display-mode: standalone)").matches ||
-    ("standalone" in navigator && (navigator as Navigator & { standalone?: boolean }).standalone === true)
-  );
 }
 
 export function InstallPrompt() {
@@ -35,7 +22,7 @@ export function InstallPrompt() {
     return () => window.removeEventListener("beforeinstallprompt", onInstall);
   }, []);
 
-  if (isStandalone() || dismissed) return null;
+  if (isStandalone() || dismissed || isTouchDevice()) return null;
 
   const dismiss = () => {
     sessionStorage.setItem("gwriziou-install-dismissed", "1");
