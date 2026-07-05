@@ -45,3 +45,25 @@ def parse_gedcom_dates(date_str: str | None) -> str | None:
     if m:
         return f"{m.group(1)}-01-01"
     return None
+
+
+_FULL_DATE_ISO = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+_FULL_DATE_GEDCOM = re.compile(r"^\d{1,2}\s+[A-Z]{3}\s+\d{4}$", re.I)
+_DATE_PREFIX = re.compile(r"^(ABT|BEF|AFT|EST|CAL|FROM|TO)\s+", re.I)
+
+
+def is_full_gedcom_date(date_brute: str | None) -> bool:
+    """Date complète (jour + mois + année) — exclut les approximations partielles."""
+    if not date_brute or not date_brute.strip():
+        return False
+    cleaned = _DATE_PREFIX.sub("", date_brute.strip())
+    return bool(_FULL_DATE_ISO.fullmatch(cleaned) or _FULL_DATE_GEDCOM.match(cleaned))
+
+
+def year_from_iso(date_iso: str | None) -> int | None:
+    if not date_iso or len(date_iso) < 4:
+        return None
+    try:
+        return int(date_iso[:4])
+    except ValueError:
+        return None

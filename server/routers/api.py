@@ -7,6 +7,7 @@ from server.gedcom_id import normalize_gedcom_id
 from server.import_service import run_import
 from server.schemas.status import RafraichirResponse, StatusResponse
 from server.services.personnes import get_arbre, get_personne, rechercher_personnes
+from server.services.geoloc import get_geoloc
 from server.services.warnings import get_warnings_stats, list_warnings
 
 router = APIRouter(prefix="/api", tags=["api"])
@@ -158,3 +159,11 @@ def api_warnings(
             ancetres=ancetres,
             descendants=descendants,
         )
+
+
+@router.get("/geoloc")
+def api_geoloc(
+    annee: int = Query(..., ge=1000, le=3000, description="Année affichée"),
+):
+    with connection(read_only=True) as conn:
+        return get_geoloc(conn, annee)

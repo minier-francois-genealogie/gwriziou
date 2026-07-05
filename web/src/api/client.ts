@@ -1,5 +1,6 @@
 import type {
   ArbreResponse,
+  GeolocResponse,
   PersonneDetail,
   RafraichirResponse,
   RechercheResponse,
@@ -96,6 +97,9 @@ export const api = {
     request<WarningsListResponse>(
       `/api/warnings?ancre=${encodeURIComponent(ancre)}&ancetres=${ancetres}&descendants=${descendants}&zone=${zone}`,
     ),
+
+  geoloc: (annee: number) =>
+    request<GeolocResponse>(`/api/geoloc?annee=${annee}`),
 };
 
 export { ApiError };

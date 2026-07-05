@@ -60,6 +60,7 @@ def main() -> None:
     run_script("import_gedcom.py", gedcom_args)
     run_script("import_actes.py", actes_args)
     run_script("import_warnings.py", actes_args)
+    run_script("import_geocode.py", actes_args)
     print("\nImport complet terminé.")
 
 

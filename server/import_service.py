@@ -116,6 +116,10 @@ def run_import(force: bool = False) -> dict:
         [sys.executable, str(scripts / "import_warnings.py"), "--db", str(SQLITE_PATH)],
         check=True,
     )
+    subprocess.run(
+        [sys.executable, str(scripts / "import_geocode.py"), "--db", str(SQLITE_PATH)],
+        check=True,
+    )
 
     import sqlite3
 

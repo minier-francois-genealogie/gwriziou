@@ -27,7 +27,9 @@ export function Layout() {
           ? "parametres"
           : location.pathname === "/warnings"
             ? "warnings"
-            : "recherche";
+            : location.pathname === "/geoloc"
+              ? "geoloc"
+              : "recherche";
     saveDerniereVue(view);
   }, [location.pathname]);
 

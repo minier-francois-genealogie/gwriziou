@@ -9,7 +9,7 @@ const KEYS = {
   derniereVue: "gwriziou.derniereVue",
 } as const;
 
-export type AppView = "recherche" | "arbre" | "parametres" | "warnings";
+export type AppView = "recherche" | "arbre" | "parametres" | "warnings" | "geoloc";
 
 const DEFAULT_ANCETRES = 4;
 const DEFAULT_DESCENDANTS = 2;
@@ -78,7 +78,7 @@ export function saveDescendants(n: number): void {
 export function loadDerniereVue(): AppView {
   try {
     const v = localStorage.getItem(KEYS.derniereVue);
-    if (v === "arbre" || v === "parametres" || v === "recherche" || v === "warnings") return v;
+    if (v === "arbre" || v === "parametres" || v === "recherche" || v === "warnings" || v === "geoloc") return v;
   } catch {
     /* ignore */
   }

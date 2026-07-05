@@ -184,3 +184,20 @@ export interface WarningsListResponse {
   nombre_warning_total: number;
   nombre_warning_zone: number;
 }
+
+export interface GeolocCommune {
+  lieu_id: number;
+  commune: string;
+  departement: string | null;
+  latitude: number;
+  longitude: number;
+  nombre: number;
+}
+
+export interface GeolocResponse {
+  annee: number;
+  annee_min: number;
+  annee_max: number;
+  nombre_personnes: number;
+  communes: GeolocCommune[];
+}
