@@ -104,7 +104,15 @@ export function GeolocPage() {
           {error && (
             <p className="text-xs text-red-600">{error}</p>
           )}
-          {data && (
+          {data && data.communes.length === 0 && !loading && (
+            <p className="text-xs text-amber-800">
+              Aucun point sur la carte pour {data.annee}
+              {data.annee_min === data.annee_max
+                ? " (données de vie ou géocodage manquants côté serveur — essayez ↻ Rafraîchir)"
+                : " — essayez une autre année avec le curseur ci-dessous"}
+            </p>
+          )}
+          {data && data.communes.length > 0 && (
             <p className="text-xs text-slate-600">
               {data.nombre_personnes} vivant{data.nombre_personnes > 1 ? "s" : ""} en {data.annee}
               {" · "}

@@ -15,11 +15,7 @@ COPY paths.py .
 COPY server/ ./server/
 COPY bdd/schema.sql ./bdd/schema.sql
 COPY bdd/scripts/ ./bdd/scripts/
-COPY scripts/act_path_normalize.py \
-     scripts/analyze_ascendance.py \
-     scripts/gedcom_dates.py \
-     scripts/generate_ascendance_table.py \
-     ./scripts/
+COPY scripts/ ./scripts/
 
 RUN mkdir -p /data
 
