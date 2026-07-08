@@ -20,6 +20,7 @@ Documentation interactive : http://127.0.0.1:8000/docs
 | Méthode | Route | Description |
 |---------|-------|-------------|
 | GET | `/api/status` | Métadonnées import (`meta`, incl. `nb_photos`) |
+| GET | `/healthz` | Health check léger (self-ping Render, hors OpenAPI) |
 | GET | `/api/personnes/{id}` | Fiche + actes + photos + relations |
 | GET | `/api/personnes/{id}/arbre?ancetres=4&descendants=2` | Sous-graphe arbre (`actes.p` = photo disponible) |
 | GET | `/api/recherche?q=minier&page=1&limit=20` | Recherche nom, prénom, profession |
@@ -45,6 +46,10 @@ Exemple bloc `photos` dans la fiche :
 | `GEDCOM_PATH` | clone local | GEDCOM local (dev) ; prod = téléchargement raw GitHub |
 | `GITHUB_ACTES_TREE_URL` | API GitHub | Listing `actes/` distant |
 | `PORT` | `8000` | Port HTTP (injecté par Render) |
+| `SELF_PING_ENABLED` | `true` sur Render, `false` en local | Active le self-ping pour éviter le spin-down du plan gratuit |
+| `SELF_PING_URL` | `RENDER_EXTERNAL_URL/healthz` sur Render | URL publique pingée (doit être l'URL Render, pas `localhost`) |
+| `SELF_PING_INTERVAL_SECONDS` | `840` (14 min) | Intervalle entre deux pings (< 15 min d'inactivité Render) |
+| `SELF_PING_TIMEOUT_SECONDS` | `5` | Timeout HTTP du ping |
 
 ## Déploiement Render (API seule)
 
@@ -77,6 +82,26 @@ Puis http://127.0.0.1:8000/docs
 
 Données sources (GEDCOM, scans) : toujours sur GitHub — le serveur ne stocke que l'index SQLite.
 
+### Self-ping (plan gratuit Render)
+
+Sur le plan gratuit, Render **met l'API en veille après 15 minutes** sans trafic entrant. Le redémarrage (cold start) prend environ 30–60 s.
+
+L'API se ping elle-même **automatiquement sur Render**, sans configuration dans le dashboard ni sur l'IHM static :
+
+- Render injecte `RENDER_EXTERNAL_URL` → l'API appelle `…/healthz` toutes les **14 minutes**
+- Aucune variable `SELF_PING_*` à ajouter dans `render.yaml` (détection automatique)
+- L'IHM (`gwriziou`, static site) n'a **rien à configurer** pour le ping
+
+**Limites importantes :**
+
+- Le self-ping **ne réveille pas** une API déjà en veille : il évite seulement la mise en veille tant que le container tourne
+- Une API maintenue éveillée consomme les **750 h/mois** du workspace (environ 720 h pour un service 24h/24)
+- Seuls les **web services gratuits** consomment ces heures ; l'IHM static ne les utilise pas
+
+Pour **désactiver** le self-ping : `SELF_PING_ENABLED=false` dans l'environnement Render du service `gwriziou-api`.
+
+Consommation Render : **Dashboard → Billing → Monthly Included Usage** (section *Free instance hours*).
+
 ### Rafraîchir sans redéployer
 
 `POST /api/rafraichir` — compare empreintes GEDCOM + arbre actes GitHub. Si changement → re-import.
@@ -84,4 +109,4 @@ Données sources (GEDCOM, scans) : toujours sur GitHub — le serveur ne stocke 
 ## Rafraîchir (détail)
 
 Compare les empreintes `meta` avec GEDCOM raw + arbre actes GitHub. Si identiques → `{ "status": "unchanged" }`. Sinon relance `import_gedcom` + `import_actes`.
-
+

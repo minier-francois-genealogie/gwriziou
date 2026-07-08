@@ -52,6 +52,8 @@ Le fichier `render.yaml` à la racine du monorepo déclare **gwriziou-api** (Doc
 2. Le site static build depuis `web/` avec `VITE_API_URL` pointant vers l'API
 3. Le rewrite SPA (`/* → /index.html`) est configuré dans le blueprint
 
+**Anti veille Render :** le self-ping est géré par l'API (`gwriziou-api`), pas par l'IHM. Aucune config supplémentaire sur le site static. Voir `server/README.md` (section *Self-ping*).
+
 Déploiement manuel (sans blueprint) : **Static Site**, root `web`, publish `dist`, variable `VITE_API_URL`.
 
 ### Netlify

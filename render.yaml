@@ -3,6 +3,7 @@
 #
 # New → Blueprint → connecter le repo GitHub minier-francois-genealogie/gwriziou
 # Au 1er démarrage API : téléchargement GEDCOM + index actes GitHub (~20 s).
+# Self-ping anti veille : automatique côté API (voir server/README.md), rien à configurer sur l'IHM.
 
 services:
   - type: web
@@ -10,7 +11,7 @@ services:
     runtime: docker
     dockerfilePath: ./Dockerfile
     plan: free
-    healthCheckPath: /
+    healthCheckPath: /healthz
     envVars:
       - key: AUTO_IMPORT
         value: "true"
