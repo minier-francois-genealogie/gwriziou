@@ -60,8 +60,8 @@ Le dépôt contient `Dockerfile` + `render.yaml`. Pas besoin de l'IHM pour teste
 1. Pousser le code sur **GitHub** (repo `cursor_ws` ou monorepo).
 2. [Render](https://render.com) → **New** → **Blueprint** → sélectionner le repo.
 3. Render crée le Web Service Docker avec les variables du blueprint.
-4. Premier déploiement : build Docker → démarrage → import GEDCOM + actes (~20 s).
-5. Tester : `https://<nom-service>.onrender.com/docs`
+4. Premier déploiement : build Docker → démarrage rapide → import GEDCOM + actes en arrière-plan (peut prendre plusieurs minutes).
+5. Tester : `https://<nom-service>.onrender.com/docs` (certaines routes peuvent répondre vide tant que l'import n'est pas terminé).
 
 ### Test Docker en local
 
@@ -95,6 +95,7 @@ L'API se ping elle-même **automatiquement sur Render**, sans configuration dans
 **Limites importantes :**
 
 - Le self-ping **ne réveille pas** une API déjà en veille : il évite seulement la mise en veille tant que le container tourne
+- Au démarrage, l'import tourne en arrière-plan pour que Render détecte le port tout de suite (`/healthz` répond avant la fin de l'import)
 - Une API maintenue éveillée consomme les **750 h/mois** du workspace (environ 720 h pour un service 24h/24)
 - Seuls les **web services gratuits** consomment ces heures ; l'IHM static ne les utilise pas
 

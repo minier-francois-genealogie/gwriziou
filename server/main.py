@@ -55,17 +55,23 @@ async def _self_ping_loop() -> None:
         await asyncio.sleep(interval_s)
 
 
+async def _run_startup_import() -> None:
+    if not (AUTO_IMPORT or not database_exists()):
+        return
+    logger.info("Import initial ou synchronisation (AUTO_IMPORT=%s)…", AUTO_IMPORT)
+    try:
+        result = await asyncio.to_thread(run_import, force=not database_exists())
+        logger.info("Import terminé : %s", result)
+    except Exception:
+        logger.exception("Import échoué, nouvelle tentative…")
+        await asyncio.to_thread(ensure_database)
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     self_ping_task: asyncio.Task[None] | None = None
-    if AUTO_IMPORT or not database_exists():
-        logger.info("Import initial ou synchronisation (AUTO_IMPORT=%s)…", AUTO_IMPORT)
-        try:
-            result = run_import(force=not database_exists())
-            logger.info("Import terminé : %s", result)
-        except Exception:
-            logger.exception("Import échoué, nouvelle tentative…")
-            ensure_database()
+    # Import in background so uvicorn binds PORT before Render's port scan.
+    asyncio.create_task(_run_startup_import())
 
     if SELF_PING_ENABLED:
         self_ping_task = asyncio.create_task(_self_ping_loop())
