@@ -110,6 +110,16 @@ class FaitHistorique(BaseModel):
     pays: str | None = None
 
 
+class DirigeantFrance(BaseModel):
+    slug: str
+    nom: str
+    titre: str
+    debut: str
+    fin: str
+    periode: str
+    photo_url: str | None = None
+
+
 class PersonneDetail(BaseModel):
     id_gedcom: str
     nom: str
@@ -133,6 +143,7 @@ class PersonneDetail(BaseModel):
     photos: list[PhotoPersonne] = Field(default_factory=list)
     relations: RelationsPersonne
     faits_historiques: list[FaitHistorique] = Field(default_factory=list)
+    dirigeants_france: list[DirigeantFrance] = Field(default_factory=list)
 
 
 class NoeudArbre(BaseModel):

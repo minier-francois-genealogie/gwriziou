@@ -151,6 +151,15 @@ def run_import(force: bool = False) -> dict:
         ],
         check=True,
     )
+    subprocess.run(
+        [
+            sys.executable,
+            str(scripts / "import_dirigeants_france.py"),
+            "--db",
+            str(SQLITE_PATH),
+        ],
+        check=True,
+    )
 
     import sqlite3
 
@@ -158,7 +167,8 @@ def run_import(force: bool = False) -> dict:
     try:
         row = conn.execute(
             """
-            SELECT nb_personnes, nb_familles, nb_actes, nb_photos, nb_faits_historiques
+            SELECT nb_personnes, nb_familles, nb_actes, nb_photos,
+                   nb_faits_historiques, nb_dirigeants_france
             FROM meta WHERE id = 1
             """
         ).fetchone()
@@ -172,6 +182,7 @@ def run_import(force: bool = False) -> dict:
         "nb_actes": row[2] if row else None,
         "nb_photos": row[3] if row else None,
         "nb_faits_historiques": row[4] if row else None,
+        "nb_dirigeants_france": row[5] if row else None,
     }
 
 

@@ -21,8 +21,9 @@ sys.path.insert(0, str(SCRIPTS_DIR))
 
 from act_path_normalize import normalize_commune  # noqa: E402
 from paths import (  # noqa: E402
-    FAITS_HISTORIQUES_DIR,
-    FAITS_HISTORIQUES_RAW_BASE,
+    HISTOIRE_FAITS_DIR,
+    HISTOIRE_FAITS_RAW_BASE,
+    HISTOIRE_FAITS_REL_PREFIX,
     GITHUB_API_TREE_URL,
 )
 
@@ -35,8 +36,26 @@ def slug_label(value: str) -> str:
     return normalize_commune(value).lower()
 
 
+def normalize_pays(niveau: str, slug: str, pays: str | None) -> str | None:
+    """Libellés lisibles en BDD (France, Monde…) plutôt que codes (FR)."""
+    raw = (pays or "").strip()
+    if niveau == "MONDE":
+        return raw or "Monde"
+    if niveau == "NATIONAL":
+        if raw.upper() == "FR":
+            return "France"
+        if raw:
+            return raw
+        if slug == "france":
+            return "France"
+        return raw or None
+    if raw.upper() == "FR":
+        return "France"
+    return raw or None
+
+
 def parse_fichier(relative: str) -> tuple[str, str] | None:
-    """Retourne (niveau, slug) à partir du chemin relatif sous faits_historiques/."""
+    """Retourne (niveau, slug) à partir du chemin relatif sous histoire/faits/."""
     if relative == "communal/_index.json":
         return None
     parts = PurePosixPath(relative).parts
@@ -87,7 +106,7 @@ def fetch_github_faits_entries(
     except urllib.error.HTTPError as exc:
         raise SystemExit(f"GitHub API indisponible : {exc}") from exc
 
-    prefix = "faits_historiques/"
+    prefix = f"{HISTOIRE_FAITS_REL_PREFIX}/"
     out: list[tuple[str, str]] = []
     for item in payload.get("tree", []):
         path = item.get("path", "")
@@ -105,7 +124,7 @@ def fetch_github_faits_entries(
 
 
 def load_json_remote(relative: str) -> object:
-    url = f"{FAITS_HISTORIQUES_RAW_BASE}/{relative}"
+    url = f"{HISTOIRE_FAITS_RAW_BASE}/{relative}"
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     with urllib.request.urlopen(request, timeout=60) as response:
         return json.loads(response.read().decode("utf-8"))
@@ -163,7 +182,7 @@ def insert_evenements(
                 evt.get("commune"),
                 evt.get("departement"),
                 evt.get("region"),
-                evt.get("pays"),
+                normalize_pays(niveau, slug, evt.get("pays")),
                 slug,
                 source_fichier,
             ),
@@ -208,12 +227,13 @@ def import_faits_historiques(conn: sqlite3.Connection) -> dict[str, int]:
     total_communes = 0
     empreinte_entries: list[tuple[str, str]] = []
 
-    if FAITS_HISTORIQUES_DIR.is_dir():
-        local_files = iter_local_files(FAITS_HISTORIQUES_DIR)
+    if HISTOIRE_FAITS_DIR.is_dir():
+        local_files = iter_local_files(HISTOIRE_FAITS_DIR)
         empreinte = local_empreinte(local_files)
         for relative, path in local_files:
             digest = hashlib.sha256(path.read_bytes()).hexdigest()
             empreinte_entries.append((relative, digest))
+            source = f"{HISTOIRE_FAITS_REL_PREFIX}/{relative}"
             if relative == "communal/_index.json":
                 data = json.loads(path.read_text(encoding="utf-8"))
                 if isinstance(data, list):
@@ -226,13 +246,14 @@ def import_faits_historiques(conn: sqlite3.Connection) -> dict[str, int]:
             data = json.loads(path.read_text(encoding="utf-8"))
             if isinstance(data, list):
                 total_events += insert_evenements(
-                    conn, niveau, slug, relative, data
+                    conn, niveau, slug, source, data
                 )
     else:
         remote_entries = fetch_github_faits_entries()
         empreinte_entries = remote_entries
         empreinte = tree_empreinte(remote_entries)
         for relative, _sha in remote_entries:
+            source = f"{HISTOIRE_FAITS_REL_PREFIX}/{relative}"
             if relative == "communal/_index.json":
                 data = load_json_remote(relative)
                 if isinstance(data, list):
@@ -245,7 +266,7 @@ def import_faits_historiques(conn: sqlite3.Connection) -> dict[str, int]:
             data = load_json_remote(relative)
             if isinstance(data, list):
                 total_events += insert_evenements(
-                    conn, niveau, slug, relative, data
+                    conn, niveau, slug, source, data
                 )
 
     imported_at = datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")

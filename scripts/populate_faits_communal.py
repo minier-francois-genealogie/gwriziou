@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-COMMUNAL_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "faits_historiques" / "communal"
+COMMUNAL_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "histoire" / "faits" / "communal"
 
 
 def _evt(

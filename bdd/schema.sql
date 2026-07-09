@@ -1,7 +1,7 @@
 -- Schéma SQLite — index généalogique
 -- Référence : bdd/SCHEMA_BDD.md
 -- Base dérivée, reconstruite à chaque import GEDCOM + actes.
--- version_schema : 8 — faits historiques (contexte communal → monde)
+-- version_schema : 9 — dirigeants France (chefs d'État)
 
 PRAGMA foreign_keys = ON;
 
@@ -22,7 +22,9 @@ CREATE TABLE meta (
     nb_actes            INTEGER,
     nb_photos           INTEGER,
     empreinte_faits     TEXT,
-    nb_faits_historiques INTEGER
+    nb_faits_historiques INTEGER,
+    empreinte_dirigeants TEXT,
+    nb_dirigeants_france INTEGER
 );
 
 -- ---------------------------------------------------------------------------
@@ -234,3 +236,20 @@ CREATE TABLE faits_historiques (
 
 CREATE INDEX idx_faits_niveau_slug ON faits_historiques (niveau, slug);
 CREATE INDEX idx_faits_debut ON faits_historiques (debut);
+
+-- ---------------------------------------------------------------------------
+-- Dirigeants France (rois, empereurs, présidents)
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE dirigeants_france (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug            TEXT NOT NULL UNIQUE,
+    nom             TEXT NOT NULL,
+    titre           TEXT NOT NULL,
+    debut           TEXT NOT NULL,
+    fin             TEXT NOT NULL,
+    photo_url       TEXT,
+    source_fichier  TEXT NOT NULL
+);
+
+CREATE INDEX idx_dirigeants_debut ON dirigeants_france (debut);

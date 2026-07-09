@@ -7,6 +7,10 @@ from server.gedcom_id import normalize_gedcom_id
 from server.import_service import run_import
 from server.schemas.status import RafraichirResponse, StatusResponse
 from server.services.personnes import get_arbre, get_personne, rechercher_personnes
+from server.services.faits_historiques import (
+    get_faits_historiques_stats,
+    list_faits_historiques,
+)
 from server.services.geoloc import get_geoloc
 from server.services.warnings import get_warnings_stats, list_warnings
 
@@ -153,6 +157,43 @@ def api_warnings(
 
     with connection(read_only=True) as conn:
         return list_warnings(
+            conn,
+            zone=zone,
+            ancre=gid,
+            ancetres=ancetres,
+            descendants=descendants,
+        )
+
+
+@router.get("/faits-historiques/stats")
+def api_faits_historiques_stats(
+    ancre: str = Query(..., description="Id GEDCOM ancre pour le périmètre zone"),
+    ancetres: int = Query(4, ge=0, le=20),
+    descendants: int = Query(2, ge=0, le=20),
+):
+    try:
+        gid = normalize_gedcom_id(ancre)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    with connection(read_only=True) as conn:
+        return get_faits_historiques_stats(conn, gid, ancetres, descendants)
+
+
+@router.get("/faits-historiques")
+def api_faits_historiques(
+    zone: bool = Query(False, description="Limiter au périmètre géographique de l'arbre"),
+    ancre: str = Query(..., description="Id GEDCOM ancre"),
+    ancetres: int = Query(4, ge=0, le=20),
+    descendants: int = Query(2, ge=0, le=20),
+):
+    try:
+        gid = normalize_gedcom_id(ancre)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    with connection(read_only=True) as conn:
+        return list_faits_historiques(
             conn,
             zone=zone,
             ancre=gid,

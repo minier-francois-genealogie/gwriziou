@@ -35,7 +35,24 @@ DATA_ROOT = WS_ROOT.parent / "data"
 
 GEDCOM_PATH = Path(os.environ.get("GEDCOM_PATH", DATA_ROOT / GEDCOM_REL_PATH))
 ACTES_DIR = Path(os.environ.get("ACTES_INDEX_PATH", DATA_ROOT / "actes"))
-FAITS_HISTORIQUES_DIR = Path(
-    os.environ.get("FAITS_HISTORIQUES_DIR", DATA_ROOT / "faits_historiques")
+HISTOIRE_DIR = DATA_ROOT / "histoire"
+HISTOIRE_FAITS_DIR = Path(
+    os.environ.get(
+        "HISTOIRE_FAITS_DIR",
+        os.environ.get("FAITS_HISTORIQUES_DIR", HISTOIRE_DIR / "faits"),
+    )
 )
-FAITS_HISTORIQUES_RAW_BASE = f"{DATA_REPO_RAW_BASE}/faits_historiques"
+HISTOIRE_FAITS_RAW_BASE = f"{DATA_REPO_RAW_BASE}/histoire/faits"
+HISTOIRE_FAITS_REL_PREFIX = "histoire/faits"
+DIRIGEANTS_FRANCE_REL_PATH = "histoire/dirigeants/france.json"
+DIRIGEANTS_FRANCE_FILE = Path(
+    os.environ.get(
+        "DIRIGEANTS_FRANCE_FILE",
+        HISTOIRE_DIR / "dirigeants" / "france.json",
+    )
+)
+DIRIGEANTS_FRANCE_RAW_URL = f"{DATA_REPO_RAW_BASE}/{DIRIGEANTS_FRANCE_REL_PATH}"
+
+# Alias rétrocompatibilité
+FAITS_HISTORIQUES_DIR = HISTOIRE_FAITS_DIR
+FAITS_HISTORIQUES_RAW_BASE = HISTOIRE_FAITS_RAW_BASE

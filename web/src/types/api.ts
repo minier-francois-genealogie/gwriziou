@@ -120,6 +120,16 @@ export interface FaitHistorique {
   pays?: string | null;
 }
 
+export interface DirigeantFrance {
+  slug: string;
+  nom: string;
+  titre: string;
+  debut: string;
+  fin: string;
+  periode: string;
+  photo_url?: string | null;
+}
+
 export interface PersonneDetail {
   id_gedcom: string;
   nom: string;
@@ -144,6 +154,7 @@ export interface PersonneDetail {
   photos: PhotoPersonne[];
   relations: RelationsPersonne;
   faits_historiques?: FaitHistorique[];
+  dirigeants_france?: DirigeantFrance[];
 }
 
 export interface VieDatesAffichage {
@@ -234,6 +245,34 @@ export interface WarningsListResponse {
   lignes: WarningLigne[];
   nombre_warning_total: number;
   nombre_warning_zone: number;
+}
+
+export interface FaitsHistoriquesStatsResponse {
+  nombre_faits_total: number;
+  nombre_faits_zone: number;
+}
+
+export interface FaitHistoriqueLigne {
+  niveau: string;
+  niveau_label: string;
+  categorie: string;
+  categorie_label: string;
+  debut: string;
+  fin: string;
+  periode: string;
+  libelle: string;
+  description?: string | null;
+  commune?: string | null;
+  departement?: string | null;
+  region?: string | null;
+  pays?: string | null;
+  lieu?: string | null;
+}
+
+export interface FaitsHistoriquesListResponse {
+  lignes: FaitHistoriqueLigne[];
+  nombre_faits_total: number;
+  nombre_faits_zone: number;
 }
 
 export interface GeolocCommune {

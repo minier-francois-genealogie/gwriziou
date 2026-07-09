@@ -56,6 +56,11 @@ export function AppMenu() {
     [ancrePersonneId, ancetres, descendants],
   );
 
+  const { data: faitsStats } = useAsync(
+    () => api.faitsHistoriquesStats(ancrePersonneId, ancetres, descendants),
+    [ancrePersonneId, ancetres, descendants],
+  );
+
   const closeAndGo = (view: AppView, path: string) => {
     saveDerniereVue(view);
     setMenuOpen(false);
@@ -75,6 +80,10 @@ export function AppMenu() {
 
   const warningBadge = warningStats
     ? `${warningStats.nombre_warning_zone} / ${warningStats.nombre_warning_total}`
+    : undefined;
+
+  const faitsBadge = faitsStats
+    ? `${faitsStats.nombre_faits_zone} / ${faitsStats.nombre_faits_total}`
     : undefined;
 
   const onMap = location.pathname === "/geoloc";
@@ -145,6 +154,19 @@ export function AppMenu() {
                 <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
                 <path d="M12 9v4" />
                 <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none" />
+              </svg>
+            }
+          />
+          <NavItem
+            to="/faits-historiques"
+            label="Faits historiques"
+            badge={faitsBadge}
+            onNavigate={() => closeAndGo("faits-historiques", "/faits-historiques")}
+            icon={
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                <path d="M8 7h8M8 11h8M8 15h5" />
               </svg>
             }
           />

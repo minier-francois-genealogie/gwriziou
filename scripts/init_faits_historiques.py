@@ -231,8 +231,8 @@ def main() -> None:
     parser.add_argument(
         "--output",
         type=Path,
-        default=GEDCOM_PATH.resolve().parent.parent / "faits_historiques",
-        help="Répertoire de sortie (défaut: data/faits_historiques)",
+        default=GEDCOM_PATH.resolve().parent.parent / "histoire" / "faits",
+        help="Répertoire de sortie (défaut: data/histoire/faits)",
     )
     parser.add_argument(
         "--overwrite-readme",

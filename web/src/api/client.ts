@@ -1,5 +1,7 @@
 import type {
   ArbreResponse,
+  FaitsHistoriquesListResponse,
+  FaitsHistoriquesStatsResponse,
   GeolocResponse,
   PersonneDetail,
   RafraichirResponse,
@@ -96,6 +98,21 @@ export const api = {
   ) =>
     request<WarningsListResponse>(
       `/api/warnings?ancre=${encodeURIComponent(ancre)}&ancetres=${ancetres}&descendants=${descendants}&zone=${zone}`,
+    ),
+
+  faitsHistoriquesStats: (ancre: string, ancetres: number, descendants: number) =>
+    request<FaitsHistoriquesStatsResponse>(
+      `/api/faits-historiques/stats?ancre=${encodeURIComponent(ancre)}&ancetres=${ancetres}&descendants=${descendants}`,
+    ),
+
+  faitsHistoriques: (
+    ancre: string,
+    ancetres: number,
+    descendants: number,
+    zone = false,
+  ) =>
+    request<FaitsHistoriquesListResponse>(
+      `/api/faits-historiques?ancre=${encodeURIComponent(ancre)}&ancetres=${ancetres}&descendants=${descendants}&zone=${zone}`,
     ),
 
   geoloc: (annee: number) =>
