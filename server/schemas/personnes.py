@@ -97,10 +97,25 @@ class MariageResume(BaseModel):
     conjoint: RelationResume | None = None
 
 
+class FaitHistorique(BaseModel):
+    niveau: str
+    categorie: str
+    debut: str
+    fin: str
+    libelle: str
+    description: str | None = None
+    commune: str | None = None
+    departement: str | None = None
+    region: str | None = None
+    pays: str | None = None
+
+
 class PersonneDetail(BaseModel):
     id_gedcom: str
     nom: str
     prenoms: str | None = None
+    surnom: str | None = None
+    anecdote: str | None = None
     sexe: str | None = None
     profession: str | None = None
     naissance: EvenementResume | None = None
@@ -117,6 +132,7 @@ class PersonneDetail(BaseModel):
     evenements: list[EvenementArbre] = Field(default_factory=list)
     photos: list[PhotoPersonne] = Field(default_factory=list)
     relations: RelationsPersonne
+    faits_historiques: list[FaitHistorique] = Field(default_factory=list)
 
 
 class NoeudArbre(BaseModel):

@@ -6,6 +6,8 @@ import { AncreButton } from "./AncreButton";
 
 import { EvenementsList, normalizeEvenements } from "./EvenementsList";
 
+import { FaitsHistoriquesSection } from "./FaitsHistoriquesSection";
+
 import { RelationPersonLabel } from "./RelationPersonLabel";
 
 import { PersonName } from "./SexeIcon";
@@ -162,6 +164,22 @@ export function PersonPanel({
 
         )}
 
+        {personne.surnom && (
+
+          <p className="text-sm italic text-slate-600">dit {personne.surnom}</p>
+
+        )}
+
+        {personne.anecdote && (
+
+          <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
+
+            {personne.anecdote}
+
+          </p>
+
+        )}
+
       </header>
 
 
@@ -211,6 +229,10 @@ export function PersonPanel({
           />
 
         </div>
+
+
+
+        <FaitsHistoriquesSection faits={personne.faits_historiques ?? []} />
 
 
 

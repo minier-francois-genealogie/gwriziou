@@ -25,6 +25,7 @@ from server.schemas.personnes import (
     RelationResume,
     WarningEvenement,
 )
+from server.services.faits_historiques import get_faits_historiques_personne
 
 
 def _evenement_row(row: sqlite3.Row | None) -> EvenementResume | None:
@@ -340,7 +341,10 @@ def _fetch_vie_dates_row(
 
 def get_personne(conn: sqlite3.Connection, id_gedcom: str) -> PersonneDetail | None:
     row = conn.execute(
-        "SELECT id_gedcom, nom, prenoms, sexe, profession FROM personnes WHERE id_gedcom = ?",
+        """
+        SELECT id_gedcom, nom, prenoms, surnom, anecdote, sexe, profession
+        FROM personnes WHERE id_gedcom = ?
+        """,
         (id_gedcom,),
     ).fetchone()
     if not row:
@@ -354,6 +358,8 @@ def get_personne(conn: sqlite3.Connection, id_gedcom: str) -> PersonneDetail | N
         id_gedcom=row["id_gedcom"],
         nom=row["nom"],
         prenoms=row["prenoms"],
+        surnom=row["surnom"],
+        anecdote=row["anecdote"],
         sexe=row["sexe"],
         profession=row["profession"],
         naissance=naissance,
@@ -371,6 +377,7 @@ def get_personne(conn: sqlite3.Connection, id_gedcom: str) -> PersonneDetail | N
         ),
         photos=_fetch_photos(conn, id_gedcom),
         relations=_fetch_relations(conn, id_gedcom),
+        faits_historiques=get_faits_historiques_personne(conn, id_gedcom),
     )
 
 

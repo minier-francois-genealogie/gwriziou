@@ -107,10 +107,25 @@ export interface MariageResume {
   conjoint: RelationResume | null;
 }
 
+export interface FaitHistorique {
+  niveau: string;
+  categorie: string;
+  debut: string;
+  fin: string;
+  libelle: string;
+  description?: string | null;
+  commune?: string | null;
+  departement?: string | null;
+  region?: string | null;
+  pays?: string | null;
+}
+
 export interface PersonneDetail {
   id_gedcom: string;
   nom: string;
   prenoms: string | null;
+  surnom?: string | null;
+  anecdote?: string | null;
   sexe: string | null;
   profession: string | null;
   naissance: EvenementResume | null;
@@ -128,6 +143,7 @@ export interface PersonneDetail {
   evenements: EvenementArbre[];
   photos: PhotoPersonne[];
   relations: RelationsPersonne;
+  faits_historiques?: FaitHistorique[];
 }
 
 export interface VieDatesAffichage {

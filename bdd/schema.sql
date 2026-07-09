@@ -1,7 +1,7 @@
 -- Schéma SQLite — index généalogique
 -- Référence : bdd/SCHEMA_BDD.md
 -- Base dérivée, reconstruite à chaque import GEDCOM + actes.
--- version_schema : 7 — surnom (GEDCOM NICK) + anecdote (GEDCOM NOTE niveau personne)
+-- version_schema : 8 — faits historiques (contexte communal → monde)
 
 PRAGMA foreign_keys = ON;
 
@@ -20,7 +20,9 @@ CREATE TABLE meta (
     nb_personnes        INTEGER,
     nb_familles         INTEGER,
     nb_actes            INTEGER,
-    nb_photos           INTEGER
+    nb_photos           INTEGER,
+    empreinte_faits     TEXT,
+    nb_faits_historiques INTEGER
 );
 
 -- ---------------------------------------------------------------------------
@@ -196,3 +198,39 @@ CREATE TABLE warnings (
 
 CREATE INDEX idx_warnings_personne ON warnings (id_gedcom);
 CREATE INDEX idx_warnings_type ON warnings (type_evenement);
+
+-- ---------------------------------------------------------------------------
+-- Faits historiques (contexte communal → monde)
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE commune_slugs (
+    slug            TEXT PRIMARY KEY,
+    commune         TEXT NOT NULL,
+    code_postal     TEXT,
+    departement     TEXT,
+    region          TEXT,
+    pays            TEXT
+);
+
+CREATE INDEX idx_commune_slugs_commune ON commune_slugs (commune);
+
+CREATE TABLE faits_historiques (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    niveau          TEXT NOT NULL CHECK (
+        niveau IN ('MONDE', 'NATIONAL', 'REGIONAL', 'DEPARTEMENT', 'COMMUNAL')
+    ),
+    categorie       TEXT NOT NULL,
+    debut           TEXT NOT NULL,
+    fin             TEXT NOT NULL,
+    libelle         TEXT NOT NULL,
+    description     TEXT,
+    commune         TEXT,
+    departement     TEXT,
+    region          TEXT,
+    pays            TEXT,
+    slug            TEXT NOT NULL,
+    source_fichier  TEXT NOT NULL
+);
+
+CREATE INDEX idx_faits_niveau_slug ON faits_historiques (niveau, slug);
+CREATE INDEX idx_faits_debut ON faits_historiques (debut);

@@ -66,7 +66,7 @@ def api_rafraichir(force: bool = Query(False, description="Forcer l'import même
         _import_lock.release()
 
     if result["status"] == "unchanged":
-        return RafraichirResponse(status="unchanged", message="GEDCOM et actes inchangés")
+        return RafraichirResponse(status="unchanged", message="Données inchangées")
     return RafraichirResponse(
         status="ok",
         nb_personnes=result.get("nb_personnes"),

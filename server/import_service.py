@@ -20,19 +20,19 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _read_meta_empreintes() -> tuple[str | None, str | None]:
+def _read_meta_empreintes() -> tuple[str | None, str | None, str | None]:
     import sqlite3
 
     if not SQLITE_PATH.is_file():
-        return None, None
+        return None, None, None
     conn = sqlite3.connect(SQLITE_PATH)
     try:
         row = conn.execute(
-            "SELECT empreinte_gedcom, empreinte_actes FROM meta WHERE id = 1"
+            "SELECT empreinte_gedcom, empreinte_actes, empreinte_faits FROM meta WHERE id = 1"
         ).fetchone()
         if not row:
-            return None, None
-        return row[0], row[1]
+            return None, None, None
+        return row[0], row[1], row[2]
     finally:
         conn.close()
 
@@ -66,14 +66,32 @@ def _remote_actes_empreinte() -> str:
     return tree_empreinte(blobs)
 
 
+def _remote_faits_empreinte() -> str:
+    import sys
+
+    ws_root = BDD_SCRIPTS_DIR.parent.parent
+    if str(ws_root) not in sys.path:
+        sys.path.insert(0, str(ws_root))
+    if str(BDD_SCRIPTS_DIR) not in sys.path:
+        sys.path.insert(0, str(BDD_SCRIPTS_DIR))
+    from import_faits_historiques import fetch_github_faits_entries, tree_empreinte
+
+    return tree_empreinte(fetch_github_faits_entries())
+
+
 def empreintes_inchangees() -> bool:
-    gedcom_hash, actes_hash = _read_meta_empreintes()
+    gedcom_hash, actes_hash, faits_hash = _read_meta_empreintes()
     if gedcom_hash is None:
         return False
     try:
         remote_ged = _remote_gedcom_empreinte()
         remote_actes = _remote_actes_empreinte()
-        return gedcom_hash == remote_ged and actes_hash == remote_actes
+        remote_faits = _remote_faits_empreinte()
+        return (
+            gedcom_hash == remote_ged
+            and actes_hash == remote_actes
+            and faits_hash == remote_faits
+        )
     except OSError:
         if not GEDCOM_PATH.is_file():
             return False
@@ -124,13 +142,25 @@ def run_import(force: bool = False) -> dict:
         [sys.executable, str(scripts / "import_dates_vie.py"), "--db", str(SQLITE_PATH)],
         check=True,
     )
+    subprocess.run(
+        [
+            sys.executable,
+            str(scripts / "import_faits_historiques.py"),
+            "--db",
+            str(SQLITE_PATH),
+        ],
+        check=True,
+    )
 
     import sqlite3
 
     conn = sqlite3.connect(SQLITE_PATH)
     try:
         row = conn.execute(
-            "SELECT nb_personnes, nb_familles, nb_actes, nb_photos FROM meta WHERE id = 1"
+            """
+            SELECT nb_personnes, nb_familles, nb_actes, nb_photos, nb_faits_historiques
+            FROM meta WHERE id = 1
+            """
         ).fetchone()
     finally:
         conn.close()
@@ -141,6 +171,7 @@ def run_import(force: bool = False) -> dict:
         "nb_familles": row[1] if row else None,
         "nb_actes": row[2] if row else None,
         "nb_photos": row[3] if row else None,
+        "nb_faits_historiques": row[4] if row else None,
     }
 
 
