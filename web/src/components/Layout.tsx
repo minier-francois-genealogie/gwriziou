@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AppMenu } from "../components/AppMenu";
 import { InstallPrompt } from "../components/InstallPrompt";
 import { MobilePwaGate } from "../components/MobilePwaGate";
+import { PortraitRotateOverlay } from "../components/PortraitRotateOverlay";
 import { useApp } from "../context/AppContext";
 import { api } from "../api/client";
 import { useAsync } from "../hooks/useApi";
@@ -45,6 +46,7 @@ export function Layout() {
   return (
     <MobilePwaGate>
       <div className="relative flex h-dvh flex-col overflow-hidden bg-slate-100">
+        <PortraitRotateOverlay />
         <InstallPrompt />
         <AppMenu />
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden">

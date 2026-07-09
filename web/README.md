@@ -71,6 +71,7 @@ Root directory `web` — `netlify.toml` et `public/_redirects` gèrent build + r
 ## Fonctionnalités (MVP)
 
 - **Application installable (PWA)** — plein écran via « Installer » (Chrome/Android) ou « Sur l’écran d’accueil » (iPhone/iPad)
+- **Mode paysage sur mobile** — manifest PWA `orientation: landscape` + écran « Tournez votre appareil » en portrait (téléphone / tablette)
 
 - **Arbre généalogique** — ancêtres/descendants configurables, clic pour recentrer
 - **Navigation clavier** — ↑↓ parents/enfants, ←→ fratrie, Home = souche
