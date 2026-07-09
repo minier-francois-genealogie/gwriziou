@@ -21,7 +21,7 @@ from paths import GEDCOM_PATH as DEFAULT_GEDCOM  # noqa: E402
 
 DEFAULT_DB = BDD_DIR / "genealogie.sqlite"
 SCHEMA_PATH = BDD_DIR / "schema.sql"
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
 
 from act_path_normalize import ascii_fold  # noqa: E402
 from analyze_ascendance import find_root  # noqa: E402
@@ -76,6 +76,13 @@ def normalize_sexe(sex: str) -> str:
     if s in {"M", "F"}:
         return s
     return "U"
+
+
+def _join_gedcom_parts(values: list[str] | None, separator: str) -> str | None:
+    if not values:
+        return None
+    text = separator.join(part for part in values if part.strip())
+    return text or None
 
 
 def resolve_root_id(individuals: dict[str, dict], configured: str | None) -> str:
@@ -171,17 +178,21 @@ def import_gedcom(conn: sqlite3.Connection, gedcom_path: Path, root_id: str) -> 
         nom = (person.get("surn") or "?").strip()
         prenoms = (person.get("given") or "").strip()
         profession = normalize_profession(person.get("occu"))
+        surnom = _join_gedcom_parts(person.get("nick"), " ; ")
+        anecdote = _join_gedcom_parts(person.get("notes"), "\n\n")
         conn.execute(
             """
             INSERT INTO personnes (
-                id_gedcom, nom, prenoms, sexe, profession, id_famille_enfant,
+                id_gedcom, nom, prenoms, surnom, anecdote, sexe, profession, id_famille_enfant,
                 nom_tri, texte_recherche
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 person["id"],
                 nom,
                 prenoms or None,
+                surnom,
+                anecdote,
                 normalize_sexe(person.get("sex", "")),
                 profession,
                 famc,

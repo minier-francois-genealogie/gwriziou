@@ -81,6 +81,19 @@ class ActBundle:
     deces: ActRecord | None = None
 
 
+def _flush_person_note(person: dict) -> None:
+    pending = person.get("_pending_note")
+    if pending:
+        person.setdefault("notes", []).append(" ".join(pending))
+        person["_pending_note"] = None
+
+
+def _finalize_person(person: dict) -> dict:
+    _flush_person_note(person)
+    person.pop("_pending_note", None)
+    return person
+
+
 def load_gedcom(path: Path) -> tuple[dict[str, dict], dict[str, dict]]:
     individuals: dict[str, dict] = {}
     families: dict[str, dict] = {}
@@ -100,7 +113,7 @@ def load_gedcom(path: Path) -> tuple[dict[str, dict], dict[str, dict]]:
             if level == 0 and tag.startswith("@"):
                 if val == "INDI":
                     if cur_i:
-                        individuals[cur_i["id"]] = cur_i
+                        individuals[cur_i["id"]] = _finalize_person(cur_i)
                     cur_i = {
                         "id": tag,
                         "given": "",
@@ -113,13 +126,16 @@ def load_gedcom(path: Path) -> tuple[dict[str, dict], dict[str, dict]]:
                         "deat": None,
                         "deat_plac": None,
                         "occu": None,
+                        "nick": [],
+                        "notes": [],
+                        "_pending_note": None,
                     }
                     cur_f = None
                     ctx = None
                     name_set = False
                 elif val == "FAM":
                     if cur_i:
-                        individuals[cur_i["id"]] = cur_i
+                        individuals[cur_i["id"]] = _finalize_person(cur_i)
                         cur_i = None
                     if cur_f:
                         families[cur_f["id"]] = cur_f
@@ -159,8 +175,16 @@ def load_gedcom(path: Path) -> tuple[dict[str, dict], dict[str, dict]]:
                 elif level == 1 and tag == "OCCU" and val.strip():
                     if not cur_i.get("occu"):
                         cur_i["occu"] = val.strip().strip('"')
+                elif level == 1 and tag == "NOTE":
+                    _flush_person_note(cur_i)
+                    cur_i["_pending_note"] = [val.strip()]
+                    ctx = None
                 elif level == 1:
                     ctx = None
+                elif level == 2 and tag in ("CONT", "CONC") and cur_i.get("_pending_note"):
+                    cur_i["_pending_note"].append(val.strip())
+                elif level == 2 and tag == "NICK":
+                    cur_i.setdefault("nick", []).append(val.strip())
                 elif level == 2 and ctx == "BIRT" and tag == "DATE":
                     cur_i["birt"] = val.strip()
                 elif level == 2 and ctx == "BIRT" and tag == "PLAC":
@@ -186,7 +210,7 @@ def load_gedcom(path: Path) -> tuple[dict[str, dict], dict[str, dict]]:
                     cur_f["marr_plac"] = val.strip()
 
     if cur_i:
-        individuals[cur_i["id"]] = cur_i
+        individuals[cur_i["id"]] = _finalize_person(cur_i)
     if cur_f:
         families[cur_f["id"]] = cur_f
     return individuals, families

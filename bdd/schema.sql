@@ -1,7 +1,7 @@
 -- Schéma SQLite — index généalogique
 -- Référence : bdd/SCHEMA_BDD.md
 -- Base dérivée, reconstruite à chaque import GEDCOM + actes.
--- version_schema : 6 — bornes vie : approximation + règle renommées
+-- version_schema : 7 — surnom (GEDCOM NICK) + anecdote (GEDCOM NOTE niveau personne)
 
 PRAGMA foreign_keys = ON;
 
@@ -39,6 +39,8 @@ CREATE TABLE personnes (
     id_gedcom                       TEXT PRIMARY KEY,
     nom                             TEXT NOT NULL,
     prenoms                         TEXT,
+    surnom                          TEXT,
+    anecdote                        TEXT,
     sexe                            TEXT CHECK (sexe IN ('M', 'F', 'U')),
     profession                      TEXT,
     id_famille_enfant               TEXT REFERENCES familles (id_gedcom),

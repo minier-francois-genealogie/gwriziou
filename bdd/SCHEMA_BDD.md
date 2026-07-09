@@ -6,7 +6,7 @@ La base est un **index dérivé** : recréée ou reconstruite à chaque import G
 
 **Scripts d'import :** voir [`bdd/scripts/README.md`](scripts/README.md).
 
-**Version schéma actuelle :** `3` (table `photos`, type `P` dans `actes/`).
+**Version schéma actuelle :** `7` (colonnes `surnom`, `anecdote` sur `personnes`).
 
 ---
 
@@ -102,6 +102,8 @@ Une ligne par individu GEDCOM (`0 @…@ INDI`).
 | `id_gedcom` | TEXT | PK | Ex. `@655@` |
 | `nom` | TEXT NOT NULL | | Nom de famille (UTF-8) |
 | `prenoms` | TEXT | | Prénoms complets (UTF-8) |
+| `surnom` | TEXT | | Surnom GEDCOM (`NICK` sous `NAME`) |
+| `anecdote` | TEXT | | Note libre de la fiche personne (`1 NOTE` sous `INDI`, `CONT`/`CONC`) |
 | `sexe` | TEXT | CHECK IN (`M`,`F`,`U`) | Sexe |
 | `profession` | TEXT | | Profession GEDCOM (`OCCU`), ex. « Cultivateur » |
 | `id_famille_enfant` | TEXT | FK → `familles.id_gedcom` | Famille où l'individu est enfant (GEDCOM `FAMC`) |
