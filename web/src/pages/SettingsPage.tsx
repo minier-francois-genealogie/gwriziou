@@ -60,9 +60,10 @@ export function SettingsPage() {
         <h2 className="mb-2 font-semibold text-slate-800">Navigation (écran Arbre)</h2>
         <ul className="space-y-1 text-xs leading-relaxed">
           <li>↑ père (ou mère) · ↓ enfant aîné · ←→ même génération</li>
+          <li>+ / − : zoom avant / arrière</li>
           <li>Icône ancre : centre de l&apos;arbre (reload)</li>
           <li>Clic cellule = focus · chevrons en bas à droite</li>
-          <li>Molette : zoom · glisser : déplacer</li>
+          <li>Glisser : déplacer · boutons + / − à droite des chevrons</li>
         </ul>
       </section>
 

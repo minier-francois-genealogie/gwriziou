@@ -6,6 +6,8 @@ interface KeyboardNavHandlers {
   onChild?: () => void;
   onSiblingPrev?: () => void;
   onSiblingNext?: () => void;
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
 }
 
 export function useKeyboardNav(handlers: KeyboardNavHandlers) {
@@ -45,6 +47,20 @@ export function useKeyboardNav(handlers: KeyboardNavHandlers) {
           event.preventDefault();
           blurFocus();
           handlers.onSiblingNext?.();
+          break;
+        case "+":
+        case "=":
+        case "Add":
+          event.preventDefault();
+          blurFocus();
+          handlers.onZoomIn?.();
+          break;
+        case "-":
+        case "_":
+        case "Subtract":
+          event.preventDefault();
+          blurFocus();
+          handlers.onZoomOut?.();
           break;
       }
     },

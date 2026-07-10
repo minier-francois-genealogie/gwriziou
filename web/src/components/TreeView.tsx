@@ -15,6 +15,8 @@ export interface TreeViewHandle {
   recenterOn: (nodeId: string) => void;
   panTo: (nodeId: string) => void;
   fitAll: () => void;
+  zoomIn: () => void;
+  zoomOut: () => void;
 }
 
 interface TreeViewProps {
@@ -59,10 +61,13 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
     recenterOn: panRecenterWithZoom,
     panTo: panRecenter,
     fitAll,
+    zoomIn,
+    zoomOut,
     onWheel,
     onPointerDown,
     onPointerMove,
     onPointerUp,
+    isPanning,
   } = useSvgViewport({
     contentWidth: layout.width,
     contentHeight: layout.height,
@@ -90,6 +95,8 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
     recenterOn: recenterOnNode,
     panTo: panToNode,
     fitAll,
+    zoomIn,
+    zoomOut,
   }));
 
   const handleParentsRefClick = useCallback((parentIds: string[]) => {
@@ -101,7 +108,9 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
     <div className="relative flex min-h-0 flex-1 flex-col">
       <div
         ref={containerRef}
-        className="min-h-0 flex-1 touch-none overflow-hidden bg-slate-50/80"
+        className={`min-h-0 flex-1 touch-none overscroll-none overflow-hidden bg-slate-50/80 ${
+          isPanning ? "cursor-grabbing" : "cursor-grab"
+        }`}
         onWheel={onWheel}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -110,7 +119,7 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
       >
         <svg
           viewBox={viewBoxString}
-          className="h-full w-full"
+          className={`h-full w-full ${isPanning ? "cursor-grabbing" : "cursor-grab"}`}
           role="img"
           aria-label="Arbre généalogique"
         >
@@ -181,16 +190,6 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
             ))}
           </g>
         </svg>
-      </div>
-      <div className="pointer-events-none absolute bottom-2 left-2 flex gap-1">
-        <button
-          type="button"
-          onClick={fitAll}
-          className="pointer-events-auto rounded-lg border border-slate-200 bg-white/90 px-2 py-1 text-xs text-slate-600 shadow-sm backdrop-blur"
-          title="Tout voir"
-        >
-          ⊡
-        </button>
       </div>
     </div>
   );

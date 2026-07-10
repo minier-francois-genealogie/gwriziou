@@ -4,10 +4,12 @@ import { ActeModal } from "../components/ActeModal";
 import { PhotoModal } from "../components/PhotoModal";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { TreeNavPad } from "../components/TreeNavPad";
+import { TreeZoomPad } from "../components/TreeZoomPad";
 import { TreeView, type TreeViewHandle } from "../components/TreeView";
 import { useApp } from "../context/AppContext";
 import { useAsync } from "../hooks/useApi";
 import { useKeyboardNav } from "../hooks/useKeyboardNav";
+import { hasSavedTreeZoom } from "../hooks/useSvgViewport";
 import { usePhotoModal } from "../hooks/usePhotoModal";
 import type { ActeType, ArbreResponse } from "../types/api";
 import { layoutTree } from "../utils/treeLayout";
@@ -32,6 +34,8 @@ export function TreePage() {
   const [toast, setToast] = useState<string | null>(null);
   const treeRef = useRef<TreeViewHandle>(null);
   const skipFocusPanRef = useRef(false);
+  const initialTreeFramedRef = useRef(false);
+  const [displayArbre, setDisplayArbre] = useState<ArbreResponse | null>(null);
 
   const [acteModal, setActeModal] = useState<{
     type: ActeType;
@@ -50,27 +54,31 @@ export function TreePage() {
     [fetchKey, ancetres, descendants],
   );
 
+  useEffect(() => {
+    if (arbre) setDisplayArbre(arbre as ArbreResponse);
+  }, [arbre]);
+
   const layout = useMemo(
     () =>
-      arbre
+      displayArbre
         ? layoutTree(
-            arbre.centre,
-            arbre.noeuds,
-            arbre.unions ?? [],
-            arbre.aretes,
-            arbre.ancetres,
-            arbre.descendants,
+            displayArbre.centre,
+            displayArbre.noeuds,
+            displayArbre.unions ?? [],
+            displayArbre.aretes,
+            displayArbre.ancetres,
+            displayArbre.descendants,
           )
         : null,
-    [arbre],
+    [displayArbre],
   );
 
   const navIndex = useMemo(
     () =>
-      layout && arbre
-        ? buildTreeNavIndex(layout, arbre.aretes, arbre.noeuds)
+      layout && displayArbre
+        ? buildTreeNavIndex(layout, displayArbre.aretes, displayArbre.noeuds)
         : null,
-    [layout, arbre],
+    [layout, displayArbre],
   );
 
   const showToast = useCallback((msg: string) => {
@@ -106,21 +114,27 @@ export function TreePage() {
   );
 
   useEffect(() => {
-    if (!arbre || !navIndex?.graphIds.has(ancrePersonneId)) return;
+    if (!displayArbre || !navIndex?.graphIds.has(ancrePersonneId)) return;
     skipFocusPanRef.current = true;
     setFocusPersonneId(ancrePersonneId);
     requestAnimationFrame(() => {
-      treeRef.current?.recenterOn(ancrePersonneId);
+      const keepZoom = initialTreeFramedRef.current || hasSavedTreeZoom();
+      if (keepZoom) {
+        treeRef.current?.panTo(ancrePersonneId);
+      } else {
+        treeRef.current?.recenterOn(ancrePersonneId);
+        initialTreeFramedRef.current = true;
+      }
       skipFocusPanRef.current = false;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [arbre]);
+  }, [displayArbre]);
 
   useEffect(() => {
     if (skipFocusPanRef.current) return;
-    if (!arbre || !navIndex?.graphIds.has(focusPersonneId)) return;
+    if (!displayArbre || !navIndex?.graphIds.has(focusPersonneId)) return;
     treeRef.current?.panTo(focusPersonneId);
-  }, [focusPersonneId, arbre, navIndex]);
+  }, [focusPersonneId, displayArbre, navIndex]);
 
   useKeyboardNav({
     onHome: () => tryFocus(ancrePersonneId),
@@ -128,6 +142,8 @@ export function TreePage() {
     onChild: () => tryMove("down"),
     onSiblingPrev: () => tryMove("left"),
     onSiblingNext: () => tryMove("right"),
+    onZoomIn: () => treeRef.current?.zoomIn(),
+    onZoomOut: () => treeRef.current?.zoomOut(),
   });
 
   const handleActeClick = useCallback(
@@ -157,19 +173,20 @@ export function TreePage() {
         </div>
       )}
 
-      {arbreLoading && <LoadingSpinner />}
+      {arbreLoading && !displayArbre && <LoadingSpinner />}
 
-      {!arbreLoading && arbreError && (
+      {!arbreLoading && arbreError && !displayArbre && (
         <p className="m-4 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
           {arbreError}
         </p>
       )}
 
-      {!arbreLoading && arbre && (
-        <>
+      {displayArbre && (
+        <div className="relative flex min-h-0 flex-1 flex-col">
+          {arbreLoading && <LoadingSpinner variant="overlay" />}
           <TreeView
             ref={treeRef}
-            arbre={arbre as ArbreResponse}
+            arbre={displayArbre}
             focusId={focusPersonneId}
             ancreId={ancrePersonneId}
             onFocus={tryFocus}
@@ -177,7 +194,7 @@ export function TreePage() {
             onActeClick={handleActeClick}
             onPhotoClick={handlePhotoClick}
           />
-          <div className="pointer-events-none absolute bottom-3 right-3 z-40">
+          <div className="pointer-events-none absolute bottom-3 right-3 z-40 flex items-end gap-2">
             <TreeNavPad
               canUp={canUp}
               canDown={canDown}
@@ -185,8 +202,13 @@ export function TreePage() {
               canRight={canRight}
               onMove={tryMove}
             />
+            <TreeZoomPad
+              onZoomIn={() => treeRef.current?.zoomIn()}
+              onZoomOut={() => treeRef.current?.zoomOut()}
+              onFitAll={() => treeRef.current?.fitAll()}
+            />
           </div>
-        </>
+        </div>
       )}
 
       {acteModal && (

@@ -7,24 +7,43 @@ export interface ViewBox {
   h: number;
 }
 
+/** Zoom conservé entre rechargements d'arbre (changement d'ancre, profondeur). */
+let persistedViewBox: ViewBox | null = null;
+
+export function hasSavedTreeZoom(): boolean {
+  return persistedViewBox != null;
+}
+
 interface UseSvgViewportOptions {
   contentWidth: number;
   contentHeight: number;
   enabled?: boolean;
+  /** Molette : zoom si true, sinon ignorée (déplacement seul au glisser). */
+  wheelZoom?: boolean;
+  /** Pincement à deux doigts : zoom si true. */
+  pinchZoom?: boolean;
 }
 
 export function useSvgViewport({
   contentWidth,
   contentHeight,
   enabled = true,
+  wheelZoom = false,
+  pinchZoom = false,
 }: UseSvgViewportOptions) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [viewBox, setViewBox] = useState<ViewBox>(() => ({
-    x: 0,
-    y: 0,
-    w: Math.max(contentWidth, 1),
-    h: Math.max(contentHeight, 1),
-  }));
+  const [viewBox, setViewBox] = useState<ViewBox>(() => {
+    if (persistedViewBox) {
+      return { ...persistedViewBox };
+    }
+    return {
+      x: 0,
+      y: 0,
+      w: Math.max(contentWidth, 1),
+      h: Math.max(contentHeight, 1),
+    };
+  });
+  const [isPanning, setIsPanning] = useState(false);
   const panRef = useRef<{ x: number; y: number; vb: ViewBox; pid: number } | null>(
     null,
   );
@@ -44,14 +63,8 @@ export function useSvgViewport({
   useEffect(() => () => cancelPanAnimation(), [cancelPanAnimation]);
 
   useEffect(() => {
-    if (!enabled) return;
-    setViewBox({
-      x: 0,
-      y: 0,
-      w: Math.max(contentWidth, 1),
-      h: Math.max(contentHeight, 1),
-    });
-  }, [contentWidth, contentHeight, enabled]);
+    persistedViewBox = viewBox;
+  }, [viewBox]);
 
   const clampViewBox = useCallback(
     (vb: ViewBox): ViewBox => {
@@ -65,6 +78,18 @@ export function useSvgViewport({
     },
     [contentWidth, contentHeight],
   );
+
+  useEffect(() => {
+    if (!enabled) return;
+    setViewBox((vb) =>
+      clampViewBox({
+        x: vb.x,
+        y: vb.y,
+        w: vb.w,
+        h: vb.h,
+      }),
+    );
+  }, [contentWidth, contentHeight, enabled, clampViewBox]);
 
   const animateViewBox = useCallback(
     (target: ViewBox, options?: { durationMs?: number; animate?: boolean }) => {
@@ -149,30 +174,78 @@ export function useSvgViewport({
     });
   }, [cancelPanAnimation, contentWidth, contentHeight]);
 
-  const onWheel = useCallback(
-    (e: React.WheelEvent) => {
+  const zoomBy = useCallback(
+    (factor: number) => {
       if (!enabled) return;
       cancelPanAnimation();
-      e.preventDefault();
-      const el = containerRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const mx = ((e.clientX - rect.left) / rect.width) * viewBox.w + viewBox.x;
-      const my = ((e.clientY - rect.top) / rect.height) * viewBox.h + viewBox.y;
-      const factor = e.deltaY > 0 ? 1.12 : 0.88;
-      setViewBox((vb) => {
-        const nw = vb.w * factor;
-        const nh = vb.h * factor;
-        return clampViewBox({
+      const vb = viewBoxRef.current;
+      const mx = vb.x + vb.w / 2;
+      const my = vb.y + vb.h / 2;
+      const nw = vb.w * factor;
+      const nh = vb.h * factor;
+      setViewBox(
+        clampViewBox({
           w: nw,
           h: nh,
           x: mx - (mx - vb.x) * (nw / vb.w),
           y: my - (my - vb.y) * (nh / vb.h),
-        });
-      });
+        }),
+      );
     },
-    [cancelPanAnimation, clampViewBox, enabled, viewBox],
+    [cancelPanAnimation, clampViewBox, enabled],
   );
+
+  const zoomIn = useCallback(() => zoomBy(0.88), [zoomBy]);
+  const zoomOut = useCallback(() => zoomBy(1.12), [zoomBy]);
+
+  useEffect(() => {
+    if (!enabled) return;
+    const el = containerRef.current;
+    if (!el) return;
+
+    const blockWheelZoom = (e: WheelEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!wheelZoom) return;
+
+      cancelPanAnimation();
+      const rect = el.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+      const vb = viewBoxRef.current;
+      const mx = ((e.clientX - rect.left) / rect.width) * vb.w + vb.x;
+      const my = ((e.clientY - rect.top) / rect.height) * vb.h + vb.y;
+      const factor = e.deltaY > 0 ? 1.12 : 0.88;
+      setViewBox(
+        clampViewBox({
+          w: vb.w * factor,
+          h: vb.h * factor,
+          x: mx - (mx - vb.x) * ((vb.w * factor) / vb.w),
+          y: my - (my - vb.y) * ((vb.h * factor) / vb.h),
+        }),
+      );
+    };
+
+    const blockGesture = (e: Event) => {
+      e.preventDefault();
+    };
+
+    el.addEventListener("wheel", blockWheelZoom, { passive: false });
+    el.addEventListener("gesturestart", blockGesture);
+    el.addEventListener("gesturechange", blockGesture);
+    el.addEventListener("gestureend", blockGesture);
+
+    return () => {
+      el.removeEventListener("wheel", blockWheelZoom);
+      el.removeEventListener("gesturestart", blockGesture);
+      el.removeEventListener("gesturechange", blockGesture);
+      el.removeEventListener("gestureend", blockGesture);
+    };
+  }, [cancelPanAnimation, clampViewBox, enabled, wheelZoom]);
+
+  const onWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -186,6 +259,7 @@ export function useSvgViewport({
       if (pointersRef.current.size === 1 && e.button === 0) {
         (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
         panRef.current = { x: e.clientX, y: e.clientY, vb: viewBox, pid: e.pointerId };
+        setIsPanning(true);
       }
     },
     [cancelPanAnimation, enabled, viewBox],
@@ -199,6 +273,7 @@ export function useSvgViewport({
       }
 
       if (pointersRef.current.size === 2) {
+        if (!pinchZoom) return;
         const pts = [...pointersRef.current.values()];
         const dist = Math.hypot(pts[0]!.x - pts[1]!.x, pts[0]!.y - pts[1]!.y);
         const el = containerRef.current;
@@ -249,13 +324,18 @@ export function useSvgViewport({
         );
       }
     },
-    [clampViewBox, enabled, viewBox],
+    [clampViewBox, enabled, pinchZoom, viewBox],
   );
 
-  const onPointerUp = useCallback((e: React.PointerEvent) => {
+  const endPan = useCallback((e: React.PointerEvent) => {
     pointersRef.current.delete(e.pointerId);
-    if (pointersRef.current.size === 0) panRef.current = null;
+    if (pointersRef.current.size === 0) {
+      panRef.current = null;
+      setIsPanning(false);
+    }
   }, []);
+
+  const onPointerUp = endPan;
 
   const viewBoxString = `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`;
 
@@ -266,9 +346,12 @@ export function useSvgViewport({
     recenterOn,
     panTo,
     fitAll,
+    zoomIn,
+    zoomOut,
     onWheel,
     onPointerDown,
     onPointerMove,
     onPointerUp,
+    isPanning,
   };
 }

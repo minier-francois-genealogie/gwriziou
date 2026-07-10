@@ -3,8 +3,8 @@ import { useRef } from "react";
 import type { ParentsAilleursRef } from "../utils/treeLayout";
 import {
   formatNom,
-  formatNomArbre,
   hasMultiplePrenoms,
+  splitPrenoms,
 } from "../utils/format";
 import { NODE_H, NODE_W } from "../utils/treeLayout";
 import { AncreButton } from "./AncreButton";
@@ -65,7 +65,7 @@ export function PersonNode({
         : "border-slate-300";
 
   const fullName = formatNom(noeud.nom, noeud.prenoms);
-  const displayName = formatNomArbre(noeud.nom, noeud.prenoms);
+  const prenomArbre = splitPrenoms(noeud.prenoms)[0] ?? null;
   const extraPrenoms = hasMultiplePrenoms(noeud.prenoms);
   const handleActeClick = onActeClick
     ? (type: ActeType, url: string) => onActeClick(type, url, fullName)
@@ -171,8 +171,8 @@ export function PersonNode({
             className="relative flex min-h-0 flex-1 cursor-pointer flex-col p-1.5 pr-7 text-left outline-none"
           >
             <span className="min-w-0">
-              <span className="flex min-w-0 items-center gap-1">
-                <SexeIcon sexe={noeud.sexe} className="shrink-0" />
+              <span className="flex min-w-0 items-start gap-1">
+                <SexeIcon sexe={noeud.sexe} className="mt-0.5 shrink-0" />
                 <PhotoIcon
                   hasPhotos={noeud.photos}
                   size="xs"
@@ -180,21 +180,45 @@ export function PersonNode({
                     onPhotoClick?.(noeud.id_gedcom, noeud.nom, noeud.prenoms)
                   }
                 />
-                <span className="flex min-w-0 items-baseline gap-0.5">
-                  <span className="truncate text-xs font-bold leading-tight text-slate-900">
-                    {displayName}
-                  </span>
-                  {extraPrenoms && (
-                    <FloatingTooltip content={fullName} maxWidth={220} multiline align="start">
-                      <span
-                        className="shrink-0 text-[11px] leading-none text-slate-500"
-                        aria-hidden="true"
-                      >
-                        *
+                {extraPrenoms ? (
+                  <FloatingTooltip
+                    content={fullName}
+                    maxWidth={220}
+                    multiline
+                    align="start"
+                    className="min-w-0"
+                  >
+                    <span className="flex min-w-0 flex-col leading-tight">
+                      <span className="truncate text-xs font-bold text-slate-900">
+                        {noeud.nom}
                       </span>
-                    </FloatingTooltip>
-                  )}
-                </span>
+                      {prenomArbre && (
+                        <span className="flex min-w-0 items-baseline gap-0.5">
+                          <span className="truncate text-xs font-bold text-slate-900">
+                            {prenomArbre}
+                          </span>
+                          <span
+                            className="shrink-0 text-[11px] leading-none text-slate-500"
+                            aria-hidden="true"
+                          >
+                            *
+                          </span>
+                        </span>
+                      )}
+                    </span>
+                  </FloatingTooltip>
+                ) : (
+                  <span className="flex min-w-0 flex-col leading-tight">
+                    <span className="truncate text-xs font-bold text-slate-900">
+                      {noeud.nom}
+                    </span>
+                    {prenomArbre && (
+                      <span className="truncate text-xs font-bold text-slate-900">
+                        {prenomArbre}
+                      </span>
+                    )}
+                  </span>
+                )}
               </span>
             </span>
             <div className="mt-1.5">
