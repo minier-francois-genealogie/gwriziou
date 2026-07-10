@@ -19,7 +19,8 @@ function viewFromPath(pathname: string): AppView {
   if (pathname === "/histoire/dirigeants") return "histoire-dirigeants";
   if (pathname === "/analyse/stats") return "analyse-stats";
   if (pathname === "/analyse/professions") return "analyse-professions";
-  if (pathname === "/analyse/noms") return "analyse-noms";
+  if (pathname === "/gestion/professions") return "gestion-professions";
+  if (pathname === "/gestion/warnings") return "gestion-warnings";
   if (pathname === "/aide/a-propos") return "aide-a-propos";
   if (pathname === "/aide/warnings" || pathname === "/warnings") return "aide-warnings";
   if (pathname === "/aide/a-savoir" || pathname === "/a-savoir") return "aide-a-savoir";

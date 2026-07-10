@@ -9,6 +9,7 @@ import { ASavoirPage } from "./pages/ASavoirPage";
 import { DirigeantsPage } from "./pages/DirigeantsPage";
 import { FaitsHistoriquesPage } from "./pages/FaitsHistoriquesPage";
 import { GeolocPage } from "./pages/GeolocPage";
+import { GestionProfessionsPage } from "./pages/GestionProfessionsPage";
 import { SearchPage } from "./pages/SearchPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { TreePage } from "./pages/TreePage";
@@ -21,8 +22,8 @@ function LastViewRedirect() {
   if (last === "parametres" || last === "aide-parametres") {
     return <Navigate to="/aide/parametres" replace />;
   }
-  if (last === "warnings" || last === "aide-warnings") {
-    return <Navigate to="/aide/warnings" replace />;
+  if (last === "warnings" || last === "aide-warnings" || last === "gestion-warnings") {
+    return <Navigate to="/gestion/warnings" replace />;
   }
   if (last === "histoire-faits" || last === "faits-historiques") {
     return <Navigate to="/histoire/faits" replace />;
@@ -34,6 +35,7 @@ function LastViewRedirect() {
   if (last === "analyse-stats") return <Navigate to="/analyse/stats" replace />;
   if (last === "analyse-professions") return <Navigate to="/analyse/professions" replace />;
   if (last === "analyse-noms") return <Navigate to="/analyse/noms" replace />;
+  if (last === "gestion-professions") return <Navigate to="/gestion/professions" replace />;
   if (last === "a-savoir" || last === "aide-a-savoir") {
     return <Navigate to="/aide/a-savoir" replace />;
   }
@@ -52,11 +54,13 @@ export default function App() {
             <Route path="arbre" element={<TreePage />} />
             <Route path="tree" element={<Navigate to="/arbre" replace />} />
             <Route path="aide/a-propos" element={<AProposPage />} />
-            <Route path="aide/warnings" element={<WarningsPage />} />
+            <Route path="aide/warnings" element={<Navigate to="/gestion/warnings" replace />} />
+            <Route path="gestion/professions" element={<GestionProfessionsPage />} />
+            <Route path="gestion/warnings" element={<WarningsPage />} />
             <Route path="aide/a-savoir" element={<ASavoirPage />} />
             <Route path="aide/parametres" element={<SettingsPage />} />
             <Route path="parametres" element={<Navigate to="/aide/parametres" replace />} />
-            <Route path="warnings" element={<Navigate to="/aide/warnings" replace />} />
+            <Route path="warnings" element={<Navigate to="/gestion/warnings" replace />} />
             <Route path="histoire/faits" element={<FaitsHistoriquesPage />} />
             <Route path="histoire/dirigeants" element={<DirigeantsPage />} />
             <Route path="faits-historiques" element={<Navigate to="/histoire/faits" replace />} />

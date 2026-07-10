@@ -8,6 +8,8 @@ import type {
   FaitsHistoriquesStatsResponse,
   GeolocResponse,
   PersonneDetail,
+  ProfessionMappingListResponse,
+  ProfessionMappingLigne,
   ProfessionsNuageResponse,
   RafraichirResponse,
   RechercheResponse,
@@ -151,6 +153,22 @@ export const api = {
   analyseNoms: (ancre: string, ancetres: number, descendants: number, zone = true) =>
     request<EvolutionNomsResponse>(
       `/api/analyse/noms?ancre=${encodeURIComponent(ancre)}&ancetres=${ancetres}&descendants=${descendants}&zone=${zone}`,
+    ),
+
+  gestionProfessions: () =>
+    request<ProfessionMappingListResponse>("/api/gestion/professions"),
+
+  gestionProfessionUpdate: (profession_brute: string, libelle_nuage: string) =>
+    request<ProfessionMappingLigne>("/api/gestion/professions", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ profession_brute, libelle_nuage }),
+    }),
+
+  gestionProfessionReset: (profession_brute: string) =>
+    request<{ ok: boolean }>(
+      `/api/gestion/professions?profession_brute=${encodeURIComponent(profession_brute)}`,
+      { method: "DELETE" },
     ),
 };
 

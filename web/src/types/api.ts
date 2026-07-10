@@ -342,6 +342,20 @@ export interface ProfessionsNuageResponse {
   nombre_personnes_scope: number;
 }
 
+export interface ProfessionMappingLigne {
+  profession_brute: string;
+  effectif: number;
+  libelle_nuage: string;
+  libelle_defaut: string;
+  override: boolean;
+}
+
+export interface ProfessionMappingListResponse {
+  lignes: ProfessionMappingLigne[];
+  nombre_professions_distinctes: number;
+  nombre_overrides: number;
+}
+
 export interface CompteParLabel {
   label: string;
   effectif: number;

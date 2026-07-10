@@ -7,6 +7,7 @@ const KEYS = {
   ancetres: "gwriziou.ancetres",
   descendants: "gwriziou.descendants",
   derniereVue: "gwriziou.derniereVue",
+  treeViewBoxZoom: "gwriziou.treeViewBoxZoom",
 } as const;
 
 export type AppView =
@@ -25,6 +26,8 @@ export type AppView =
   | "analyse-stats"
   | "analyse-professions"
   | "analyse-noms"
+  | "gestion-professions"
+  | "gestion-warnings"
   | "a-savoir";
 
 const DEFAULT_ANCETRES = 4;
@@ -110,6 +113,8 @@ export function loadDerniereVue(): AppView {
       v === "analyse-stats" ||
       v === "analyse-professions" ||
       v === "analyse-noms" ||
+      v === "gestion-professions" ||
+      v === "gestion-warnings" ||
       v === "a-savoir"
     )
       return v;
@@ -124,6 +129,33 @@ export function saveDerniereVue(view: AppView): void {
     localStorage.setItem(KEYS.derniereVue, view);
   } catch {
     /* ignore */
+  }
+}
+
+export interface TreeViewBoxZoom {
+  w: number;
+  h: number;
+}
+
+export function loadTreeViewBoxZoom(): TreeViewBoxZoom | null {
+  try {
+    const raw = localStorage.getItem(KEYS.treeViewBoxZoom);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { w?: unknown; h?: unknown };
+    const w = Number(parsed.w);
+    const h = Number(parsed.h);
+    if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) return null;
+    return { w, h };
+  } catch {
+    return null;
+  }
+}
+
+export function saveTreeViewBoxZoom(zoom: TreeViewBoxZoom): void {
+  try {
+    localStorage.setItem(KEYS.treeViewBoxZoom, JSON.stringify(zoom));
+  } catch {
+    /* quota / private mode */
   }
 }
 

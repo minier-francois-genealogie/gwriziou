@@ -5,7 +5,6 @@ from __future__ import annotations
 import sqlite3
 from collections import Counter, defaultdict
 
-from act_path_normalize import ascii_fold
 from gedcom_dates import year_from_iso
 
 from server.schemas.analyse import (
@@ -15,6 +14,11 @@ from server.schemas.analyse import (
     EvolutionNomsResponse,
     ProfessionNuageItem,
     ProfessionsNuageResponse,
+)
+from server.services.profession_mapping import (
+    libelle_nuage_key,
+    load_mapping_dict,
+    resolve_libelle_nuage,
 )
 
 
@@ -80,10 +84,6 @@ def _premier_prenom(prenoms: str | None) -> str | None:
 
 def _decennie(year: int) -> int:
     return (year // 10) * 10
-
-
-def _profession_key(raw: str) -> str:
-    return ascii_fold(raw.strip()).casefold()
 
 
 def _empty_stats(nombre_personnes_total: int) -> AnalyseStatsResponse:
@@ -215,23 +215,29 @@ def get_professions_nuage(
     ).fetchall()
 
     sans = 0
-    buckets: dict[str, Counter[str]] = defaultdict(Counter)
+    effectif_par_key: Counter[str] = Counter()
+    labels_par_key: dict[str, Counter[str]] = defaultdict(Counter)
+    mapping = load_mapping_dict(conn)
+
     for row in rows:
         raw = (row["profession"] or "").strip()
         if not raw:
             sans += 1
             continue
-        buckets[_profession_key(raw)][raw] += 1
+        libelle = resolve_libelle_nuage(raw, mapping)
+        key = libelle_nuage_key(libelle)
+        effectif_par_key[key] += 1
+        labels_par_key[key][libelle] += 1
 
     lignes: list[ProfessionNuageItem] = []
-    for _key, labels in buckets.items():
-        profession, effectif = labels.most_common(1)[0]
+    for key, effectif in effectif_par_key.items():
+        profession = labels_par_key[key].most_common(1)[0][0]
         lignes.append(ProfessionNuageItem(profession=profession, effectif=effectif))
 
     lignes.sort(key=lambda item: (-item.effectif, item.profession.casefold()))
     return ProfessionsNuageResponse(
         lignes=lignes,
-        nombre_avec_profession=sum(item.effectif for item in lignes),
+        nombre_avec_profession=sum(effectif_par_key.values()),
         nombre_sans_profession=sans,
         nombre_personnes_total=nombre_personnes_total,
         nombre_personnes_scope=len(scope_ids),

@@ -21,7 +21,7 @@ from paths import GEDCOM_PATH as DEFAULT_GEDCOM  # noqa: E402
 
 DEFAULT_DB = BDD_DIR / "genealogie.sqlite"
 SCHEMA_PATH = BDD_DIR / "schema.sql"
-SCHEMA_VERSION = 9
+SCHEMA_VERSION = 10
 
 from act_path_normalize import ascii_fold  # noqa: E402
 from analyze_ascendance import find_root  # noqa: E402
@@ -95,6 +95,7 @@ def resolve_root_id(individuals: dict[str, dict], configured: str | None) -> str
 
 
 def purge_database(db_path: Path) -> sqlite3.Connection:
+    mapping_backup = _read_profession_mappings(db_path)
     schema = SCHEMA_PATH.read_text(encoding="utf-8")
     if db_path.exists():
         db_path.unlink()
@@ -102,7 +103,37 @@ def purge_database(db_path: Path) -> sqlite3.Connection:
     conn = sqlite3.connect(db_path)
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(schema)
+    _restore_profession_mappings(conn, mapping_backup)
     return conn
+
+
+def _read_profession_mappings(db_path: Path) -> list[tuple[str, str, str]]:
+    if not db_path.is_file():
+        return []
+    conn = sqlite3.connect(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT profession_brute, libelle_nuage, modifie_le FROM profession_mapping"
+        ).fetchall()
+        return [(str(r[0]), str(r[1]), str(r[2])) for r in rows]
+    except sqlite3.OperationalError:
+        return []
+    finally:
+        conn.close()
+
+
+def _restore_profession_mappings(
+    conn: sqlite3.Connection, rows: list[tuple[str, str, str]]
+) -> None:
+    if not rows:
+        return
+    conn.executemany(
+        """
+        INSERT INTO profession_mapping (profession_brute, libelle_nuage, modifie_le)
+        VALUES (?, ?, ?)
+        """,
+        rows,
+    )
 
 
 class LieuCache:

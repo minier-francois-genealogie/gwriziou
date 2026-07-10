@@ -30,27 +30,27 @@ export function AnalyseZoneToggle({
   totalCount?: number;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
-      <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+    <div className="flex shrink-0 items-center justify-end gap-4 text-sm">
+      <label className="flex cursor-pointer items-center gap-2 text-slate-700">
+        <span>Limiter à la zone de l&apos;arbre</span>
         <input
           type="checkbox"
+          role="switch"
+          aria-label="Limiter à la zone de l'arbre"
           checked={zoneOnly}
           onChange={(e) => onChange(e.target.checked)}
-          className="rounded border-slate-300 text-sky-700 focus:ring-sky-500"
+          className="h-4 w-7 shrink-0 cursor-pointer appearance-none rounded-full bg-slate-300 transition checked:bg-sky-600 before:block before:h-3 before:w-3 before:translate-x-0.5 before:rounded-full before:bg-white before:transition before:content-[''] checked:before:translate-x-3.5"
         />
-        Limiter à la zone de l&apos;arbre
       </label>
-      {scopeCount != null && totalCount != null && (
-        <p className="text-sm text-slate-500">
-          {zoneOnly ? (
-            <>
-              Zone : {scopeCount} — Total : {totalCount}
-            </>
-          ) : (
-            <>Total : {totalCount}</>
-          )}
-        </p>
-      )}
+      <span
+        className="w-28 shrink-0 text-right tabular-nums text-slate-500"
+        aria-hidden={!zoneOnly || scopeCount == null}
+      >
+        {zoneOnly && scopeCount != null ? `Zone : ${scopeCount}` : "\u00a0"}
+      </span>
+      <span className="w-32 shrink-0 text-right tabular-nums text-slate-500">
+        {totalCount != null ? `Total : ${totalCount}` : "\u00a0"}
+      </span>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 -- Schéma SQLite — index généalogique
 -- Référence : bdd/SCHEMA_BDD.md
 -- Base dérivée, reconstruite à chaque import GEDCOM + actes.
--- version_schema : 9 — dirigeants France (chefs d'État)
+-- version_schema : 10 — mapping professions (nuage)
 
 PRAGMA foreign_keys = ON;
 
@@ -259,3 +259,13 @@ CREATE TABLE dirigeants_france (
 );
 
 CREATE INDEX idx_dirigeants_debut ON dirigeants_france (debut);
+
+-- ---------------------------------------------------------------------------
+-- Mapping professions (libellé nuage, indépendant du GEDCOM)
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE profession_mapping (
+    profession_brute TEXT PRIMARY KEY,
+    libelle_nuage    TEXT NOT NULL,
+    modifie_le       TEXT NOT NULL
+);

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { loadTreeViewBoxZoom, saveTreeViewBoxZoom } from "../utils/appStorage";
 
 export interface ViewBox {
   x: number;
@@ -7,8 +8,11 @@ export interface ViewBox {
   h: number;
 }
 
-/** Zoom conservé entre rechargements d'arbre (changement d'ancre, profondeur). */
-let persistedViewBox: ViewBox | null = null;
+/** Zoom conservé entre rechargements d'arbre et entre sessions (localStorage). */
+let persistedViewBox: ViewBox | null = (() => {
+  const saved = loadTreeViewBoxZoom();
+  return saved ? { x: 0, y: 0, w: saved.w, h: saved.h } : null;
+})();
 
 export function hasSavedTreeZoom(): boolean {
   return persistedViewBox != null;
@@ -65,6 +69,10 @@ export function useSvgViewport({
   useEffect(() => {
     persistedViewBox = viewBox;
   }, [viewBox]);
+
+  useEffect(() => {
+    saveTreeViewBoxZoom({ w: viewBox.w, h: viewBox.h });
+  }, [viewBox.w, viewBox.h]);
 
   const clampViewBox = useCallback(
     (vb: ViewBox): ViewBox => {

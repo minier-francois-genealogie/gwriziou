@@ -4,7 +4,11 @@ from server.db import connection, database_exists
 from server.gedcom_id import normalize_gedcom_id
 from server.import_service import empreintes_inchangees, run_import
 from server.import_state import is_import_en_cours
-from server.schemas.status import RafraichirResponse, StatusResponse
+from server.schemas.profession_mapping import (
+    ProfessionMappingListResponse,
+    ProfessionMappingLigne,
+    ProfessionMappingUpdate,
+)
 from server.services.personnes import get_arbre, get_personne, rechercher_personnes
 from server.services.faits_historiques import (
     get_faits_historiques_stats,
@@ -20,7 +24,13 @@ from server.services.analyse import (
     get_professions_nuage,
 )
 from server.services.geoloc import get_geoloc
+from server.services.profession_mapping import (
+    list_profession_mappings,
+    reset_profession_mapping,
+    upsert_profession_mapping,
+)
 from server.services.warnings import get_warnings_stats, list_warnings
+from server.schemas.status import RafraichirResponse, StatusResponse
 
 router = APIRouter(prefix="/api", tags=["api"])
 
@@ -310,3 +320,30 @@ def api_analyse_noms(
 
     with connection(read_only=True) as conn:
         return get_evolution_noms(conn, gid, ancetres, descendants, zone=zone)
+
+
+@router.get("/gestion/professions", response_model=ProfessionMappingListResponse)
+def api_gestion_professions_list():
+    with connection(read_only=False) as conn:
+        return list_profession_mappings(conn)
+
+
+@router.put("/gestion/professions", response_model=ProfessionMappingLigne)
+def api_gestion_professions_update(payload: ProfessionMappingUpdate):
+    try:
+        with connection(read_only=False) as conn:
+            return upsert_profession_mapping(conn, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.delete("/gestion/professions")
+def api_gestion_professions_reset(
+    profession_brute: str = Query(..., description="Profession brute à réinitialiser"),
+):
+    try:
+        with connection(read_only=False) as conn:
+            reset_profession_mapping(conn, profession_brute)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"ok": True}
