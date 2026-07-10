@@ -42,14 +42,7 @@ function RulesTable({ rules }: { rules: Record<string, string> }) {
 export function ASavoirPage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <header className="shrink-0 border-b border-slate-300 bg-white px-4 py-3 pt-[calc(3.5rem+env(safe-area-inset-top,0px))]">
-        <h1 className="text-lg font-bold text-sky-900">À savoir</h1>
-        <p className="mt-0.5 text-sm text-slate-500">
-          Bornes de vie estimées, constantes et légende d&apos;affichage.
-        </p>
-      </header>
-
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pt-[calc(3.5rem+env(safe-area-inset-top,0px))]">
         <div className="mx-auto max-w-2xl space-y-8 pb-8">
           <Section title="Constantes">
             <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">

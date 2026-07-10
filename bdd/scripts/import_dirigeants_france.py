@@ -37,6 +37,12 @@ def ensure_schema(conn: sqlite3.Connection) -> None:
             titre           TEXT NOT NULL,
             debut           TEXT NOT NULL,
             fin             TEXT NOT NULL,
+            naissance       TEXT,
+            deces           TEXT,
+            regime          TEXT,
+            faits_positifs  TEXT,
+            faits_negatifs  TEXT,
+            lien_predecesseur TEXT,
             photo_url       TEXT,
             source_fichier  TEXT NOT NULL
         )
@@ -45,6 +51,17 @@ def ensure_schema(conn: sqlite3.Connection) -> None:
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_dirigeants_debut ON dirigeants_france (debut)"
     )
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(dirigeants_france)")}
+    for col, ddl in (
+        ("naissance", "ALTER TABLE dirigeants_france ADD COLUMN naissance TEXT"),
+        ("deces", "ALTER TABLE dirigeants_france ADD COLUMN deces TEXT"),
+        ("regime", "ALTER TABLE dirigeants_france ADD COLUMN regime TEXT"),
+        ("faits_positifs", "ALTER TABLE dirigeants_france ADD COLUMN faits_positifs TEXT"),
+        ("faits_negatifs", "ALTER TABLE dirigeants_france ADD COLUMN faits_negatifs TEXT"),
+        ("lien_predecesseur", "ALTER TABLE dirigeants_france ADD COLUMN lien_predecesseur TEXT"),
+    ):
+        if col not in cols:
+            conn.execute(ddl)
     cols = {row[1] for row in conn.execute("PRAGMA table_info(meta)")}
     if "empreinte_dirigeants" not in cols:
         conn.execute("ALTER TABLE meta ADD COLUMN empreinte_dirigeants TEXT")
@@ -98,13 +115,45 @@ def import_dirigeants_france(conn: sqlite3.Connection) -> dict[str, int]:
         if not slug or not nom or not titre:
             continue
         photo_url = (row.get("photo_url") or "").strip() or None
+        naissance = (row.get("naissance") or "").strip() or None
+        deces = (row.get("deces") or "").strip() or None
+        regime = (row.get("regime") or "").strip() or None
+        faits_positifs = row.get("faits_positifs")
+        faits_negatifs = row.get("faits_negatifs")
+        faits_positifs_json = (
+            json.dumps(faits_positifs, ensure_ascii=False)
+            if isinstance(faits_positifs, list)
+            else None
+        )
+        faits_negatifs_json = (
+            json.dumps(faits_negatifs, ensure_ascii=False)
+            if isinstance(faits_negatifs, list)
+            else None
+        )
+        lien_predecesseur = (row.get("lien_predecesseur") or "").strip() or None
         conn.execute(
             """
             INSERT INTO dirigeants_france (
-                slug, nom, titre, debut, fin, photo_url, source_fichier
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                slug, nom, titre, debut, fin,
+                naissance, deces, regime, faits_positifs, faits_negatifs,
+                lien_predecesseur, photo_url, source_fichier
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (slug, nom, titre, debut, fin, photo_url, source_label),
+            (
+                slug,
+                nom,
+                titre,
+                debut,
+                fin,
+                naissance,
+                deces,
+                regime,
+                faits_positifs_json,
+                faits_negatifs_json,
+                lien_predecesseur,
+                photo_url,
+                source_label,
+            ),
         )
         count += 1
 

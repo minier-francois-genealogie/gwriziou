@@ -11,6 +11,7 @@ class StatusResponse(BaseModel):
     empreinte_actes: str | None
     id_gedcom_racine: str | None
     version_schema: int | None
+    import_en_cours: bool = False
 
 
 class RafraichirResponse(BaseModel):

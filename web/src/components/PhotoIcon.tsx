@@ -1,4 +1,5 @@
 import { ICON_ABSENT_BTN } from "../utils/iconStyles";
+import { FloatingTooltip } from "./FloatingTooltip";
 
 function CameraIcon({ className }: { className?: string }) {
   return (
@@ -45,7 +46,7 @@ export function PhotoIcon({
   const tooltip = photoTooltip(hasPhotos, photoCount);
 
   return (
-    <span className={`group/photo relative inline-flex shrink-0 justify-center ${className}`}>
+    <FloatingTooltip content={tooltip} className={`shrink-0 justify-center ${className}`}>
       <button
         type="button"
         aria-disabled={!hasPhotos}
@@ -59,18 +60,12 @@ export function PhotoIcon({
         onPointerUp={(e) => e.stopPropagation()}
         className={`inline-flex items-center justify-center rounded-full transition-colors ${btnDim} ${
           hasPhotos
-            ? `text-slate-900 hover:bg-slate-100`
+            ? "text-slate-900 hover:bg-slate-100"
             : ICON_ABSENT_BTN
         }`}
       >
         <CameraIcon className={dim} />
       </button>
-      <span
-        role="tooltip"
-        className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-800 px-2 py-1 text-[10px] text-white shadow-md group-hover/photo:block"
-      >
-        {tooltip}
-      </span>
-    </span>
+    </FloatingTooltip>
   );
 }

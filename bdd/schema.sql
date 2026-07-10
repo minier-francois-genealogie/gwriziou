@@ -248,6 +248,12 @@ CREATE TABLE dirigeants_france (
     titre           TEXT NOT NULL,
     debut           TEXT NOT NULL,
     fin             TEXT NOT NULL,
+    naissance       TEXT,
+    deces           TEXT,
+    regime          TEXT,
+    faits_positifs  TEXT,
+    faits_negatifs  TEXT,
+    lien_predecesseur TEXT,
     photo_url       TEXT,
     source_fichier  TEXT NOT NULL
 );

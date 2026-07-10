@@ -1,6 +1,7 @@
 import type { ActeResume, ActeType, ActesPersonne } from "../types/api";
 import { formatActeTooltipLines } from "../utils/format";
 import { ICON_ABSENT_BTN } from "../utils/iconStyles";
+import { FloatingTooltip } from "./FloatingTooltip";
 import { EvenementIcon } from "./GenealogyIcons";
 
 const ACTE_META: Record<
@@ -34,7 +35,7 @@ const ACTE_ICON_SIZE: Record<"xs" | "sm" | "md", "xs" | "sm" | "md" | "lg"> = {
 interface ActeIconsProps {
   actes: ActesPersonne;
   onActeClick?: (type: ActeType, url: string) => void;
-  size?: "sm" | "md";
+  size?: "xs" | "sm" | "md";
 }
 
 interface ActeIconSingleProps {
@@ -60,7 +61,24 @@ export function ActeIconSingle({
   const ariaLabel = lines.join(" — ");
 
   return (
-    <span className="group/acte relative inline-flex justify-center">
+    <FloatingTooltip
+      content={
+        <>
+          {lines.map((line, i) => (
+            <span
+              key={i}
+              className={`block ${i === 0 ? "font-medium" : "font-normal text-slate-200"}`}
+            >
+              {line}
+            </span>
+          ))}
+        </>
+      }
+      className="justify-center"
+      contentClassName="min-w-[148px] px-2.5 py-1.5"
+      maxWidth={240}
+      multiline
+    >
       <button
         type="button"
         aria-disabled={!canOpen}
@@ -82,20 +100,7 @@ export function ActeIconSingle({
       >
         <EvenementIcon type={type} size={iconSize} />
       </button>
-      <span
-        role="tooltip"
-        className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1 hidden min-w-[148px] max-w-[240px] -translate-x-1/2 rounded-md bg-slate-800 px-2.5 py-1.5 text-left text-[10px] leading-snug text-white shadow-md group-hover/acte:block"
-      >
-        {lines.map((line, i) => (
-          <span
-            key={i}
-            className={`block ${i === 0 ? "font-medium" : "font-normal text-slate-200"}`}
-          >
-            {line}
-          </span>
-        ))}
-      </span>
-    </span>
+    </FloatingTooltip>
   );
 }
 
@@ -111,7 +116,7 @@ export function ActeIcons({
   ];
 
   return (
-    <div className="flex gap-1" role="group" aria-label="Actes d'état civil">
+    <div className="flex gap-0.5" role="group" aria-label="Actes d'état civil">
       {items.map(({ type, acte }) => (
         <ActeIconSingle
           key={type}

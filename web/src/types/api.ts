@@ -8,6 +8,7 @@ export interface StatusResponse {
   empreinte_actes: string | null;
   id_gedcom_racine: string | null;
   version_schema: number | null;
+  import_en_cours: boolean;
 }
 
 export interface PersonneResume {
@@ -91,6 +92,7 @@ export interface RelationResume {
   naissance?: EvenementResume | null;
   deces?: EvenementResume | null;
   photos?: boolean;
+  actes?: ActesPersonne;
 }
 
 export interface RelationsPersonne {
@@ -120,16 +122,6 @@ export interface FaitHistorique {
   pays?: string | null;
 }
 
-export interface DirigeantFrance {
-  slug: string;
-  nom: string;
-  titre: string;
-  debut: string;
-  fin: string;
-  periode: string;
-  photo_url?: string | null;
-}
-
 export interface PersonneDetail {
   id_gedcom: string;
   nom: string;
@@ -154,7 +146,7 @@ export interface PersonneDetail {
   photos: PhotoPersonne[];
   relations: RelationsPersonne;
   faits_historiques?: FaitHistorique[];
-  dirigeants_france?: DirigeantFrance[];
+  dirigeants_france?: DirigeantFranceLigne[];
 }
 
 export interface VieDatesAffichage {
@@ -212,7 +204,7 @@ export interface ArbreResponse {
 }
 
 export interface RafraichirResponse {
-  status: "ok" | "unchanged";
+  status: "ok" | "unchanged" | "running";
   message?: string;
   nb_personnes?: number;
   nb_familles?: number;
@@ -275,6 +267,36 @@ export interface FaitsHistoriquesListResponse {
   nombre_faits_zone: number;
 }
 
+export interface DirigeantsFranceStatsResponse {
+  nombre_dirigeants_total: number;
+  nombre_dirigeants_zone: number;
+}
+
+export interface DirigeantFranceLigne {
+  slug: string;
+  nom: string;
+  titre: string;
+  debut: string;
+  fin: string;
+  periode: string;
+  naissance?: string | null;
+  deces?: string | null;
+  vie?: string | null;
+  regime?: string | null;
+  lien_predecesseur?: string | null;
+  faits_positifs: string[];
+  faits_negatifs: string[];
+  photo_url?: string | null;
+}
+
+export type DirigeantFrance = DirigeantFranceLigne;
+
+export interface DirigeantsFranceListResponse {
+  lignes: DirigeantFranceLigne[];
+  nombre_dirigeants_total: number;
+  nombre_dirigeants_zone: number;
+}
+
 export interface GeolocCommune {
   lieu_id: number;
   commune: string;
@@ -290,4 +312,51 @@ export interface GeolocResponse {
   annee_max: number;
   nombre_personnes: number;
   communes: GeolocCommune[];
+}
+
+export interface AnalyseStatsResponse {
+  nombre_personnes_total: number;
+  nombre_personnes_zone: number;
+  nombre_familles_zone: number;
+  hommes_zone: number;
+  femmes_zone: number;
+  sexe_inconnu_zone: number;
+  avec_profession_zone: number;
+  avec_naissance_zone: number;
+  avec_deces_zone: number;
+  age_moyen_deces_zone: number | null;
+  enfants_par_famille_moyen: number | null;
+  enfants_par_famille_max: number;
+}
+
+export interface ProfessionNuageItem {
+  profession: string;
+  effectif: number;
+}
+
+export interface ProfessionsNuageResponse {
+  lignes: ProfessionNuageItem[];
+  nombre_avec_profession: number;
+  nombre_sans_profession: number;
+  nombre_personnes_total: number;
+  nombre_personnes_scope: number;
+}
+
+export interface CompteParLabel {
+  label: string;
+  effectif: number;
+}
+
+export interface DecennieNoms {
+  decennie: number;
+  labels: CompteParLabel[];
+}
+
+export interface EvolutionNomsResponse {
+  par_decennie_famille: DecennieNoms[];
+  par_decennie_prenom: DecennieNoms[];
+  personnes_avec_date: number;
+  personnes_sans_date: number;
+  nombre_personnes_total: number;
+  nombre_personnes_scope: number;
 }

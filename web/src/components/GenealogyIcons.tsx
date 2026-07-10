@@ -156,6 +156,26 @@ export function TreeMenuIcon({ className = "h-4 w-4" }: { className?: string }) 
   );
 }
 
+/** Ancre de l'arbre (même pictogramme que le bouton ancre). */
+export function AncreIcon({ className = "h-3.5 w-3.5 text-slate-800" }: { className?: string }) {
+  return (
+    <svg
+      viewBox={VIEWBOX}
+      className={`inline-block shrink-0 align-[-0.12em] ${className}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="5" r="3" />
+      <path d="M12 22V8" />
+      <path d="M5 12H2a10 10 0 0 0 20 0h-3" />
+    </svg>
+  );
+}
+
 /** Triangle d'avertissement (alerte sur un événement). */
 export function WarningIcon({
   size = "xs",

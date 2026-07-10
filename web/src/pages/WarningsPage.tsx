@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
+import { LoadingSpinner } from "../components/LoadingSpinner";
 import { PersonName } from "../components/SexeIcon";
 import {
   ColumnHeaderMultiSelect,
@@ -61,7 +62,8 @@ function WarningsTableColgroup() {
 }
 
 export function WarningsPage() {
-  const { ancrePersonneId, ancetres, descendants } = useApp();
+  const { ancrePersonneId, ancetres, descendants, dataRefreshTick, importEnCours } =
+    useApp();
   const [zoneOnly, setZoneOnly] = useState(true);
   const [eventTypes, setEventTypes] = useState(
     () => new Set<string>(EVENT_FILTERS.map((f) => f.code)),
@@ -74,12 +76,12 @@ export function WarningsPage() {
 
   const { data: stats } = useAsync(
     () => api.warningsStats(ancrePersonneId, ancetres, descendants),
-    [ancrePersonneId, ancetres, descendants],
+    [ancrePersonneId, ancetres, descendants, dataRefreshTick],
   );
 
   const { data, loading, error } = useAsync(
     () => api.warnings(ancrePersonneId, ancetres, descendants, zoneOnly),
-    [ancrePersonneId, ancetres, descendants, zoneOnly],
+    [ancrePersonneId, ancetres, descendants, zoneOnly, dataRefreshTick],
   );
 
   const filteredLignes = useMemo(
@@ -95,18 +97,13 @@ export function WarningsPage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] pl-[calc(env(safe-area-inset-left,0px)+0.75rem)]">
-        {loading && (
-          <p className="text-sm text-slate-500">Chargement des warnings…</p>
-        )}
-        {error && (
+        {(loading || importEnCours) && <LoadingSpinner />}
+        {!loading && !importEnCours && error && (
           <p className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
             {error}
           </p>
         )}
-        {data && data.lignes.length === 0 && (
-          <p className="text-sm text-slate-500">Aucun warning.</p>
-        )}
-        {data && data.lignes.length > 0 && (
+        {!loading && !importEnCours && data && data.lignes.length > 0 && (
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
             <div className="flex min-h-0 flex-1 flex-col overflow-x-auto">
               <div className="shrink-0 border-b border-slate-300 bg-slate-50">

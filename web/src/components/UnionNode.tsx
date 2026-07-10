@@ -2,6 +2,8 @@ import type { NoeudUnion } from "../types/api";
 import { EvenementIconG } from "./GenealogyIcons";
 
 const UNION_R = 18;
+/** Couleur des traits de filiation et contour des unions sur l'arbre. */
+export const TREE_BRANCH_STROKE = "#94a3b8";
 
 interface UnionNodeProps {
   union: NoeudUnion;
@@ -35,6 +37,8 @@ export function UnionNode({ union, x, y, onActeClick }: UnionNodeProps) {
         cy={0}
         r={UNION_R}
         className={union.acte_m ? "fill-amber-500" : "fill-icon-absent-bg"}
+        stroke={TREE_BRANCH_STROKE}
+        strokeWidth={1}
       />
       <EvenementIconG
         type="mariage"

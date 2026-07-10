@@ -9,6 +9,7 @@ import {
 import { NODE_H, NODE_W } from "../utils/treeLayout";
 import { AncreButton } from "./AncreButton";
 import { EvenementsList } from "./EvenementsList";
+import { FloatingTooltip } from "./FloatingTooltip";
 import { PhotoIcon } from "./PhotoIcon";
 import { SexeIcon } from "./SexeIcon";
 
@@ -46,15 +47,15 @@ export function PersonNode({
   const isMale = noeud.sexe === "M";
   const isFemale = noeud.sexe === "F";
 
-  const accent = highlighted
-    ? "ring-2 ring-amber-400 ring-offset-2"
+  const innerBorder = highlighted
+    ? "border-amber-400"
     : focused
       ? isFemale
-        ? "ring-2 ring-rose-500 ring-offset-2"
+        ? "border-rose-500"
         : isMale
-          ? "ring-2 ring-sky-500 ring-offset-2"
-          : "ring-2 ring-slate-500 ring-offset-2"
-      : "";
+          ? "border-sky-500"
+          : "border-slate-500"
+      : "border-transparent";
   const border = highlighted
     ? "border-amber-300"
     : isMale
@@ -115,7 +116,22 @@ export function PersonNode({
       <div className="flex h-full flex-col">
         {parentsAilleurs && (
           <div className="flex shrink-0 justify-center pb-0.5">
-            <span className="group/ref relative inline-flex">
+            <FloatingTooltip
+              content={
+                <>
+                  <span className="block font-medium">Parents déjà affichés</span>
+                  <span className="block font-normal text-slate-200">
+                    {parentsAilleurs.label}
+                  </span>
+                  <span className="mt-0.5 block text-[9px] text-slate-400">
+                    Cliquer pour surligner
+                  </span>
+                </>
+              }
+              contentClassName="min-w-[160px] px-2 py-1.5 text-center"
+              maxWidth={240}
+              multiline
+            >
               <button
                 type="button"
                 aria-label={`Parents déjà affichés : ${parentsAilleurs.label}`}
@@ -139,29 +155,20 @@ export function PersonNode({
                   <path d="M4 9h10a4 4 0 0 1 4 4v7" />
                 </svg>
               </button>
-              <span
-                role="tooltip"
-                className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1 hidden min-w-[160px] max-w-[240px] -translate-x-1/2 rounded-md bg-slate-800 px-2 py-1.5 text-center text-[10px] leading-snug text-white shadow-md group-hover/ref:block"
-              >
-                <span className="block font-medium">Parents déjà affichés</span>
-                <span className="block font-normal text-slate-200">
-                  {parentsAilleurs.label}
-                </span>
-                <span className="mt-0.5 block text-[9px] text-slate-400">
-                  Cliquer pour surligner
-                </span>
-              </span>
-            </span>
+            </FloatingTooltip>
           </div>
         )}
         <div
-          className={`relative flex min-h-0 flex-1 flex-col overflow-visible rounded-xl border-2 bg-white shadow-sm transition hover:shadow-md ${border} ${accent}`}
+          className={`relative flex min-h-0 flex-1 flex-col overflow-visible rounded-xl border-2 bg-white p-0.5 shadow-sm transition hover:shadow-md ${border}`}
         >
+          <div
+            className={`relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[10px] border-2 transition-colors ${innerBorder}`}
+          >
           <div
             role="button"
             onPointerDown={onCellPointerDown}
             onPointerUp={onCellPointerUp}
-            className="relative flex min-h-0 flex-1 cursor-pointer flex-col p-2 pr-7 text-left outline-none"
+            className="relative flex min-h-0 flex-1 cursor-pointer flex-col p-1.5 pr-7 text-left outline-none"
           >
             <span className="min-w-0">
               <span className="flex min-w-0 items-center gap-1">
@@ -178,18 +185,14 @@ export function PersonNode({
                     {displayName}
                   </span>
                   {extraPrenoms && (
-                    <span
-                      className="group/prenoms relative shrink-0 text-[11px] leading-none text-slate-500"
-                      aria-hidden="true"
-                    >
-                      *
+                    <FloatingTooltip content={fullName} maxWidth={220} multiline align="start">
                       <span
-                        role="tooltip"
-                        className="pointer-events-none absolute bottom-full left-0 z-50 mb-1 hidden max-w-[220px] whitespace-normal rounded-md bg-slate-800 px-2 py-1 text-[10px] font-normal leading-snug text-white shadow-md group-hover/prenoms:block"
+                        className="shrink-0 text-[11px] leading-none text-slate-500"
+                        aria-hidden="true"
                       >
-                        {fullName}
+                        *
                       </span>
-                    </span>
+                    </FloatingTooltip>
                   )}
                 </span>
               </span>
@@ -219,7 +222,7 @@ export function PersonNode({
             )}
           </div>
           <div
-            className="absolute right-1 top-1 z-10"
+            className="absolute right-1.5 top-1.5 z-10"
             data-tree-interactive
           >
             <AncreButton
@@ -227,6 +230,7 @@ export function PersonNode({
               onAncre={() => onAncre(noeud.id_gedcom)}
               size="sm"
             />
+          </div>
           </div>
         </div>
       </div>

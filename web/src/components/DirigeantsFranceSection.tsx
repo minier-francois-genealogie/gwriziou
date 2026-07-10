@@ -1,4 +1,5 @@
 import type { DirigeantFrance } from "../types/api";
+import { DirigeantPhotoThumb } from "./DirigeantPhotoThumb";
 
 function initials(nom: string): string {
   const parts = nom.trim().split(/\s+/);
@@ -27,11 +28,10 @@ export function DirigeantsFranceSection({
             className="flex flex-col items-center rounded-lg border border-slate-100 bg-slate-50/80 p-2 text-center"
           >
             {d.photo_url ? (
-              <img
+              <DirigeantPhotoThumb
                 src={d.photo_url}
-                alt=""
-                loading="lazy"
-                className="h-16 w-16 rounded-full border border-slate-200 object-cover object-top"
+                alt={d.nom}
+                className="h-16 w-16 cursor-zoom-in rounded-full border border-slate-200 object-cover object-top shadow-sm"
               />
             ) : (
               <span
@@ -44,6 +44,11 @@ export function DirigeantsFranceSection({
             <span className="mt-2 text-xs font-semibold leading-snug text-slate-800">
               {d.nom}
             </span>
+            {d.regime && (
+              <span className="mt-0.5 text-[10px] leading-snug text-slate-600">
+                {d.regime}
+              </span>
+            )}
             <span className="mt-0.5 text-[10px] leading-snug text-slate-500">{d.titre}</span>
             <span className="mt-1 text-[10px] tabular-nums text-slate-400">{d.periode}</span>
           </li>

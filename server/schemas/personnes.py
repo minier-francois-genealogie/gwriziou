@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field
 
+from server.schemas.dirigeants_france import DirigeantFranceLigne
+
 
 class PersonneResume(BaseModel):
     id_gedcom: str
@@ -42,6 +44,12 @@ class ActeResume(BaseModel):
     lieu: str | None = None
 
 
+class ActesPersonne(BaseModel):
+    naissance: ActeResume | None = None
+    mariage: ActeResume | None = None
+    deces: ActeResume | None = None
+
+
 class WarningEvenement(BaseModel):
     code: str
     message: str
@@ -57,6 +65,7 @@ class RelationResume(BaseModel):
     naissance: EvenementResume | None = None
     deces: EvenementResume | None = None
     photos: bool = False
+    actes: ActesPersonne = Field(default_factory=ActesPersonne)
 
 
 class EvenementArbre(BaseModel):
@@ -70,12 +79,6 @@ class EvenementArbre(BaseModel):
     id_famille: str | None = None
     conjoint: RelationResume | None = None
     enfant: RelationResume | None = None
-
-
-class ActesPersonne(BaseModel):
-    naissance: ActeResume | None = None
-    mariage: ActeResume | None = None
-    deces: ActeResume | None = None
 
 
 class PhotoPersonne(BaseModel):
@@ -110,16 +113,6 @@ class FaitHistorique(BaseModel):
     pays: str | None = None
 
 
-class DirigeantFrance(BaseModel):
-    slug: str
-    nom: str
-    titre: str
-    debut: str
-    fin: str
-    periode: str
-    photo_url: str | None = None
-
-
 class PersonneDetail(BaseModel):
     id_gedcom: str
     nom: str
@@ -143,7 +136,7 @@ class PersonneDetail(BaseModel):
     photos: list[PhotoPersonne] = Field(default_factory=list)
     relations: RelationsPersonne
     faits_historiques: list[FaitHistorique] = Field(default_factory=list)
-    dirigeants_france: list[DirigeantFrance] = Field(default_factory=list)
+    dirigeants_france: list[DirigeantFranceLigne] = Field(default_factory=list)
 
 
 class NoeudArbre(BaseModel):

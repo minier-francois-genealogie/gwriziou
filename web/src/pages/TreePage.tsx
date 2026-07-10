@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api/client";
 import { ActeModal } from "../components/ActeModal";
 import { PhotoModal } from "../components/PhotoModal";
+import { LoadingSpinner } from "../components/LoadingSpinner";
 import { TreeNavPad } from "../components/TreeNavPad";
 import { TreeView, type TreeViewHandle } from "../components/TreeView";
 import { useApp } from "../context/AppContext";
@@ -156,19 +157,15 @@ export function TreePage() {
         </div>
       )}
 
-      {arbreLoading && (
-        <p className="flex flex-1 items-center justify-center text-slate-500">
-          Chargement de l&apos;arbre…
-        </p>
-      )}
+      {arbreLoading && <LoadingSpinner />}
 
-      {arbreError && (
+      {!arbreLoading && arbreError && (
         <p className="m-4 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
           {arbreError}
         </p>
       )}
 
-      {arbre && (
+      {!arbreLoading && arbre && (
         <>
           <TreeView
             ref={treeRef}

@@ -1,9 +1,14 @@
 import type {
+  AnalyseStatsResponse,
   ArbreResponse,
+  DirigeantsFranceListResponse,
+  DirigeantsFranceStatsResponse,
+  EvolutionNomsResponse,
   FaitsHistoriquesListResponse,
   FaitsHistoriquesStatsResponse,
   GeolocResponse,
   PersonneDetail,
+  ProfessionsNuageResponse,
   RafraichirResponse,
   RechercheResponse,
   StatusResponse,
@@ -115,8 +120,38 @@ export const api = {
       `/api/faits-historiques?ancre=${encodeURIComponent(ancre)}&ancetres=${ancetres}&descendants=${descendants}&zone=${zone}`,
     ),
 
+  dirigeantsFranceStats: (ancre: string, ancetres: number, descendants: number) =>
+    request<DirigeantsFranceStatsResponse>(
+      `/api/dirigeants-france/stats?ancre=${encodeURIComponent(ancre)}&ancetres=${ancetres}&descendants=${descendants}`,
+    ),
+
+  dirigeantsFrance: (
+    ancre: string,
+    ancetres: number,
+    descendants: number,
+    zone = false,
+  ) =>
+    request<DirigeantsFranceListResponse>(
+      `/api/dirigeants-france?ancre=${encodeURIComponent(ancre)}&ancetres=${ancetres}&descendants=${descendants}&zone=${zone}`,
+    ),
+
   geoloc: (annee: number) =>
     request<GeolocResponse>(`/api/geoloc?annee=${annee}`),
+
+  analyseStats: (ancre: string, ancetres: number, descendants: number, zone = true) =>
+    request<AnalyseStatsResponse>(
+      `/api/analyse/stats?ancre=${encodeURIComponent(ancre)}&ancetres=${ancetres}&descendants=${descendants}&zone=${zone}`,
+    ),
+
+  analyseProfessions: (ancre: string, ancetres: number, descendants: number, zone = true) =>
+    request<ProfessionsNuageResponse>(
+      `/api/analyse/professions?ancre=${encodeURIComponent(ancre)}&ancetres=${ancetres}&descendants=${descendants}&zone=${zone}`,
+    ),
+
+  analyseNoms: (ancre: string, ancetres: number, descendants: number, zone = true) =>
+    request<EvolutionNomsResponse>(
+      `/api/analyse/noms?ancre=${encodeURIComponent(ancre)}&ancetres=${ancetres}&descendants=${descendants}&zone=${zone}`,
+    ),
 };
 
 export { ApiError };

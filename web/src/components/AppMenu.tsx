@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { TreeMenuIcon } from "./GenealogyIcons";
@@ -12,19 +12,23 @@ function NavItem({
   icon,
   badge,
   onNavigate,
+  indent = false,
 }: {
   to: string;
   label: string;
   icon: React.ReactNode;
   badge?: string;
   onNavigate: () => void;
+  indent?: boolean;
 }) {
   return (
     <NavLink
       to={to}
       onClick={onNavigate}
       className={({ isActive }) =>
-        `flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium ${
+        `flex items-center gap-2.5 rounded-xl py-2 text-sm font-medium ${
+          indent ? "pl-5 pr-2.5" : "px-2.5"
+        } ${
           isActive
             ? "bg-sky-700 text-white"
             : "text-slate-700 hover:bg-slate-100"
@@ -44,8 +48,126 @@ function NavItem({
   );
 }
 
+function HistoireIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+      <path d="M8 7h8M8 11h8M8 15h5" />
+    </svg>
+  );
+}
+
+function FaitsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
+function DirigeantsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6" />
+    </svg>
+  );
+}
+
+function AideIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.5 9.5a2.5 2.5 0 1 1 4.2 1.8c-.7.6-1.2 1.2-1.2 2.2" />
+      <circle cx="12" cy="17" r="0.75" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function AProposIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v5" />
+      <circle cx="12" cy="8" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function WarningsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      <path d="M12 9v4" />
+      <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function ASavoirIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+      <path d="M8 7h8M8 11h6" />
+    </svg>
+  );
+}
+
+function ParametresIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function AnalyseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 3v18h18" />
+      <path d="M7 16l4-6 4 3 5-8" />
+    </svg>
+  );
+}
+
+function StatsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 19V5" />
+      <path d="M10 19V9" />
+      <path d="M16 19v-4" />
+      <path d="M22 19V3" />
+    </svg>
+  );
+}
+
+function NuageIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4.5 16.5c-1.5-2.5 0-5.5 3-6.5 1-3.5 5-4.5 7-1.5 2.5-.5 5 1.5 4.5 4.5-1 2.5-4 4-6.5 3.5Z" />
+      <path d="M8 14h.01M12 12h.01M16 14h.01" />
+    </svg>
+  );
+}
+
+function NomsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 20h16" />
+      <path d="M6 16V8" />
+      <path d="M10 16V4" />
+      <path d="M14 16v-6" />
+      <path d="M18 16v-3" />
+    </svg>
+  );
+}
+
 export function AppMenu() {
-  const { menuOpen, setMenuOpen, toggleMenu, ancrePersonneId, ancetres, descendants } =
+  const { menuOpen, setMenuOpen, toggleMenu, ancrePersonneId, ancetres, descendants, dataRefreshTick } =
     useApp();
   const navigate = useNavigate();
   const location = useLocation();
@@ -53,13 +175,41 @@ export function AppMenu() {
 
   const { data: warningStats } = useAsync(
     () => api.warningsStats(ancrePersonneId, ancetres, descendants),
-    [ancrePersonneId, ancetres, descendants],
+    [ancrePersonneId, ancetres, descendants, dataRefreshTick],
   );
 
   const { data: faitsStats } = useAsync(
     () => api.faitsHistoriquesStats(ancrePersonneId, ancetres, descendants),
-    [ancrePersonneId, ancetres, descendants],
+    [ancrePersonneId, ancetres, descendants, dataRefreshTick],
   );
+
+  const { data: dirigeantsStats } = useAsync(
+    () => api.dirigeantsFranceStats(ancrePersonneId, ancetres, descendants),
+    [ancrePersonneId, ancetres, descendants, dataRefreshTick],
+  );
+
+  const onHistoireRoute =
+    location.pathname.startsWith("/histoire") ||
+    location.pathname === "/faits-historiques";
+  const [histoireOpen, setHistoireOpen] = useState(onHistoireRoute);
+
+  const onAideRoute = location.pathname.startsWith("/aide");
+  const [aideOpen, setAideOpen] = useState(onAideRoute);
+
+  const onAnalyseRoute = location.pathname.startsWith("/analyse");
+  const [analyseOpen, setAnalyseOpen] = useState(onAnalyseRoute);
+
+  useEffect(() => {
+    if (onHistoireRoute) setHistoireOpen(true);
+  }, [onHistoireRoute]);
+
+  useEffect(() => {
+    if (onAideRoute) setAideOpen(true);
+  }, [onAideRoute]);
+
+  useEffect(() => {
+    if (onAnalyseRoute) setAnalyseOpen(true);
+  }, [onAnalyseRoute]);
 
   const closeAndGo = (view: AppView, path: string) => {
     saveDerniereVue(view);
@@ -84,6 +234,10 @@ export function AppMenu() {
 
   const faitsBadge = faitsStats
     ? `${faitsStats.nombre_faits_zone} / ${faitsStats.nombre_faits_total}`
+    : undefined;
+
+  const dirigeantsBadge = dirigeantsStats
+    ? `${dirigeantsStats.nombre_dirigeants_zone} / ${dirigeantsStats.nombre_dirigeants_total}`
     : undefined;
 
   const onMap = location.pathname === "/geoloc";
@@ -144,32 +298,53 @@ export function AppMenu() {
             onNavigate={() => closeAndGo("arbre", "/arbre")}
             icon={<TreeMenuIcon />}
           />
-          <NavItem
-            to="/warnings"
-            label="Warnings"
-            badge={warningBadge}
-            onNavigate={() => closeAndGo("warnings", "/warnings")}
-            icon={
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                <path d="M12 9v4" />
-                <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none" />
+          <div>
+            <button
+              type="button"
+              onClick={() => setHistoireOpen((open) => !open)}
+              className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium ${
+                onHistoireRoute
+                  ? "bg-sky-50 text-sky-900"
+                  : "text-slate-700 hover:bg-slate-100"
+              }`}
+              aria-expanded={histoireOpen}
+            >
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center" aria-hidden="true">
+                <HistoireIcon />
+              </span>
+              <span className="min-w-0 flex-1 text-left">Histoire</span>
+              <svg
+                viewBox="0 0 24 24"
+                className={`h-3.5 w-3.5 shrink-0 transition-transform ${histoireOpen ? "rotate-180" : ""}`}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <path d="m6 9 6 6 6-6" />
               </svg>
-            }
-          />
-          <NavItem
-            to="/faits-historiques"
-            label="Faits historiques"
-            badge={faitsBadge}
-            onNavigate={() => closeAndGo("faits-historiques", "/faits-historiques")}
-            icon={
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                <path d="M8 7h8M8 11h8M8 15h5" />
-              </svg>
-            }
-          />
+            </button>
+            {histoireOpen && (
+              <div className="mt-0.5 space-y-0.5">
+                <NavItem
+                  to="/histoire/faits"
+                  label="Faits"
+                  badge={faitsBadge}
+                  indent
+                  onNavigate={() => closeAndGo("histoire-faits", "/histoire/faits")}
+                  icon={<FaitsIcon />}
+                />
+                <NavItem
+                  to="/histoire/dirigeants"
+                  label="Dirigeants"
+                  badge={dirigeantsBadge}
+                  indent
+                  onNavigate={() => closeAndGo("histoire-dirigeants", "/histoire/dirigeants")}
+                  icon={<DirigeantsIcon />}
+                />
+              </div>
+            )}
+          </div>
           <NavItem
             to="/geoloc"
             label="Géoloc"
@@ -181,29 +356,118 @@ export function AppMenu() {
               </svg>
             }
           />
-          <NavItem
-            to="/a-savoir"
-            label="À savoir"
-            onNavigate={() => closeAndGo("a-savoir", "/a-savoir")}
-            icon={
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="9" />
-                <circle cx="12" cy="8" r="1" fill="currentColor" stroke="none" />
-                <path d="M12 11v5" />
+          <div>
+            <button
+              type="button"
+              onClick={() => setAnalyseOpen((open) => !open)}
+              className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium ${
+                onAnalyseRoute
+                  ? "bg-sky-50 text-sky-900"
+                  : "text-slate-700 hover:bg-slate-100"
+              }`}
+              aria-expanded={analyseOpen}
+            >
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center" aria-hidden="true">
+                <AnalyseIcon />
+              </span>
+              <span className="min-w-0 flex-1 text-left">Analyse</span>
+              <svg
+                viewBox="0 0 24 24"
+                className={`h-3.5 w-3.5 shrink-0 transition-transform ${analyseOpen ? "rotate-180" : ""}`}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <path d="m6 9 6 6 6-6" />
               </svg>
-            }
-          />
-          <NavItem
-            to="/parametres"
-            label="Paramètres"
-            onNavigate={() => closeAndGo("parametres", "/parametres")}
-            icon={
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-                <circle cx="12" cy="12" r="3" />
+            </button>
+            {analyseOpen && (
+              <div className="mt-0.5 space-y-0.5">
+                <NavItem
+                  to="/analyse/stats"
+                  label="Statistiques familiales"
+                  indent
+                  onNavigate={() => closeAndGo("analyse-stats", "/analyse/stats")}
+                  icon={<StatsIcon />}
+                />
+                <NavItem
+                  to="/analyse/professions"
+                  label="Nuage de professions"
+                  indent
+                  onNavigate={() => closeAndGo("analyse-professions", "/analyse/professions")}
+                  icon={<NuageIcon />}
+                />
+                <NavItem
+                  to="/analyse/noms"
+                  label="Noms par décennie"
+                  indent
+                  onNavigate={() => closeAndGo("analyse-noms", "/analyse/noms")}
+                  icon={<NomsIcon />}
+                />
+              </div>
+            )}
+          </div>
+          <div>
+            <button
+              type="button"
+              onClick={() => setAideOpen((open) => !open)}
+              className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium ${
+                onAideRoute
+                  ? "bg-sky-50 text-sky-900"
+                  : "text-slate-700 hover:bg-slate-100"
+              }`}
+              aria-expanded={aideOpen}
+            >
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center" aria-hidden="true">
+                <AideIcon />
+              </span>
+              <span className="min-w-0 flex-1 text-left">Aide</span>
+              <svg
+                viewBox="0 0 24 24"
+                className={`h-3.5 w-3.5 shrink-0 transition-transform ${aideOpen ? "rotate-180" : ""}`}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <path d="m6 9 6 6 6-6" />
               </svg>
-            }
-          />
+            </button>
+            {aideOpen && (
+              <div className="mt-0.5 space-y-0.5">
+                <NavItem
+                  to="/aide/a-propos"
+                  label="À propos"
+                  indent
+                  onNavigate={() => closeAndGo("aide-a-propos", "/aide/a-propos")}
+                  icon={<AProposIcon />}
+                />
+                <NavItem
+                  to="/aide/warnings"
+                  label="Warnings"
+                  badge={warningBadge}
+                  indent
+                  onNavigate={() => closeAndGo("aide-warnings", "/aide/warnings")}
+                  icon={<WarningsIcon />}
+                />
+                <NavItem
+                  to="/aide/a-savoir"
+                  label="À savoir"
+                  indent
+                  onNavigate={() => closeAndGo("aide-a-savoir", "/aide/a-savoir")}
+                  icon={<ASavoirIcon />}
+                />
+                <NavItem
+                  to="/aide/parametres"
+                  label="Paramètres"
+                  indent
+                  onNavigate={() => closeAndGo("aide-parametres", "/aide/parametres")}
+                  icon={<ParametresIcon />}
+                />
+              </div>
+            )}
+          </div>
         </nav>
         </>
       )}

@@ -40,8 +40,25 @@ def _evenement_row(row: sqlite3.Row | None) -> EvenementResume | None:
     )
 
 
-def _relation_row(conn: sqlite3.Connection, row: sqlite3.Row) -> RelationResume:
+def _relation_row(
+    conn: sqlite3.Connection,
+    row: sqlite3.Row,
+    *,
+    cache: dict[str, dict] | None = None,
+) -> RelationResume:
     id_gedcom = row["id_gedcom"]
+    if cache is not None:
+        return RelationResume(
+            id_gedcom=id_gedcom,
+            nom=row["nom"],
+            prenoms=row["prenoms"],
+            sexe=row["sexe"] if "sexe" in row.keys() else None,
+            role=row["role"] if "role" in row.keys() else None,
+            naissance=cache["naissance"].get(id_gedcom),
+            deces=cache["deces"].get(id_gedcom),
+            photos=cache["photos"].get(id_gedcom, False),
+            actes=cache["actes"].get(id_gedcom, ActesPersonne()),
+        )
     return RelationResume(
         id_gedcom=id_gedcom,
         nom=row["nom"],
@@ -51,6 +68,7 @@ def _relation_row(conn: sqlite3.Connection, row: sqlite3.Row) -> RelationResume:
         naissance=_fetch_evenement(conn, id_gedcom, "NAISSANCE"),
         deces=_fetch_evenement(conn, id_gedcom, "DECES"),
         photos=_has_photos(conn, id_gedcom),
+        actes=_fetch_actes(conn, id_gedcom),
     )
 
 
@@ -67,6 +85,89 @@ def _fetch_evenement(
         (id_personne, type_evenement),
     ).fetchone()
     return _evenement_row(row)
+
+
+def _fetch_evenement_map(
+    conn: sqlite3.Connection, id_gedcoms: list[str], type_evenement: str
+) -> dict[str, EvenementResume | None]:
+    result: dict[str, EvenementResume | None] = {gid: None for gid in id_gedcoms}
+    if not id_gedcoms:
+        return result
+    placeholders = ",".join("?" * len(id_gedcoms))
+    rows = conn.execute(
+        f"""
+        SELECT e.id_personne, e.date_iso, e.date_brute, l.commune, l.departement
+        FROM evenements e
+        LEFT JOIN lieux l ON l.id = e.id_lieu
+        WHERE e.id_personne IN ({placeholders}) AND e.type = ?
+        ORDER BY e.id_personne, e.id
+        """,
+        (*id_gedcoms, type_evenement),
+    )
+    for row in rows:
+        gid = row["id_personne"]
+        if result[gid] is None:
+            result[gid] = _evenement_row(row)
+    return result
+
+
+def _fetch_photos_map(
+    conn: sqlite3.Connection, id_gedcoms: list[str]
+) -> dict[str, bool]:
+    result = {gid: False for gid in id_gedcoms}
+    if not id_gedcoms:
+        return result
+    placeholders = ",".join("?" * len(id_gedcoms))
+    for row in conn.execute(
+        f"""
+        SELECT DISTINCT id_gedcom
+        FROM photos
+        WHERE id_gedcom IN ({placeholders})
+        """,
+        id_gedcoms,
+    ):
+        result[row["id_gedcom"]] = True
+    return result
+
+
+def _fetch_actes_map(
+    conn: sqlite3.Connection, id_gedcoms: list[str]
+) -> dict[str, ActesPersonne]:
+    result = {gid: ActesPersonne() for gid in id_gedcoms}
+    if not id_gedcoms:
+        return result
+    mapping = {"N": "naissance", "M": "mariage", "D": "deces"}
+    placeholders = ",".join("?" * len(id_gedcoms))
+    for row in conn.execute(
+        f"""
+        SELECT id_gedcom, type, url, date_acte_iso, commune, nom_fichier
+        FROM actes
+        WHERE id_gedcom IN ({placeholders})
+        ORDER BY id_gedcom, type, id
+        """,
+        id_gedcoms,
+    ):
+        gid = row["id_gedcom"]
+        field = mapping.get(row["type"])
+        actes = result[gid]
+        if field and getattr(actes, field) is None:
+            setattr(actes, field, _acte_row(row))
+    for gid in id_gedcoms:
+        if result[gid].mariage is None:
+            result[gid].mariage = _fetch_mariage_acte_union(conn, gid)
+    return result
+
+
+def _build_relation_cache(
+    conn: sqlite3.Connection, id_gedcoms: list[str]
+) -> dict[str, dict]:
+    unique_ids = list(dict.fromkeys(id_gedcoms))
+    return {
+        "naissance": _fetch_evenement_map(conn, unique_ids, "NAISSANCE"),
+        "deces": _fetch_evenement_map(conn, unique_ids, "DECES"),
+        "photos": _fetch_photos_map(conn, unique_ids),
+        "actes": _fetch_actes_map(conn, unique_ids),
+    }
 
 
 _ACTE_DATE_RE = re.compile(r"__[NMD]__(\d{4}(?:-\d{2}(?:-\d{2})?)?)__")
@@ -196,7 +297,11 @@ _CHILD_BIRTH_ORDER = """
 
 
 def _fetch_relations(conn: sqlite3.Connection, id_gedcom: str) -> RelationsPersonne:
-    relations = RelationsPersonne()
+    parent_rows: list[sqlite3.Row] = []
+    fratrie_rows: list[sqlite3.Row] = []
+    enfant_rows: list[sqlite3.Row] = []
+    conjoint_rows: list[sqlite3.Row] = []
+
     person = conn.execute(
         "SELECT id_famille_enfant FROM personnes WHERE id_gedcom = ?",
         (id_gedcom,),
@@ -204,67 +309,79 @@ def _fetch_relations(conn: sqlite3.Connection, id_gedcom: str) -> RelationsPerso
     famc = person["id_famille_enfant"] if person else None
 
     if famc:
-        for row in conn.execute(
-            """
-            SELECT p.id_gedcom, p.nom, p.prenoms, p.sexe, fc.role
-            FROM famille_conjoints fc
-            JOIN personnes p ON p.id_gedcom = fc.id_personne
-            WHERE fc.id_famille = ?
-            ORDER BY """ + _PARENT_ORDER + """
-            """,
-            (famc,),
-        ):
-            relations.parents.append(_relation_row(conn, row))
+        parent_rows = list(
+            conn.execute(
+                """
+                SELECT p.id_gedcom, p.nom, p.prenoms, p.sexe, fc.role
+                FROM famille_conjoints fc
+                JOIN personnes p ON p.id_gedcom = fc.id_personne
+                WHERE fc.id_famille = ?
+                ORDER BY """ + _PARENT_ORDER + """
+                """,
+                (famc,),
+            )
+        )
 
-        for row in conn.execute(
+        fratrie_rows = list(
+            conn.execute(
+                """
+                SELECT p.id_gedcom, p.nom, p.prenoms, p.sexe
+                FROM famille_enfants fe
+                JOIN personnes p ON p.id_gedcom = fe.id_enfant
+                LEFT JOIN evenements e ON e.id_personne = fe.id_enfant AND e.type = 'NAISSANCE'
+                WHERE fe.id_famille = ? AND fe.id_enfant != ?
+                GROUP BY p.id_gedcom
+                ORDER BY MIN(CASE WHEN e.date_tri IS NULL THEN 1 ELSE 0 END),
+                         MIN(e.date_tri),
+                         MIN(fe.ordre),
+                         p.id_gedcom
+                """,
+                (famc, id_gedcom),
+            )
+        )
+
+    enfant_rows = list(
+        conn.execute(
             """
             SELECT p.id_gedcom, p.nom, p.prenoms, p.sexe
-            FROM famille_enfants fe
+            FROM personne_unions pu
+            JOIN famille_enfants fe ON fe.id_famille = pu.id_famille
             JOIN personnes p ON p.id_gedcom = fe.id_enfant
             LEFT JOIN evenements e ON e.id_personne = fe.id_enfant AND e.type = 'NAISSANCE'
-            WHERE fe.id_famille = ? AND fe.id_enfant != ?
+            WHERE pu.id_personne = ?
             GROUP BY p.id_gedcom
             ORDER BY MIN(CASE WHEN e.date_tri IS NULL THEN 1 ELSE 0 END),
                      MIN(e.date_tri),
                      MIN(fe.ordre),
                      p.id_gedcom
             """,
-            (famc, id_gedcom),
-        ):
-            relations.fratrie.append(_relation_row(conn, row))
+            (id_gedcom,),
+        )
+    )
 
-    for row in conn.execute(
-        """
-        SELECT p.id_gedcom, p.nom, p.prenoms, p.sexe
-        FROM personne_unions pu
-        JOIN famille_enfants fe ON fe.id_famille = pu.id_famille
-        JOIN personnes p ON p.id_gedcom = fe.id_enfant
-        LEFT JOIN evenements e ON e.id_personne = fe.id_enfant AND e.type = 'NAISSANCE'
-        WHERE pu.id_personne = ?
-        GROUP BY p.id_gedcom
-        ORDER BY MIN(CASE WHEN e.date_tri IS NULL THEN 1 ELSE 0 END),
-                 MIN(e.date_tri),
-                 MIN(fe.ordre),
-                 p.id_gedcom
-        """,
-        (id_gedcom,),
-    ):
-        relations.enfants.append(_relation_row(conn, row))
+    conjoint_rows = list(
+        conn.execute(
+            """
+            SELECT DISTINCT p.id_gedcom, p.nom, p.prenoms, p.sexe, fc.role
+            FROM personne_unions pu
+            JOIN famille_conjoints fc ON fc.id_famille = pu.id_famille
+            JOIN personnes p ON p.id_gedcom = fc.id_personne
+            WHERE pu.id_personne = ? AND fc.id_personne != ?
+            ORDER BY p.nom, p.prenoms
+            """,
+            (id_gedcom, id_gedcom),
+        )
+    )
 
-    for row in conn.execute(
-        """
-        SELECT DISTINCT p.id_gedcom, p.nom, p.prenoms, p.sexe, fc.role
-        FROM personne_unions pu
-        JOIN famille_conjoints fc ON fc.id_famille = pu.id_famille
-        JOIN personnes p ON p.id_gedcom = fc.id_personne
-        WHERE pu.id_personne = ? AND fc.id_personne != ?
-        ORDER BY p.nom, p.prenoms
-        """,
-        (id_gedcom, id_gedcom),
-    ):
-        relations.conjoints.append(_relation_row(conn, row))
+    all_rows = parent_rows + fratrie_rows + enfant_rows + conjoint_rows
+    cache = _build_relation_cache(conn, [row["id_gedcom"] for row in all_rows])
 
-    return relations
+    return RelationsPersonne(
+        parents=[_relation_row(conn, row, cache=cache) for row in parent_rows],
+        fratrie=[_relation_row(conn, row, cache=cache) for row in fratrie_rows],
+        enfants=[_relation_row(conn, row, cache=cache) for row in enfant_rows],
+        conjoints=[_relation_row(conn, row, cache=cache) for row in conjoint_rows],
+    )
 
 
 def _fetch_mariages(conn: sqlite3.Connection, id_gedcom: str) -> list[MariageResume]:

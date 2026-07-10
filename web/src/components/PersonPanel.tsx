@@ -7,6 +7,7 @@ import { AncreButton } from "./AncreButton";
 
 import { EvenementsList, normalizeEvenements } from "./EvenementsList";
 
+import { LoadingSpinner } from "./LoadingSpinner";
 import { DirigeantsFranceSection } from "./DirigeantsFranceSection";
 
 import {
@@ -18,17 +19,15 @@ import {
 
 import { RelationPersonLabel } from "./RelationPersonLabel";
 
-import { PersonName } from "./SexeIcon";
-
 type PersonPanelTab = "individu" | FaitsHistoriquesTab;
 
 const PANEL_TABS: { id: PersonPanelTab; label: string }[] = [
   { id: "individu", label: "Individu" },
-  { id: "monde", label: "Monde" },
-  { id: "france", label: "France" },
-  { id: "region", label: "Région" },
-  { id: "departement", label: "Département" },
   { id: "commune", label: "Commune" },
+  { id: "departement", label: "Département" },
+  { id: "region", label: "Région" },
+  { id: "france", label: "Pays" },
+  { id: "monde", label: "Monde" },
 ];
 
 function SectionDivider({ className = "" }: { className?: string }) {
@@ -88,8 +87,8 @@ export function PersonPanel({
 
   if (loading) {
     return (
-      <aside className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-500">
-        Chargement de la fiche…
+      <aside className="flex min-h-0 flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white">
+        <LoadingSpinner variant="inline" />
       </aside>
     );
   }
@@ -115,13 +114,21 @@ export function PersonPanel({
     <aside className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
       <header className="shrink-0 px-4 pb-2 pt-4">
         <div className="flex items-start justify-between gap-2">
-          <h2 className="min-w-0 text-lg font-bold text-slate-900">
-            <PersonName
+          <h2 className="min-w-0">
+            <RelationPersonLabel
               nom={personne.nom}
               prenoms={personne.prenoms}
               sexe={personne.sexe}
+              naissance={personne.naissance}
+              deces={personne.deces}
+              actes={personne.actes}
+              onActeClick={handleActeClick}
               photos={personne.photos.length > 0}
               photoCount={personne.photos.length}
+              photoSize="sm"
+              acteSize="xs"
+              className="text-lg font-bold text-slate-900"
+              datesClassName="text-sm text-slate-500"
               onPhotoClick={() => onPhotoClick(personne.photos, name)}
             />
           </h2>
@@ -214,18 +221,21 @@ export function PersonPanel({
               items={personne.relations.parents}
               onNavigate={onNavigate}
               onRelationPhotoClick={onRelationPhotoClick}
+              onActeClick={onActeClick}
             />
             <RelationList
               title="Conjoint(s)"
               items={personne.relations.conjoints}
               onNavigate={onNavigate}
               onRelationPhotoClick={onRelationPhotoClick}
+              onActeClick={onActeClick}
             />
             <RelationList
               title="Enfant(s)"
               items={personne.relations.enfants}
               onNavigate={onNavigate}
               onRelationPhotoClick={onRelationPhotoClick}
+              onActeClick={onActeClick}
             />
             <RelationList
               title="Fratrie(s)"
@@ -234,6 +244,7 @@ export function PersonPanel({
               )}
               onNavigate={onNavigate}
               onRelationPhotoClick={onRelationPhotoClick}
+              onActeClick={onActeClick}
             />
           </>
         ) : activeTab === "france" ? (
@@ -306,11 +317,13 @@ function RelationList({
   items,
   onNavigate,
   onRelationPhotoClick,
+  onActeClick,
 }: {
   title: string;
   items: RelationResume[];
   onNavigate: (id: string) => void;
   onRelationPhotoClick: (id: string, nom: string, prenoms: string | null) => void;
+  onActeClick: (type: ActeType, url: string, label?: string) => void;
 }) {
   if (items.length === 0) return null;
   return (
@@ -320,7 +333,9 @@ function RelationList({
         {title}
       </h3>
       <ul className="mt-1 space-y-1">
-        {items.map((item) => (
+        {items.map((item) => {
+          const relationName = formatNom(item.nom, item.prenoms);
+          return (
           <li key={item.id_gedcom}>
             <button
               type="button"
@@ -333,6 +348,8 @@ function RelationList({
                 sexe={item.sexe}
                 naissance={item.naissance}
                 deces={item.deces}
+                actes={item.actes}
+                onActeClick={(type, url) => onActeClick(type, url, relationName)}
                 photos={item.photos ?? false}
                 onPhotoClick={() =>
                   onRelationPhotoClick(item.id_gedcom, item.nom, item.prenoms)
@@ -340,7 +357,8 @@ function RelationList({
               />
             </button>
           </li>
-        ))}
+          );
+        })}
       </ul>
     </div>
   );

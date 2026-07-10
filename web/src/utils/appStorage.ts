@@ -9,7 +9,23 @@ const KEYS = {
   derniereVue: "gwriziou.derniereVue",
 } as const;
 
-export type AppView = "recherche" | "arbre" | "parametres" | "warnings" | "faits-historiques" | "geoloc" | "a-savoir";
+export type AppView =
+  | "recherche"
+  | "arbre"
+  | "parametres"
+  | "aide-a-propos"
+  | "aide-warnings"
+  | "aide-a-savoir"
+  | "aide-parametres"
+  | "warnings"
+  | "histoire-faits"
+  | "histoire-dirigeants"
+  | "faits-historiques"
+  | "geoloc"
+  | "analyse-stats"
+  | "analyse-professions"
+  | "analyse-noms"
+  | "a-savoir";
 
 const DEFAULT_ANCETRES = 4;
 const DEFAULT_DESCENDANTS = 2;
@@ -78,7 +94,25 @@ export function saveDescendants(n: number): void {
 export function loadDerniereVue(): AppView {
   try {
     const v = localStorage.getItem(KEYS.derniereVue);
-    if (v === "arbre" || v === "parametres" || v === "recherche" || v === "warnings" || v === "faits-historiques" || v === "geoloc" || v === "a-savoir") return v;
+    if (
+      v === "arbre" ||
+      v === "parametres" ||
+      v === "aide-a-propos" ||
+      v === "aide-warnings" ||
+      v === "aide-a-savoir" ||
+      v === "aide-parametres" ||
+      v === "recherche" ||
+      v === "warnings" ||
+      v === "histoire-faits" ||
+      v === "histoire-dirigeants" ||
+      v === "faits-historiques" ||
+      v === "geoloc" ||
+      v === "analyse-stats" ||
+      v === "analyse-professions" ||
+      v === "analyse-noms" ||
+      v === "a-savoir"
+    )
+      return v;
   } catch {
     /* ignore */
   }

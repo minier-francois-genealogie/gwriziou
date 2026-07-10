@@ -1,6 +1,7 @@
-import type { EvenementResume } from "../types/api";
+import type { ActeType, ActesPersonne, EvenementResume } from "../types/api";
 import { formatDateJJMMAAAA } from "../utils/format";
 import { EvenementIcon } from "./GenealogyIcons";
+import { FloatingTooltip } from "./FloatingTooltip";
 import { PersonName } from "./SexeIcon";
 
 function EventPartWithIcon({
@@ -14,30 +15,36 @@ function EventPartWithIcon({
   const lieu = evt?.lieu?.trim();
   const tooltip = [d, lieu].filter(Boolean).join("\n");
 
-  return (
-    <span className="group/relEvt relative inline-flex items-center gap-0.5">
+  const content = (
+    <span className="inline-flex items-center gap-0.5">
       <EvenementIcon type={type} size="xs" className="text-slate-500" />
       {d && <span>{d}</span>}
-      {tooltip && (
-        <span
-          role="tooltip"
-          className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1 hidden -translate-x-1/2 whitespace-pre-line rounded-md bg-slate-800 px-2 py-1 text-left text-xs font-normal text-white shadow-md group-hover/relEvt:block"
-        >
-          {tooltip}
-        </span>
-      )}
     </span>
   );
-}
 
+  if (!tooltip) return content;
+
+  return (
+    <FloatingTooltip content={tooltip} multiline contentClassName="text-xs">
+      {content}
+    </FloatingTooltip>
+  );
+}
 interface RelationPersonLabelProps {
   nom: string;
   prenoms: string | null;
   sexe?: string | null;
   naissance?: EvenementResume | null;
   deces?: EvenementResume | null;
+  actes?: ActesPersonne;
+  onActeClick?: (type: ActeType, url: string) => void;
   photos?: boolean;
+  photoCount?: number;
   onPhotoClick?: () => void;
+  className?: string;
+  datesClassName?: string;
+  photoSize?: "xs" | "sm";
+  acteSize?: "xs" | "sm";
 }
 
 export function RelationPersonLabel({
@@ -46,20 +53,31 @@ export function RelationPersonLabel({
   sexe,
   naissance,
   deces,
+  actes = { naissance: null, mariage: null, deces: null },
+  onActeClick,
   photos = false,
+  photoCount,
   onPhotoClick,
+  className = "",
+  datesClassName = "text-slate-500",
+  photoSize = "xs",
+  acteSize = "xs",
 }: RelationPersonLabelProps) {
   return (
-    <span className="inline-flex flex-wrap items-baseline gap-x-1 text-left">
+    <span className={`inline-flex flex-wrap items-baseline gap-x-1 text-left ${className}`}>
       <PersonName
         nom={nom}
         prenoms={prenoms}
         sexe={sexe}
         photos={photos}
+        photoCount={photoCount}
         onPhotoClick={onPhotoClick}
-        photoSize="xs"
+        photoSize={photoSize}
+        actes={actes}
+        onActeClick={onActeClick}
+        acteSize={acteSize}
       />
-      <span className="inline-flex items-center gap-x-1 text-slate-500">
+      <span className={`inline-flex items-center gap-x-1 font-normal ${datesClassName}`}>
         (<EventPartWithIcon type="naissance" evt={naissance} />
         <span aria-hidden="true">,</span>
         <EventPartWithIcon type="deces" evt={deces} />)

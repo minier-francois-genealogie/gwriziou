@@ -1,6 +1,7 @@
 import type { ActeType, EvenementArbre, VieDatesAffichage, WarningEvenement } from "../types/api";
 import { formatNaissanceEnfantLabel, formatWarningDetail } from "../utils/format";
 import { ActeIconSingle } from "./ActeIcons";
+import { FloatingTooltip } from "./FloatingTooltip";
 import { WarningIcon } from "./GenealogyIcons";
 import { resolveEventDateDisplay } from "./PersonVieResume";
 import { VieDateTooltip } from "./VieDateTooltip";
@@ -60,17 +61,22 @@ function EventWarnings({
   return (
     <span className="inline-flex justify-end gap-0.5">
       {visible.map((w, i) => (
-        <span key={`${w.code}-${i}`} className="group/warn relative inline-flex">
+        <FloatingTooltip
+          key={`${w.code}-${i}`}
+          content={
+            <>
+              {w.message}
+              {w.detail ? `\n${formatWarningDetail(w.detail)}` : ""}
+            </>
+          }
+          contentClassName="min-w-[120px]"
+          maxWidth={220}
+          multiline
+        >
           <span aria-label={w.message}>
             <WarningIcon size={iconSize} />
-          </span>          <span
-            role="tooltip"
-            className="pointer-events-none absolute bottom-full right-0 z-50 mb-1 hidden min-w-[120px] max-w-[220px] whitespace-pre-line rounded-md bg-slate-800 px-2 py-1 text-left text-[10px] font-normal leading-snug text-white shadow-md group-hover/warn:block"
-          >
-            {w.message}
-            {w.detail ? `\n${formatWarningDetail(w.detail)}` : ""}
           </span>
-        </span>
+        </FloatingTooltip>
       ))}
     </span>
   );

@@ -30,6 +30,10 @@ interface AppContextValue {
   setMenuOpen: (open: boolean) => void;
   toggleMenu: () => void;
   initAncrePersonneId: (rootId: string) => void;
+  importEnCours: boolean;
+  setImportEnCours: (value: boolean) => void;
+  dataRefreshTick: number;
+  bumpDataRefresh: () => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -41,6 +45,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [ancetres, setAncetresState] = useState(loadAncetres);
   const [descendants, setDescendantsState] = useState(loadDescendants);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [importEnCours, setImportEnCours] = useState(false);
+  const [dataRefreshTick, setDataRefreshTick] = useState(0);
+
+  const bumpDataRefresh = useCallback(() => {
+    setDataRefreshTick((t) => t + 1);
+  }, []);
 
   const initAncrePersonneId = useCallback(
     (rootId: string) => {
@@ -94,6 +104,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setMenuOpen,
       toggleMenu,
       initAncrePersonneId,
+      importEnCours,
+      setImportEnCours,
+      dataRefreshTick,
+      bumpDataRefresh,
     }),
     [
       ancrePersonneId,
@@ -108,6 +122,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       menuOpen,
       toggleMenu,
       initAncrePersonneId,
+      importEnCours,
+      dataRefreshTick,
+      bumpDataRefresh,
     ],
   );
 

@@ -1,28 +1,50 @@
-import threading
-
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 
 from server.db import connection, database_exists
 from server.gedcom_id import normalize_gedcom_id
-from server.import_service import run_import
+from server.import_service import empreintes_inchangees, run_import
+from server.import_state import is_import_en_cours
 from server.schemas.status import RafraichirResponse, StatusResponse
 from server.services.personnes import get_arbre, get_personne, rechercher_personnes
 from server.services.faits_historiques import (
     get_faits_historiques_stats,
     list_faits_historiques,
 )
+from server.services.dirigeants_france import (
+    get_dirigeants_france_stats,
+    list_dirigeants_france,
+)
+from server.services.analyse import (
+    get_analyse_stats,
+    get_evolution_noms,
+    get_professions_nuage,
+)
 from server.services.geoloc import get_geoloc
 from server.services.warnings import get_warnings_stats, list_warnings
 
 router = APIRouter(prefix="/api", tags=["api"])
 
-_import_lock = threading.Lock()
+
+def _status_payload(**fields) -> StatusResponse:
+    return StatusResponse(import_en_cours=is_import_en_cours(), **fields)
 
 
 @router.get("/status", response_model=StatusResponse)
 def api_status() -> StatusResponse:
+    if is_import_en_cours():
+        return _status_payload(
+            importe_le=None,
+            nb_personnes=None,
+            nb_familles=None,
+            nb_actes=None,
+            nb_photos=None,
+            empreinte_gedcom=None,
+            empreinte_actes=None,
+            id_gedcom_racine=None,
+            version_schema=None,
+        )
     if not database_exists():
-        return StatusResponse(
+        return _status_payload(
             importe_le=None,
             nb_personnes=None,
             nb_familles=None,
@@ -36,7 +58,7 @@ def api_status() -> StatusResponse:
     with connection(read_only=True) as conn:
         row = conn.execute("SELECT * FROM meta WHERE id = 1").fetchone()
         if not row:
-            return StatusResponse(
+            return _status_payload(
                 importe_le=None,
                 nb_personnes=None,
                 nb_familles=None,
@@ -47,7 +69,7 @@ def api_status() -> StatusResponse:
                 id_gedcom_racine=None,
                 version_schema=None,
             )
-        return StatusResponse(
+        return _status_payload(
             importe_le=row["importe_le"],
             nb_personnes=row["nb_personnes"],
             nb_familles=row["nb_familles"],
@@ -61,23 +83,18 @@ def api_status() -> StatusResponse:
 
 
 @router.post("/rafraichir", response_model=RafraichirResponse)
-def api_rafraichir(force: bool = Query(False, description="Forcer l'import même si empreintes identiques")):
-    if not _import_lock.acquire(blocking=False):
+def api_rafraichir(
+    background_tasks: BackgroundTasks,
+    force: bool = Query(False, description="Forcer l'import même si empreintes identiques"),
+):
+    if is_import_en_cours():
         raise HTTPException(status_code=409, detail="Import déjà en cours")
-    try:
-        result = run_import(force=force)
-    finally:
-        _import_lock.release()
 
-    if result["status"] == "unchanged":
+    if not force and empreintes_inchangees():
         return RafraichirResponse(status="unchanged", message="Données inchangées")
-    return RafraichirResponse(
-        status="ok",
-        nb_personnes=result.get("nb_personnes"),
-        nb_familles=result.get("nb_familles"),
-        nb_actes=result.get("nb_actes"),
-        nb_photos=result.get("nb_photos"),
-    )
+
+    background_tasks.add_task(run_import, force)
+    return RafraichirResponse(status="running", message="Import en cours")
 
 
 @router.get("/personnes/{id_gedcom}")
@@ -202,9 +219,94 @@ def api_faits_historiques(
         )
 
 
+@router.get("/dirigeants-france/stats")
+def api_dirigeants_france_stats(
+    ancre: str = Query(..., description="Id GEDCOM ancre pour le périmètre zone"),
+    ancetres: int = Query(4, ge=0, le=20),
+    descendants: int = Query(2, ge=0, le=20),
+):
+    try:
+        gid = normalize_gedcom_id(ancre)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    with connection(read_only=True) as conn:
+        return get_dirigeants_france_stats(conn, gid, ancetres, descendants)
+
+
+@router.get("/dirigeants-france")
+def api_dirigeants_france(
+    zone: bool = Query(False, description="Limiter au périmètre de l'arbre"),
+    ancre: str = Query(..., description="Id GEDCOM ancre"),
+    ancetres: int = Query(4, ge=0, le=20),
+    descendants: int = Query(2, ge=0, le=20),
+):
+    try:
+        gid = normalize_gedcom_id(ancre)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    with connection(read_only=True) as conn:
+        return list_dirigeants_france(
+            conn,
+            zone=zone,
+            ancre=gid,
+            ancetres=ancetres,
+            descendants=descendants,
+        )
+
+
 @router.get("/geoloc")
 def api_geoloc(
     annee: int = Query(..., ge=1000, le=3000, description="Année affichée"),
 ):
     with connection(read_only=True) as conn:
         return get_geoloc(conn, annee)
+
+
+@router.get("/analyse/stats")
+def api_analyse_stats(
+    ancre: str = Query(..., description="Id GEDCOM ancre pour le périmètre zone"),
+    ancetres: int = Query(4, ge=0, le=20),
+    descendants: int = Query(2, ge=0, le=20),
+    zone: bool = Query(True, description="Limiter au périmètre de l'arbre"),
+):
+    try:
+        gid = normalize_gedcom_id(ancre)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    with connection(read_only=True) as conn:
+        return get_analyse_stats(conn, gid, ancetres, descendants, zone=zone)
+
+
+@router.get("/analyse/professions")
+def api_analyse_professions(
+    ancre: str = Query(..., description="Id GEDCOM ancre pour le périmètre zone"),
+    ancetres: int = Query(4, ge=0, le=20),
+    descendants: int = Query(2, ge=0, le=20),
+    zone: bool = Query(True, description="Limiter au périmètre de l'arbre"),
+):
+    try:
+        gid = normalize_gedcom_id(ancre)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    with connection(read_only=True) as conn:
+        return get_professions_nuage(conn, gid, ancetres, descendants, zone=zone)
+
+
+@router.get("/analyse/noms")
+def api_analyse_noms(
+    ancre: str = Query(..., description="Id GEDCOM ancre pour le périmètre zone"),
+    ancetres: int = Query(4, ge=0, le=20),
+    descendants: int = Query(2, ge=0, le=20),
+    zone: bool = Query(True, description="Limiter au périmètre de l'arbre"),
+):
+    try:
+        gid = normalize_gedcom_id(ancre)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    with connection(read_only=True) as conn:
+        return get_evolution_noms(conn, gid, ancetres, descendants, zone=zone)

@@ -9,7 +9,7 @@ import type { ArbreResponse } from "../types/api";
 import { useSvgViewport } from "../hooks/useSvgViewport";
 import { layoutTree } from "../utils/treeLayout";
 import { PersonNode } from "./PersonNode";
-import { UnionNode } from "./UnionNode";
+import { UnionNode, TREE_BRANCH_STROKE } from "./UnionNode";
 
 export interface TreeViewHandle {
   recenterOn: (nodeId: string) => void;
@@ -125,11 +125,9 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
                 stroke={
                   edge.kind === "conjoint"
                     ? "#d97706"
-                    : edge.kind === "union_epoux"
-                      ? "#64748b"
-                      : edge.kind === "parents_ref_stub"
-                        ? "#8b5cf6"
-                        : "#94a3b8"
+                    : edge.kind === "parents_ref_stub"
+                      ? "#8b5cf6"
+                      : TREE_BRANCH_STROKE
                 }
                 strokeWidth={edge.kind === "parents_ref_stub" ? 1.5 : 2}
                 strokeDasharray={

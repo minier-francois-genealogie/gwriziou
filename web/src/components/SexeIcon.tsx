@@ -1,6 +1,8 @@
+import type { ActeType, ActesPersonne } from "../types/api";
 import { formatNom } from "../utils/format";
+import { ActeIcons } from "./ActeIcons";
+import { FloatingTooltip } from "./FloatingTooltip";
 import { PhotoIcon } from "./PhotoIcon";
-
 const ICON_CLASS = "h-3.5 w-3.5 shrink-0";
 
 function MarsIcon({ className }: { className?: string }) {
@@ -47,37 +49,22 @@ interface SexeIconProps {
 export function SexeIcon({ sexe, className = "" }: SexeIconProps) {
   if (sexe === "M") {
     return (
-      <span
-        className={`group/sexe relative inline-flex items-center justify-center ${className}`}
-        aria-label="Homme"
-      >
-        <MarsIcon className={`${ICON_CLASS} text-sky-600`} />
-        <span
-          role="tooltip"
-          className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-800 px-2 py-1 text-[10px] text-white shadow-md group-hover/sexe:block"
-        >
-          Homme
+      <FloatingTooltip content="Homme" className={`items-center justify-center ${className}`}>
+        <span aria-label="Homme">
+          <MarsIcon className={`${ICON_CLASS} text-sky-600`} />
         </span>
-      </span>
+      </FloatingTooltip>
     );
   }
   if (sexe === "F") {
     return (
-      <span
-        className={`group/sexe relative inline-flex items-center justify-center ${className}`}
-        aria-label="Femme"
-      >
-        <VenusIcon className={`${ICON_CLASS} text-rose-500`} />
-        <span
-          role="tooltip"
-          className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-800 px-2 py-1 text-[10px] text-white shadow-md group-hover/sexe:block"
-        >
-          Femme
+      <FloatingTooltip content="Femme" className={`items-center justify-center ${className}`}>
+        <span aria-label="Femme">
+          <VenusIcon className={`${ICON_CLASS} text-rose-500`} />
         </span>
-      </span>
+      </FloatingTooltip>
     );
-  }
-  return (
+  }  return (
     <span
       className={`inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center ${className}`}
       aria-hidden="true"
@@ -97,6 +84,9 @@ interface PersonNameProps {
   onPhotoClick?: () => void;
   photoSize?: "xs" | "sm";
   showPhoto?: boolean;
+  actes?: ActesPersonne;
+  onActeClick?: (type: ActeType, url: string) => void;
+  acteSize?: "xs" | "sm";
 }
 
 export function PersonName({
@@ -109,6 +99,9 @@ export function PersonName({
   onPhotoClick,
   photoSize = "sm",
   showPhoto = true,
+  actes,
+  onActeClick,
+  acteSize = "xs",
 }: PersonNameProps) {
   return (
     <span className={`inline-flex items-center gap-1 ${className}`}>
@@ -120,6 +113,9 @@ export function PersonName({
           onClick={onPhotoClick}
           size={photoSize}
         />
+      )}
+      {actes && (
+        <ActeIcons actes={actes} onActeClick={onActeClick} size={acteSize} />
       )}
       <span>{formatNom(nom, prenoms)}</span>
     </span>

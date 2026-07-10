@@ -10,6 +10,7 @@ import urllib.request
 from pathlib import Path
 
 from server.config import BDD_SCRIPTS_DIR, GEDCOM_PATH, GEDCOM_RAW_URL, SQLITE_PATH
+from server.import_state import ImportInProgress, import_guard
 
 
 def _sha256_file(path: Path) -> str:
@@ -116,77 +117,81 @@ def _gedcom_for_import() -> Path:
 
 
 def run_import(force: bool = False) -> dict:
-    if not force and empreintes_inchangees():
-        return {"status": "unchanged"}
+    with import_guard():
+        if not force and empreintes_inchangees():
+            return {"status": "unchanged"}
 
-    gedcom = _gedcom_for_import()
-    scripts = BDD_SCRIPTS_DIR
+        gedcom = _gedcom_for_import()
+        scripts = BDD_SCRIPTS_DIR
 
-    subprocess.run(
-        [sys.executable, str(scripts / "import_gedcom.py"), "--gedcom", str(gedcom), "--db", str(SQLITE_PATH)],
-        check=True,
-    )
-    subprocess.run(
-        [sys.executable, str(scripts / "import_actes.py"), "--db", str(SQLITE_PATH)],
-        check=True,
-    )
-    subprocess.run(
-        [sys.executable, str(scripts / "import_warnings.py"), "--db", str(SQLITE_PATH)],
-        check=True,
-    )
-    subprocess.run(
-        [sys.executable, str(scripts / "import_geocode.py"), "--db", str(SQLITE_PATH)],
-        check=True,
-    )
-    subprocess.run(
-        [sys.executable, str(scripts / "import_dates_vie.py"), "--db", str(SQLITE_PATH)],
-        check=True,
-    )
-    subprocess.run(
-        [
-            sys.executable,
-            str(scripts / "import_faits_historiques.py"),
-            "--db",
-            str(SQLITE_PATH),
-        ],
-        check=True,
-    )
-    subprocess.run(
-        [
-            sys.executable,
-            str(scripts / "import_dirigeants_france.py"),
-            "--db",
-            str(SQLITE_PATH),
-        ],
-        check=True,
-    )
+        subprocess.run(
+            [sys.executable, str(scripts / "import_gedcom.py"), "--gedcom", str(gedcom), "--db", str(SQLITE_PATH)],
+            check=True,
+        )
+        subprocess.run(
+            [sys.executable, str(scripts / "import_actes.py"), "--db", str(SQLITE_PATH)],
+            check=True,
+        )
+        subprocess.run(
+            [sys.executable, str(scripts / "import_warnings.py"), "--db", str(SQLITE_PATH)],
+            check=True,
+        )
+        subprocess.run(
+            [sys.executable, str(scripts / "import_geocode.py"), "--db", str(SQLITE_PATH)],
+            check=True,
+        )
+        subprocess.run(
+            [sys.executable, str(scripts / "import_dates_vie.py"), "--db", str(SQLITE_PATH)],
+            check=True,
+        )
+        subprocess.run(
+            [
+                sys.executable,
+                str(scripts / "import_faits_historiques.py"),
+                "--db",
+                str(SQLITE_PATH),
+            ],
+            check=True,
+        )
+        subprocess.run(
+            [
+                sys.executable,
+                str(scripts / "import_dirigeants_france.py"),
+                "--db",
+                str(SQLITE_PATH),
+            ],
+            check=True,
+        )
 
-    import sqlite3
+        import sqlite3
 
-    conn = sqlite3.connect(SQLITE_PATH)
-    try:
-        row = conn.execute(
-            """
-            SELECT nb_personnes, nb_familles, nb_actes, nb_photos,
-                   nb_faits_historiques, nb_dirigeants_france
-            FROM meta WHERE id = 1
-            """
-        ).fetchone()
-    finally:
-        conn.close()
+        conn = sqlite3.connect(SQLITE_PATH)
+        try:
+            row = conn.execute(
+                """
+                SELECT nb_personnes, nb_familles, nb_actes, nb_photos,
+                       nb_faits_historiques, nb_dirigeants_france
+                FROM meta WHERE id = 1
+                """
+            ).fetchone()
+        finally:
+            conn.close()
 
-    return {
-        "status": "ok",
-        "nb_personnes": row[0] if row else None,
-        "nb_familles": row[1] if row else None,
-        "nb_actes": row[2] if row else None,
-        "nb_photos": row[3] if row else None,
-        "nb_faits_historiques": row[4] if row else None,
-        "nb_dirigeants_france": row[5] if row else None,
-    }
+        return {
+            "status": "ok",
+            "nb_personnes": row[0] if row else None,
+            "nb_familles": row[1] if row else None,
+            "nb_actes": row[2] if row else None,
+            "nb_photos": row[3] if row else None,
+            "nb_faits_historiques": row[4] if row else None,
+            "nb_dirigeants_france": row[5] if row else None,
+        }
 
 
 def ensure_database() -> None:
     if SQLITE_PATH.is_file():
         return
     run_import(force=True)
+
+
+__all__ = ["ImportInProgress", "empreintes_inchangees", "ensure_database", "run_import"]

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { ActeModal } from "../components/ActeModal";
 import { PhotoModal } from "../components/PhotoModal";
+import { LoadingSpinner } from "../components/LoadingSpinner";
 import { PersonPanel } from "../components/PersonPanel";
 import { PersonVieResume } from "../components/PersonVieResume";
 import { PersonName } from "../components/SexeIcon";
@@ -95,7 +96,9 @@ export function SearchPage() {
             className="absolute inset-x-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg"
           >
             {loading && (
-              <p className="px-3 py-2 text-sm text-slate-500">Recherche…</p>
+              <div className="flex justify-center py-8">
+                <LoadingSpinner variant="inline" />
+              </div>
             )}
             {error && (
               <p className="border-b border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

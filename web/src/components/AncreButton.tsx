@@ -1,4 +1,5 @@
 import { ICON_ABSENT_BTN, ICON_ABSENT_BTN_HOVER } from "../utils/iconStyles";
+import { FloatingTooltip } from "./FloatingTooltip";
 
 interface AncreButtonProps {
   active: boolean;
@@ -24,11 +25,18 @@ export function AncreButton({
   size = "sm",
   className = "",
 }: AncreButtonProps) {
+  const label = active ? "Ancre actuelle de l'arbre" : "Ancrer l'arbre ici";
+
   return (
-    <span className={`group/ancre relative inline-flex shrink-0 ${className}`}>
+    <FloatingTooltip
+      content={label}
+      className={`shrink-0 ${className}`}
+      contentClassName="min-w-[140px]"
+      align="end"
+    >
       <button
         type="button"
-        aria-label={active ? "Ancre actuelle" : "Ancrer l'arbre sur cette personne"}
+        aria-label={label}
         aria-pressed={active}
         disabled={active}
         onClick={(e) => {
@@ -58,12 +66,6 @@ export function AncreButton({
           <path d="M5 12H2a10 10 0 0 0 20 0h-3" />
         </svg>
       </button>
-      <span
-        role="tooltip"
-        className="pointer-events-none absolute bottom-full right-0 z-50 mb-1 hidden min-w-[140px] rounded-md bg-slate-800 px-2 py-1 text-left text-[10px] font-normal text-white shadow-md group-hover/ancre:block"
-      >
-        {active ? "Ancre actuelle de l'arbre" : "Ancrer l'arbre ici"}
-      </span>
-    </span>
+    </FloatingTooltip>
   );
 }
