@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       injectRegister: false,
       includeAssets: ["favicon.svg", "icon-192.png", "icon-512.png"],
       workbox: {
@@ -26,7 +26,9 @@ export default defineConfig({
         theme_color: "#1e3a5f",
         background_color: "#f8fafc",
         display: "standalone",
-        orientation: "landscape",
+        // "landscape" empêche souvent le lancement Android (écran noir) ;
+        // l'overlay PortraitRotateOverlay guide l'utilisateur en portrait.
+        orientation: "any",
         start_url: "/",
         scope: "/",
         icons: [

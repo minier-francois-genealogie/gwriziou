@@ -1,5 +1,4 @@
 import { registerSW } from "virtual:pwa-register";
-import { isIos, isStandalone } from "./utils/pwaMode";
 
 let reloadWithUpdate: (() => Promise<void>) | null = null;
 
@@ -9,7 +8,7 @@ export function reloadPwaUpdate(): Promise<void> {
   return Promise.resolve();
 }
 
-/** Enregistre le SW et vérifie les mises à jour (critique pour iOS écran d'accueil). */
+/** Enregistre le SW et propose une mise à jour (sans rechargement auto en boucle). */
 export function registerPwa(): void {
   if (!import.meta.env.PROD) return;
 
@@ -20,22 +19,18 @@ export function registerPwa(): void {
 
       const check = () => {
         if (document.visibilityState === "visible") {
-          void registration.update();
+          void registration.update().catch(() => {
+            /* réseau / SW indisponible */
+          });
         }
       };
 
       check();
       document.addEventListener("visibilitychange", check);
-      window.addEventListener("focus", check);
-      window.setInterval(check, 60 * 60 * 1000);
     },
     onNeedRefresh() {
       reloadWithUpdate = () => updateSW(true);
       window.dispatchEvent(new CustomEvent("gwriziou-pwa-update"));
-      // iOS standalone recharge mal en auto : laisser l'utilisateur confirmer.
-      if (!(isIos() && isStandalone())) {
-        void updateSW(true);
-      }
     },
   });
 }
