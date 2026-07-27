@@ -5,6 +5,7 @@ import { DataRefreshOverlay } from "../components/DataRefreshOverlay";
 import { InstallPrompt } from "../components/InstallPrompt";
 import { MobilePwaGate } from "../components/MobilePwaGate";
 import { PortraitRotateOverlay } from "../components/PortraitRotateOverlay";
+import { PwaUpdateBanner } from "../components/PwaUpdateBanner";
 import { useApp } from "../context/AppContext";
 import { api } from "../api/client";
 import { useAsync } from "../hooks/useApi";
@@ -92,6 +93,7 @@ export function Layout() {
       <div className="relative flex h-dvh flex-col overflow-hidden bg-slate-100">
         {importEnCours && <DataRefreshOverlay />}
         <PortraitRotateOverlay />
+        <PwaUpdateBanner />
         <InstallPrompt />
         <AppMenu />
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden">

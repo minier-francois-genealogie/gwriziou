@@ -143,7 +143,9 @@ export function TreePage() {
   useEffect(() => {
     if (!displayArbre) return;
     requestAnimationFrame(() => treeRef.current?.fitAll());
-  }, [treeViewMode, displayArbre]);
+    // fitAll uniquement au basculement compresser/détail (pas au rechargement de l'arbre)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [treeViewMode]);
 
   const handleTreeViewModeChange = useCallback((overview: boolean) => {
     const mode: TreeViewMode = overview ? "overview" : "detail";
