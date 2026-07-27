@@ -28,6 +28,23 @@ interface UseSvgViewportOptions {
   pinchZoom?: boolean;
 }
 
+/** Même logique que preserveAspectRatio="xMidYMid meet" sur un SVG viewBox. */
+function getSvgViewportMapping(
+  containerW: number,
+  containerH: number,
+  vb: ViewBox,
+): { scale: number; padX: number; padY: number } {
+  const scale = Math.min(
+    containerW / Math.max(vb.w, 1e-6),
+    containerH / Math.max(vb.h, 1e-6),
+  );
+  return {
+    scale,
+    padX: (containerW - vb.w * scale) / 2,
+    padY: (containerH - vb.h * scale) / 2,
+  };
+}
+
 export function useSvgViewport({
   contentWidth,
   contentHeight,
@@ -338,13 +355,12 @@ export function useSvgViewport({
         const dx = e.clientX - panRef.current.x;
         const dy = e.clientY - panRef.current.y;
         const vb = panRef.current.vb;
-        const scaleX = vb.w / el.clientWidth;
-        const scaleY = vb.h / el.clientHeight;
+        const { scale } = getSvgViewportMapping(el.clientWidth, el.clientHeight, vb);
         setViewBox(
           clampViewBox({
             ...vb,
-            x: vb.x - dx * scaleX,
-            y: vb.y - dy * scaleY,
+            x: vb.x - dx / scale,
+            y: vb.y - dy / scale,
           }),
         );
       }
@@ -368,10 +384,13 @@ export function useSvgViewport({
    * transformer le SVG HTML entier déplace traits + cellules ensemble.
    */
   const svgTransform = useMemo(() => {
-    const sx = containerSize.w / Math.max(viewBox.w, 1e-6);
-    const sy = containerSize.h / Math.max(viewBox.h, 1e-6);
-    return `translate(${-viewBox.x * sx}px, ${-viewBox.y * sy}px) scale(${sx}, ${sy})`;
-  }, [containerSize.h, containerSize.w, viewBox.h, viewBox.w, viewBox.x, viewBox.y]);
+    const { scale, padX, padY } = getSvgViewportMapping(
+      containerSize.w,
+      containerSize.h,
+      viewBox,
+    );
+    return `translate(${padX - viewBox.x * scale}px, ${padY - viewBox.y * scale}px) scale(${scale})`;
+  }, [containerSize.h, containerSize.w, viewBox]);
 
   return {
     containerRef,

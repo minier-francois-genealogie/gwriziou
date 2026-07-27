@@ -135,11 +135,13 @@ export function PersonNode({
         y={y - m.nodeH / 2}
         width={m.nodeW}
         height={m.nodeH}
-        className="overflow-visible"
+        xmlns="http://www.w3.org/1999/xhtml"
+        className="overflow-hidden"
         data-tree-interactive
       >
         <div
-          className={`relative flex h-full flex-col items-center rounded-md border bg-white p-0.5 shadow-sm transition hover:shadow-md ${border}`}
+          style={{ width: m.nodeW, height: m.nodeH, boxSizing: "border-box" }}
+          className={`flex flex-col items-center rounded-md border bg-white p-0.5 shadow-sm ${border}`}
         >
           <div
             className={`flex min-h-0 flex-1 w-full flex-col items-center rounded border transition-colors ${innerBorder}`}
@@ -181,10 +183,18 @@ export function PersonNode({
       y={y - m.nodeH / 2 - extraTop}
       width={m.nodeW}
       height={m.nodeH + extraTop}
-      className="overflow-visible"
+      xmlns="http://www.w3.org/1999/xhtml"
+      className="overflow-hidden"
       data-tree-interactive
     >
-      <div className="flex h-full flex-col">
+      <div
+        style={{
+          width: m.nodeW,
+          height: m.nodeH + extraTop,
+          boxSizing: "border-box",
+        }}
+        className="flex flex-col"
+      >
         {parentsAilleurs && (
           <div className="flex shrink-0 justify-center pb-0.5">
             <FloatingTooltip
