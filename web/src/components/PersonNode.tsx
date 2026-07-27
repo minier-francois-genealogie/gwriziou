@@ -1,5 +1,5 @@
 import type { ActeType, NoeudArbre } from "../types/api";
-import { useRef } from "react";
+import { useRef, type CSSProperties } from "react";
 import {
   formatNom,
   hasMultiplePrenoms,
@@ -110,6 +110,15 @@ export function PersonNode({
     handleCellFocus();
   };
 
+  const shellStyle: CSSProperties = {
+    position: "absolute",
+    left: x - m.nodeW / 2,
+    top: y - m.nodeH / 2 - extraTop,
+    width: m.nodeW,
+    height: m.nodeH + extraTop,
+    boxSizing: "border-box",
+  };
+
   if (isOverview) {
     const nameRow = (
       <span className="flex max-h-full w-full items-end justify-center gap-1 overflow-hidden px-0.5 pb-0.5">
@@ -130,21 +139,12 @@ export function PersonNode({
     );
 
     return (
-      <foreignObject
-        x={x - m.nodeW / 2}
-        y={y - m.nodeH / 2}
-        width={m.nodeW}
-        height={m.nodeH}
-        xmlns="http://www.w3.org/1999/xhtml"
-        className="overflow-hidden"
-        data-tree-interactive
-      >
+      <div style={shellStyle} data-tree-interactive>
         <div
-          style={{ width: m.nodeW, height: m.nodeH, boxSizing: "border-box" }}
-          className={`flex flex-col items-center rounded-md border bg-white p-0.5 shadow-sm ${border}`}
+          className={`flex h-full w-full flex-col items-center rounded-md border bg-white p-0.5 shadow-sm ${border}`}
         >
           <div
-            className={`flex min-h-0 flex-1 w-full flex-col items-center rounded border transition-colors ${innerBorder}`}
+            className={`flex min-h-0 flex-1 w-full flex-col items-center rounded border ${innerBorder}`}
           >
             <div
               role="button"
@@ -173,28 +173,13 @@ export function PersonNode({
             </div>
           </div>
         </div>
-      </foreignObject>
+      </div>
     );
   }
 
   return (
-    <foreignObject
-      x={x - m.nodeW / 2}
-      y={y - m.nodeH / 2 - extraTop}
-      width={m.nodeW}
-      height={m.nodeH + extraTop}
-      xmlns="http://www.w3.org/1999/xhtml"
-      className="overflow-hidden"
-      data-tree-interactive
-    >
-      <div
-        style={{
-          width: m.nodeW,
-          height: m.nodeH + extraTop,
-          boxSizing: "border-box",
-        }}
-        className="flex flex-col"
-      >
+    <div style={shellStyle} data-tree-interactive>
+      <div className="flex h-full flex-col">
         {parentsAilleurs && (
           <div className="flex shrink-0 justify-center pb-0.5">
             <FloatingTooltip
@@ -220,7 +205,7 @@ export function PersonNode({
                   e.stopPropagation();
                   onParentsRefClick?.(parentsAilleurs.parentIds);
                 }}
-                className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-violet-200 bg-violet-50 text-violet-600 shadow-sm transition hover:border-violet-400 hover:bg-violet-100"
+                className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-violet-200 bg-violet-50 text-violet-600 shadow-sm hover:border-violet-400 hover:bg-violet-100"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -240,94 +225,94 @@ export function PersonNode({
           </div>
         )}
         <div
-          className={`relative flex min-h-0 flex-1 flex-col overflow-visible rounded-xl border-2 bg-white p-0.5 shadow-sm transition hover:shadow-md ${border}`}
+          className={`flex min-h-0 flex-1 flex-col overflow-visible rounded-xl border-2 bg-white p-0.5 shadow-sm hover:shadow-md ${border}`}
         >
           <div
-            className={`relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[10px] border-2 transition-colors ${innerBorder}`}
+            className={`flex min-h-0 flex-1 flex-col overflow-hidden rounded-[10px] border-2 ${innerBorder}`}
           >
-          <div
-            role="button"
-            onPointerDown={onCellPointerDown}
-            onPointerUp={onCellPointerUp}
-            className="relative flex min-h-0 flex-1 cursor-pointer flex-col p-1.5 pr-7 text-left outline-none"
-          >
-            <span className="min-w-0">
-              <span className="flex min-w-0 items-start gap-1">
-                <SexeIcon sexe={noeud.sexe} className="mt-0.5 shrink-0" />
-                <PhotoIcon
-                  hasPhotos={noeud.photos}
-                  size="xs"
-                  onClick={() =>
-                    onPhotoClick?.(noeud.id_gedcom, noeud.nom, noeud.prenoms)
-                  }
-                />
-                <FloatingTooltip
-                  content={fullName}
-                  maxWidth={220}
-                  multiline
-                  align="start"
-                  className="min-w-0"
-                >
-                  <span className="flex min-w-0 flex-col leading-tight">
-                    <span className="truncate text-xs font-bold text-slate-900">
-                      {noeud.nom}
-                    </span>
-                    {prenomArbre && (
-                      <span className="flex min-w-0 items-baseline gap-0.5">
+            <div className="flex min-h-0 flex-1">
+              <div
+                role="button"
+                onPointerDown={onCellPointerDown}
+                onPointerUp={onCellPointerUp}
+                className="flex min-h-0 min-w-0 flex-1 cursor-pointer flex-col p-1.5 text-left outline-none"
+              >
+                <span className="min-w-0">
+                  <span className="flex min-w-0 items-start gap-1">
+                    <SexeIcon sexe={noeud.sexe} className="mt-0.5 shrink-0" />
+                    <PhotoIcon
+                      hasPhotos={noeud.photos}
+                      size="xs"
+                      onClick={() =>
+                        onPhotoClick?.(noeud.id_gedcom, noeud.nom, noeud.prenoms)
+                      }
+                    />
+                    <FloatingTooltip
+                      content={fullName}
+                      maxWidth={220}
+                      multiline
+                      align="start"
+                      className="min-w-0"
+                    >
+                      <span className="flex min-w-0 flex-col leading-tight">
                         <span className="truncate text-xs font-bold text-slate-900">
-                          {prenomArbre}
+                          {noeud.nom}
                         </span>
-                        {extraPrenoms && (
-                          <span
-                            className="shrink-0 text-[11px] leading-none text-slate-500"
-                            aria-hidden="true"
-                          >
-                            *
+                        {prenomArbre && (
+                          <span className="flex min-w-0 items-baseline gap-0.5">
+                            <span className="truncate text-xs font-bold text-slate-900">
+                              {prenomArbre}
+                            </span>
+                            {extraPrenoms && (
+                              <span
+                                className="shrink-0 text-[11px] leading-none text-slate-500"
+                                aria-hidden="true"
+                              >
+                                *
+                              </span>
+                            )}
                           </span>
                         )}
                       </span>
-                    )}
+                    </FloatingTooltip>
                   </span>
-                </FloatingTooltip>
-              </span>
-            </span>
-            <div className="mt-1.5">
-              <EvenementsList
-                evenements={noeud.evenements ?? []}
-                onActeClick={handleActeClick}
-                size="compact"
-                hideMissingActeWarnings
-                vieDates={{
-                  date_naissance_min: noeud.date_naissance_min,
-                  date_naissance_min_approximation: noeud.date_naissance_min_approximation,
-                  date_naissance_min_regle: noeud.date_naissance_min_regle,
-                  date_deces_max: noeud.date_deces_max,
-                  date_deces_max_approximation: noeud.date_deces_max_approximation,
-                  date_deces_max_regle: noeud.date_deces_max_regle,
-                  naissance_gedcom: noeud.naissance_gedcom,
-                  deces_gedcom: noeud.deces_gedcom,
-                }}
-              />
+                </span>
+                <div className="mt-1.5">
+                  <EvenementsList
+                    evenements={noeud.evenements ?? []}
+                    onActeClick={handleActeClick}
+                    size="compact"
+                    hideMissingActeWarnings
+                    vieDates={{
+                      date_naissance_min: noeud.date_naissance_min,
+                      date_naissance_min_approximation:
+                        noeud.date_naissance_min_approximation,
+                      date_naissance_min_regle: noeud.date_naissance_min_regle,
+                      date_deces_max: noeud.date_deces_max,
+                      date_deces_max_approximation: noeud.date_deces_max_approximation,
+                      date_deces_max_regle: noeud.date_deces_max_regle,
+                      naissance_gedcom: noeud.naissance_gedcom,
+                      deces_gedcom: noeud.deces_gedcom,
+                    }}
+                  />
+                </div>
+                {noeud.profession && (
+                  <span className="mt-0.5 truncate text-[10px] leading-tight italic text-slate-400">
+                    {noeud.profession}
+                  </span>
+                )}
+              </div>
+              <div className="shrink-0 p-1.5 pt-1.5" data-tree-interactive>
+                <AncreButton
+                  active={isAncre}
+                  onAncre={() => onAncre(noeud.id_gedcom)}
+                  size="sm"
+                />
+              </div>
             </div>
-            {noeud.profession && (
-              <span className="mt-0.5 truncate text-[10px] leading-tight italic text-slate-400">
-                {noeud.profession}
-              </span>
-            )}
-          </div>
-          <div
-            className="absolute right-1.5 top-1.5 z-10"
-            data-tree-interactive
-          >
-            <AncreButton
-              active={isAncre}
-              onAncre={() => onAncre(noeud.id_gedcom)}
-              size="sm"
-            />
-          </div>
           </div>
         </div>
       </div>
-    </foreignObject>
+    </div>
   );
 }

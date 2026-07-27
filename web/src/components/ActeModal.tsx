@@ -31,7 +31,7 @@ export function ActeModal({ type, url, personName, onClose }: ActeModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col bg-black/85 p-2 sm:p-4"
+      className="fixed inset-0 z-[200] flex flex-col bg-black/85 p-2 sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-label={`${TITLES[type]} — ${personName}`}

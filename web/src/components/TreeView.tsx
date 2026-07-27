@@ -121,68 +121,81 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
-        <svg
-          width={layout.width}
-          height={layout.height}
-          viewBox={`0 0 ${layout.width} ${layout.height}`}
+        {/*
+          Conteneur unique transformé : SVG (traits/unions) + HTML (cellules).
+          Évite foreignObject (clics cassés sous CSS transform / Safari iOS).
+        */}
+        <div
+          className="relative"
           style={{
+            width: layout.width,
+            height: layout.height,
             transform: svgTransform,
             transformOrigin: "0 0",
             willChange: isPanning ? "transform" : undefined,
           }}
-          className={`block max-w-none ${isPanning ? "cursor-grabbing" : "cursor-grab"}`}
-          role="img"
-          aria-label="Arbre généalogique"
         >
-          <g>
-            {layout.edges.map((edge, i) => (
-              <path
-                key={i}
-                d={edge.points
-                  .map((p, j) => `${j === 0 ? "M" : "L"} ${p.x} ${p.y}`)
-                  .join(" ")}
-                fill="none"
-                stroke={
-                  edge.kind === "conjoint"
-                    ? "#d97706"
-                    : edge.kind === "parents_ref_stub"
-                      ? "#8b5cf6"
-                      : TREE_BRANCH_STROKE
-                }
-                strokeWidth={edge.kind === "parents_ref_stub" ? 1.5 : 2}
-                strokeDasharray={
-                  edge.kind === "conjoint"
-                    ? "5 4"
-                    : edge.kind === "parents_ref_stub"
-                      ? "3 3"
-                      : undefined
-                }
-              />
-            ))}
-          </g>
-          <g>
-            {layout.unions.map((u) => {
-              const unionLabel =
-                [u.union.date ?? u.union.date_brute, u.union.lieu]
-                  .filter(Boolean)
-                  .join(" — ") || "Mariage";
-              return (
-                <UnionNode
-                  key={u.union.id_famille}
-                  union={u.union}
-                  x={u.x}
-                  y={u.y}
-                  radius={metrics.unionR}
-                  onActeClick={
-                    u.union.acte?.url
-                      ? (url) => onActeClick("mariage", url, unionLabel)
-                      : undefined
+          <svg
+            width={layout.width}
+            height={layout.height}
+            viewBox={`0 0 ${layout.width} ${layout.height}`}
+            className={`absolute inset-0 block ${isPanning ? "cursor-grabbing" : "cursor-grab"}`}
+            role="img"
+            aria-label="Arbre généalogique"
+          >
+            <g>
+              {layout.edges.map((edge, i) => (
+                <path
+                  key={i}
+                  d={edge.points
+                    .map((p, j) => `${j === 0 ? "M" : "L"} ${p.x} ${p.y}`)
+                    .join(" ")}
+                  fill="none"
+                  stroke={
+                    edge.kind === "conjoint"
+                      ? "#d97706"
+                      : edge.kind === "parents_ref_stub"
+                        ? "#8b5cf6"
+                        : TREE_BRANCH_STROKE
+                  }
+                  strokeWidth={edge.kind === "parents_ref_stub" ? 1.5 : 2}
+                  strokeDasharray={
+                    edge.kind === "conjoint"
+                      ? "5 4"
+                      : edge.kind === "parents_ref_stub"
+                        ? "3 3"
+                        : undefined
                   }
                 />
-              );
-            })}
-          </g>
-          <g>
+              ))}
+            </g>
+            <g>
+              {layout.unions.map((u) => {
+                const unionLabel =
+                  [u.union.date ?? u.union.date_brute, u.union.lieu]
+                    .filter(Boolean)
+                    .join(" — ") || "Mariage";
+                return (
+                  <UnionNode
+                    key={u.union.id_famille}
+                    union={u.union}
+                    x={u.x}
+                    y={u.y}
+                    radius={metrics.unionR}
+                    onActeClick={
+                      u.union.acte?.url
+                        ? (url) => onActeClick("mariage", url, unionLabel)
+                        : undefined
+                    }
+                  />
+                );
+              })}
+            </g>
+          </svg>
+          <div
+            className="absolute inset-0"
+            style={{ width: layout.width, height: layout.height }}
+          >
             {layout.nodes.map((node) => (
               <PersonNode
                 key={node.id}
@@ -201,8 +214,8 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
                 onParentsRefClick={handleParentsRefClick}
               />
             ))}
-          </g>
-        </svg>
+          </div>
+        </div>
       </div>
     </div>
   );
