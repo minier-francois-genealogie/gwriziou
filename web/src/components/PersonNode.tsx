@@ -1,12 +1,14 @@
 import type { ActeType, NoeudArbre } from "../types/api";
 import { useRef } from "react";
-import type { ParentsAilleursRef } from "../utils/treeLayout";
 import {
   formatNom,
   hasMultiplePrenoms,
   splitPrenoms,
 } from "../utils/format";
-import { NODE_H, NODE_W } from "../utils/treeLayout";
+import {
+  getTreeLayoutMetrics,
+  type TreeViewMode,
+} from "../utils/treeLayoutMetrics";
 import { AncreButton } from "./AncreButton";
 import { EvenementsList } from "./EvenementsList";
 import { FloatingTooltip } from "./FloatingTooltip";
@@ -22,7 +24,8 @@ interface PersonNodeProps {
   focused: boolean;
   isAncre: boolean;
   highlighted?: boolean;
-  parentsAilleurs?: ParentsAilleursRef;
+  viewMode?: TreeViewMode;
+  parentsAilleurs?: import("../utils/treeLayout").ParentsAilleursRef;
   onFocus: (id: string) => void;
   onAncre: (id: string) => void;
   onActeClick?: (type: "naissance" | "mariage" | "deces", url: string, label?: string) => void;
@@ -37,6 +40,7 @@ export function PersonNode({
   focused,
   isAncre,
   highlighted = false,
+  viewMode = "detail",
   parentsAilleurs,
   onFocus,
   onAncre,
@@ -44,6 +48,8 @@ export function PersonNode({
   onPhotoClick,
   onParentsRefClick,
 }: PersonNodeProps) {
+  const m = getTreeLayoutMetrics(viewMode);
+  const isOverview = viewMode === "overview";
   const isMale = noeud.sexe === "M";
   const isFemale = noeud.sexe === "F";
 
@@ -70,7 +76,7 @@ export function PersonNode({
   const handleActeClick = onActeClick
     ? (type: ActeType, url: string) => onActeClick(type, url, fullName)
     : undefined;
-  const hasRef = !!parentsAilleurs;
+  const hasRef = !!parentsAilleurs && !isOverview;
   const extraTop = hasRef ? REF_BADGE_H : 0;
   const tapRef = useRef<{ x: number; y: number } | null>(null);
 
@@ -104,12 +110,77 @@ export function PersonNode({
     handleCellFocus();
   };
 
+  if (isOverview) {
+    const nameRow = (
+      <span className="flex max-h-full w-full items-end justify-center gap-1 overflow-hidden px-0.5 pb-0.5">
+        <span className="shrink-0 overflow-hidden text-[8px] font-bold leading-none text-slate-900 [writing-mode:vertical-rl] rotate-180">
+          {noeud.nom}
+        </span>
+        {prenomArbre && (
+          <span className="shrink-0 overflow-hidden text-[8px] font-semibold leading-none text-slate-700 [writing-mode:vertical-rl] rotate-180">
+            {prenomArbre}
+            {extraPrenoms && (
+              <span className="text-[7px] font-normal text-slate-500" aria-hidden="true">
+                *
+              </span>
+            )}
+          </span>
+        )}
+      </span>
+    );
+
+    return (
+      <foreignObject
+        x={x - m.nodeW / 2}
+        y={y - m.nodeH / 2}
+        width={m.nodeW}
+        height={m.nodeH}
+        className="overflow-visible"
+        data-tree-interactive
+      >
+        <div
+          className={`relative flex h-full flex-col items-center rounded-md border bg-white p-0.5 shadow-sm transition hover:shadow-md ${border}`}
+        >
+          <div
+            className={`flex min-h-0 flex-1 w-full flex-col items-center rounded border transition-colors ${innerBorder}`}
+          >
+            <div
+              role="button"
+              onPointerDown={onCellPointerDown}
+              onPointerUp={onCellPointerUp}
+              className="flex min-h-0 w-full flex-1 cursor-pointer flex-col justify-end overflow-hidden outline-none"
+            >
+              <div className="flex min-h-0 flex-1 w-full flex-col justify-end overflow-hidden">
+                <FloatingTooltip
+                  content={fullName}
+                  maxWidth={220}
+                  multiline
+                  align="center"
+                  className="w-full"
+                >
+                  {nameRow}
+                </FloatingTooltip>
+              </div>
+            </div>
+            <div className="shrink-0 pb-px" data-tree-interactive>
+              <AncreButton
+                active={isAncre}
+                onAncre={() => onAncre(noeud.id_gedcom)}
+                size="xs"
+              />
+            </div>
+          </div>
+        </div>
+      </foreignObject>
+    );
+  }
+
   return (
     <foreignObject
-      x={x - NODE_W / 2}
-      y={y - NODE_H / 2 - extraTop}
-      width={NODE_W}
-      height={NODE_H + extraTop}
+      x={x - m.nodeW / 2}
+      y={y - m.nodeH / 2 - extraTop}
+      width={m.nodeW}
+      height={m.nodeH + extraTop}
       className="overflow-visible"
       data-tree-interactive
     >
@@ -180,45 +251,34 @@ export function PersonNode({
                     onPhotoClick?.(noeud.id_gedcom, noeud.nom, noeud.prenoms)
                   }
                 />
-                {extraPrenoms ? (
-                  <FloatingTooltip
-                    content={fullName}
-                    maxWidth={220}
-                    multiline
-                    align="start"
-                    className="min-w-0"
-                  >
-                    <span className="flex min-w-0 flex-col leading-tight">
-                      <span className="truncate text-xs font-bold text-slate-900">
-                        {noeud.nom}
-                      </span>
-                      {prenomArbre && (
-                        <span className="flex min-w-0 items-baseline gap-0.5">
-                          <span className="truncate text-xs font-bold text-slate-900">
-                            {prenomArbre}
-                          </span>
+                <FloatingTooltip
+                  content={fullName}
+                  maxWidth={220}
+                  multiline
+                  align="start"
+                  className="min-w-0"
+                >
+                  <span className="flex min-w-0 flex-col leading-tight">
+                    <span className="truncate text-xs font-bold text-slate-900">
+                      {noeud.nom}
+                    </span>
+                    {prenomArbre && (
+                      <span className="flex min-w-0 items-baseline gap-0.5">
+                        <span className="truncate text-xs font-bold text-slate-900">
+                          {prenomArbre}
+                        </span>
+                        {extraPrenoms && (
                           <span
                             className="shrink-0 text-[11px] leading-none text-slate-500"
                             aria-hidden="true"
                           >
                             *
                           </span>
-                        </span>
-                      )}
-                    </span>
-                  </FloatingTooltip>
-                ) : (
-                  <span className="flex min-w-0 flex-col leading-tight">
-                    <span className="truncate text-xs font-bold text-slate-900">
-                      {noeud.nom}
-                    </span>
-                    {prenomArbre && (
-                      <span className="truncate text-xs font-bold text-slate-900">
-                        {prenomArbre}
+                        )}
                       </span>
                     )}
                   </span>
-                )}
+                </FloatingTooltip>
               </span>
             </span>
             <div className="mt-1.5">

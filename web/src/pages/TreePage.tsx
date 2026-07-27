@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import { ActeModal } from "../components/ActeModal";
 import { PhotoModal } from "../components/PhotoModal";
 import { LoadingSpinner } from "../components/LoadingSpinner";
+import { TreeOverviewToggle } from "../components/TreeOverviewToggle";
 import { TreeNavPad } from "../components/TreeNavPad";
 import { TreeZoomPad } from "../components/TreeZoomPad";
 import { TreeView, type TreeViewHandle } from "../components/TreeView";
@@ -12,7 +13,8 @@ import { useKeyboardNav } from "../hooks/useKeyboardNav";
 import { hasSavedTreeZoom } from "../hooks/useSvgViewport";
 import { usePhotoModal } from "../hooks/usePhotoModal";
 import type { ActeType, ArbreResponse } from "../types/api";
-import { layoutTree } from "../utils/treeLayout";
+import { layoutTree, type TreeViewMode } from "../utils/treeLayout";
+import { loadTreeViewMode, saveTreeViewMode } from "../utils/appStorage";
 import { buildTreeNavIndex, type TreeNavDirection } from "../utils/treeNav";
 
 const NAV_MESSAGE = "Navigation uniquement sur l'arbre chargé";
@@ -36,6 +38,7 @@ export function TreePage() {
   const skipFocusPanRef = useRef(false);
   const initialTreeFramedRef = useRef(false);
   const [displayArbre, setDisplayArbre] = useState<ArbreResponse | null>(null);
+  const [treeViewMode, setTreeViewMode] = useState<TreeViewMode>(() => loadTreeViewMode());
 
   const [acteModal, setActeModal] = useState<{
     type: ActeType;
@@ -68,9 +71,10 @@ export function TreePage() {
             displayArbre.aretes,
             displayArbre.ancetres,
             displayArbre.descendants,
+            treeViewMode,
           )
         : null,
-    [displayArbre],
+    [displayArbre, treeViewMode],
   );
 
   const navIndex = useMemo(
@@ -136,6 +140,17 @@ export function TreePage() {
     treeRef.current?.panTo(focusPersonneId);
   }, [focusPersonneId, displayArbre, navIndex]);
 
+  useEffect(() => {
+    if (!displayArbre) return;
+    requestAnimationFrame(() => treeRef.current?.fitAll());
+  }, [treeViewMode, displayArbre]);
+
+  const handleTreeViewModeChange = useCallback((overview: boolean) => {
+    const mode: TreeViewMode = overview ? "overview" : "detail";
+    setTreeViewMode(mode);
+    saveTreeViewMode(mode);
+  }, []);
+
   useKeyboardNav({
     onHome: () => tryFocus(ancrePersonneId),
     onParent: () => tryMove("up"),
@@ -189,11 +204,18 @@ export function TreePage() {
             arbre={displayArbre}
             focusId={focusPersonneId}
             ancreId={ancrePersonneId}
+            viewMode={treeViewMode}
             onFocus={tryFocus}
             onAncre={handleAncre}
             onActeClick={handleActeClick}
             onPhotoClick={handlePhotoClick}
           />
+          <div className="pointer-events-none absolute right-3 top-3 z-40 pt-[calc(env(safe-area-inset-top,0px)+0.25rem)]">
+            <TreeOverviewToggle
+              active={treeViewMode === "overview"}
+              onChange={handleTreeViewModeChange}
+            />
+          </div>
           <div className="pointer-events-none absolute bottom-3 right-3 z-40 flex items-end gap-2">
             <TreeNavPad
               canUp={canUp}

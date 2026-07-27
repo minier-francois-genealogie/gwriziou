@@ -1,6 +1,10 @@
 import type { AreteArbre, NoeudArbre, NoeudUnion } from "../types/api";
 import { formatNomArbre } from "./format";
-import { UNION_R } from "../components/UnionNode";
+import {
+  getTreeLayoutMetrics,
+  type TreeLayoutMetrics,
+  type TreeViewMode,
+} from "./treeLayoutMetrics";
 
 export interface ParentsAilleursRef {
   unionId: string;
@@ -43,17 +47,15 @@ export interface TreeLayout {
   height: number;
 }
 
-const NODE_W = 192;
-const NODE_H = 112;
-/** Descente verticale sous l'icône union avant la ramification vers les enfants. */
-const UNION_DESC_STEM = NODE_H / 2;
-const GAP_X = 24;
-const GAP_Y = 56;
-/** Au-delà, filiation abrégée (parents déjà affichés ailleurs). */
-const DISTANT_FILIATION_PX = (NODE_W + GAP_X) * 1.5;
-const PARENTS_REF_STUB = 22;
-/** Espace vertical réservé au-dessus d'un nœud avec icône ↩ (voir PersonNode). */
-const REF_BADGE_ROW_GAP = 26;
+function isDistantFiliation(
+  unionX: number,
+  childX: number,
+  m: TreeLayoutMetrics,
+): boolean {
+  const threshold = (m.nodeW + m.gapX) * m.distantFiliationFactor;
+  return Math.abs(childX - unionX) > threshold;
+}
+
 const COLUMN_MIN_GAP = 1;
 
 function parentLabel(ids: string[], byId: Map<string, NoeudArbre>): string {
@@ -63,10 +65,6 @@ function parentLabel(ids: string[], byId: Map<string, NoeudArbre>): string {
       return n ? formatNomArbre(n.nom, n.prenoms) : id;
     })
     .join(" · ");
-}
-
-function isDistantFiliation(unionX: number, childX: number): boolean {
-  return Math.abs(childX - unionX) > DISTANT_FILIATION_PX;
 }
 
 /** Évite deux personnes sur la même colonne logique (ex. branche déportée + CHARUEL). */
@@ -97,15 +95,20 @@ function generationY(
   gen: number,
   minGen: number,
   refBadgeExtra: number,
+  m: TreeLayoutMetrics,
 ): number {
-  return (gen - minGen) * (NODE_H + GAP_Y) + NODE_H / 2 + refBadgeExtra;
+  return (gen - minGen) * (m.nodeH + m.gapY) + m.nodeH / 2 + refBadgeExtra;
 }
 
 /** Décale vers le bas les rangées qui contiennent une icône ↩ (badge au-dessus de la cellule). */
 function refBadgeExtraBeforeGen(
   nodes: TreeLayoutNode[],
   minGen: number,
+  m: TreeLayoutMetrics,
 ): Map<number, number> {
+  if (m.refBadgeRowGap <= 0) {
+    return new Map();
+  }
   const rowHasRef = new Set<number>();
   for (const n of nodes) {
     if (n.parentsAilleurs) rowHasRef.add(n.generation);
@@ -114,7 +117,7 @@ function refBadgeExtraBeforeGen(
   let cumulative = 0;
   for (let g = minGen; g <= Math.max(...nodes.map((n) => n.generation), 0); g++) {
     if (g > minGen && rowHasRef.has(g)) {
-      cumulative += REF_BADGE_ROW_GAP;
+      cumulative += m.refBadgeRowGap;
     }
     extra.set(g, cumulative);
   }
@@ -746,7 +749,9 @@ export function layoutTree(
   aretes: AreteArbre[],
   ancetres: number,
   descendants: number,
+  mode: TreeViewMode = "detail",
 ): TreeLayout {
+  const m = getTreeLayoutMetrics(mode);
   const byId = new Map(noeuds.map((n) => [n.id_gedcom, n]));
   const unionData = new Map(unions.map((u) => [u.id_famille, u]));
   const { parents, children, spouses, unionParents, unionChildren } = buildMaps(
@@ -787,7 +792,7 @@ export function layoutTree(
   const span = Math.max(maxX - minX, 1);
 
   const toPixelX = (rawX: number) =>
-    ((rawX - minX) / span) * (span * (NODE_W + GAP_X)) + NODE_W / 2;
+    ((rawX - minX) / span) * (span * (m.nodeW + m.gapX)) + m.nodeW / 2;
 
   const nodes: TreeLayoutNode[] = [];
   for (const [id, gen] of generations) {
@@ -835,10 +840,10 @@ export function layoutTree(
 
     const ancestorChildren = sorted.filter((c) => c.generation < 0);
     const nearAncestors = ancestorChildren.filter(
-      (c) => !isDistantFiliation(ux, c.x),
+      (c) => !isDistantFiliation(ux, c.x, m),
     );
     const farAncestors = ancestorChildren.filter((c) =>
-      isDistantFiliation(ux, c.x),
+      isDistantFiliation(ux, c.x, m),
     );
     const far = nearAncestors.length > 0 ? farAncestors : [];
 
@@ -856,17 +861,18 @@ export function layoutTree(
     if (ref) node.parentsAilleurs = ref;
   }
 
-  const refBadgeExtra = refBadgeExtraBeforeGen(nodes, minGen);
+  const refBadgeExtra = refBadgeExtraBeforeGen(nodes, minGen, m);
   for (const node of nodes) {
     node.y = generationY(
       node.generation,
       minGen,
       refBadgeExtra.get(node.generation) ?? 0,
+      m,
     );
   }
   for (const union of layoutUnions) {
     const gen = generations.get(union.union.id_famille) ?? -1;
-    union.y = generationY(gen, minGen, refBadgeExtra.get(gen) ?? 0);
+    union.y = generationY(gen, minGen, refBadgeExtra.get(gen) ?? 0, m);
   }
 
   const edges: TreeLayoutEdge[] = [];
@@ -891,8 +897,8 @@ export function layoutTree(
       edges.push(
         edgeLine(
           "conjoint",
-          { x: left.x + NODE_W / 2, y: left.y },
-          { x: right.x - NODE_W / 2, y: right.y },
+          { x: left.x + m.nodeW / 2, y: left.y },
+          { x: right.x - m.nodeW / 2, y: right.y },
         ),
       );
       continue;
@@ -907,11 +913,11 @@ export function layoutTree(
         edgeLine(
           "union_epoux",
           {
-            x: parent.x + (toLeft ? NODE_W / 2 : -NODE_W / 2),
+            x: parent.x + (toLeft ? m.nodeW / 2 : -m.nodeW / 2),
             y: parent.y,
           },
           {
-            x: unionNode.x + (toLeft ? -UNION_R : UNION_R),
+            x: unionNode.x + (toLeft ? -m.unionR : m.unionR),
             y: unionNode.y,
           },
         ),
@@ -925,16 +931,16 @@ export function layoutTree(
 
     const sorted = [...unionChildren].sort((a, b) => a.x - b.x);
     const ux = unionNode.x;
-    const stemTop = unionNode.y + UNION_R;
-    const stemBottom = stemTop + UNION_DESC_STEM;
+    const stemTop = unionNode.y + m.unionR;
+    const stemBottom = stemTop + m.unionDescStem;
 
     const gen0Plus = sorted.filter((c) => c.generation >= 0);
     const ancestorChildren = sorted.filter((c) => c.generation < 0);
     const nearAncestors = ancestorChildren.filter(
-      (c) => !isDistantFiliation(ux, c.x),
+      (c) => !isDistantFiliation(ux, c.x, m),
     );
     const farAncestors = ancestorChildren.filter((c) =>
-      isDistantFiliation(ux, c.x),
+      isDistantFiliation(ux, c.x, m),
     );
     // Icône ↩ seulement si un autre enfant de la même union est déjà relié
     // directement (branche principale) — ex. @54@ proche, @185@ loin.
@@ -958,7 +964,7 @@ export function layoutTree(
 
     if (near.length === 1) {
       const child = near[0]!;
-      const top = { x: child.x, y: child.y - NODE_H / 2 };
+      const top = { x: child.x, y: child.y - m.nodeH / 2 };
       if (Math.abs(child.x - ux) < 1) {
         edges.push(edgeLine("union_descendant", { x: ux, y: stemTop }, top));
       } else {
@@ -984,7 +990,7 @@ export function layoutTree(
         ),
       );
       for (const child of near) {
-        const top = { x: child.x, y: child.y - NODE_H / 2 };
+        const top = { x: child.x, y: child.y - m.nodeH / 2 };
         edges.push(
           edgeLine(
             "union_descendant",
@@ -996,11 +1002,11 @@ export function layoutTree(
     }
 
     for (const child of far) {
-      const top = { x: child.x, y: child.y - NODE_H / 2 };
+      const top = { x: child.x, y: child.y - m.nodeH / 2 };
       edges.push(
         edgeLine(
           "parents_ref_stub",
-          { x: child.x, y: top.y - PARENTS_REF_STUB },
+          { x: child.x, y: top.y - m.parentsRefStub },
           top,
         ),
       );
@@ -1011,11 +1017,12 @@ export function layoutTree(
     (max, v) => Math.max(max, v),
     0,
   );
-  const width = Math.max(span * (NODE_W + GAP_X) + NODE_W, 320);
+  const width = Math.max(span * (m.nodeW + m.gapX) + m.nodeW, 320);
   const height =
-    (maxGen - minGen + 1) * (NODE_H + GAP_Y) + GAP_Y + refRows;
+    (maxGen - minGen + 1) * (m.nodeH + m.gapY) + m.gapY + refRows;
 
   return { nodes, unions: layoutUnions, edges, width, height };
 }
 
-export { NODE_W, NODE_H };
+export type { TreeViewMode } from "./treeLayoutMetrics";
+export { getTreeLayoutMetrics } from "./treeLayoutMetrics";

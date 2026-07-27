@@ -4,16 +4,18 @@ import { FloatingTooltip } from "./FloatingTooltip";
 interface AncreButtonProps {
   active: boolean;
   onAncre: () => void;
-  size?: "sm" | "md";
+  size?: "xs" | "sm" | "md";
   className?: string;
 }
 
 const SIZE = {
+  xs: "h-4 w-4",
   sm: "h-5 w-5",
   md: "h-6 w-6",
 } as const;
 
 const ICON = {
+  xs: "h-2.5 w-2.5",
   sm: "h-3 w-3",
   md: "h-3.5 w-3.5",
 } as const;

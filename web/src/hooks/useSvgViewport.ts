@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { loadTreeViewBoxZoom, saveTreeViewBoxZoom } from "../utils/appStorage";
 
 export interface ViewBox {
@@ -47,6 +47,7 @@ export function useSvgViewport({
       h: Math.max(contentHeight, 1),
     };
   });
+  const [containerSize, setContainerSize] = useState({ w: 1, h: 1 });
   const [isPanning, setIsPanning] = useState(false);
   const panRef = useRef<{ x: number; y: number; vb: ViewBox; pid: number } | null>(
     null,
@@ -56,6 +57,21 @@ export function useSvgViewport({
   const animFrameRef = useRef<number | null>(null);
 
   viewBoxRef.current = viewBox;
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const update = () => {
+      setContainerSize({
+        w: Math.max(el.clientWidth, 1),
+        h: Math.max(el.clientHeight, 1),
+      });
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const cancelPanAnimation = useCallback(() => {
     if (animFrameRef.current != null) {
@@ -315,7 +331,8 @@ export function useSvgViewport({
         return;
       }
 
-      if (panRef.current && panRef.current.pid === e.pointerId && e.buttons === 1) {
+      // Sur iOS Safari, `buttons` peut rester à 0 pendant le drag tactile.
+      if (panRef.current && panRef.current.pid === e.pointerId) {
         const el = containerRef.current;
         if (!el) return;
         const dx = e.clientX - panRef.current.x;
@@ -345,12 +362,21 @@ export function useSvgViewport({
 
   const onPointerUp = endPan;
 
-  const viewBoxString = `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`;
+  /**
+   * Pan/zoom via CSS transform (viewBox SVG fixe).
+   * Safari iOS ne resynchronise pas les foreignObject quand le viewBox change ;
+   * transformer le SVG HTML entier déplace traits + cellules ensemble.
+   */
+  const svgTransform = useMemo(() => {
+    const sx = containerSize.w / Math.max(viewBox.w, 1e-6);
+    const sy = containerSize.h / Math.max(viewBox.h, 1e-6);
+    return `translate(${-viewBox.x * sx}px, ${-viewBox.y * sy}px) scale(${sx}, ${sy})`;
+  }, [containerSize.h, containerSize.w, viewBox.h, viewBox.w, viewBox.x, viewBox.y]);
 
   return {
     containerRef,
     viewBox,
-    viewBoxString,
+    svgTransform,
     recenterOn,
     panTo,
     fitAll,

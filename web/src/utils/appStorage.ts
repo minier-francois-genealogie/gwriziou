@@ -8,6 +8,7 @@ const KEYS = {
   descendants: "gwriziou.descendants",
   derniereVue: "gwriziou.derniereVue",
   treeViewBoxZoom: "gwriziou.treeViewBoxZoom",
+  treeViewMode: "gwriziou.treeViewMode",
 } as const;
 
 export type AppView =
@@ -156,6 +157,26 @@ export function saveTreeViewBoxZoom(zoom: TreeViewBoxZoom): void {
     localStorage.setItem(KEYS.treeViewBoxZoom, JSON.stringify(zoom));
   } catch {
     /* quota / private mode */
+  }
+}
+
+export type TreeViewMode = "detail" | "overview";
+
+export function loadTreeViewMode(): TreeViewMode {
+  try {
+    const v = localStorage.getItem(KEYS.treeViewMode);
+    if (v === "overview") return "overview";
+  } catch {
+    /* ignore */
+  }
+  return "detail";
+}
+
+export function saveTreeViewMode(mode: TreeViewMode): void {
+  try {
+    localStorage.setItem(KEYS.treeViewMode, mode);
+  } catch {
+    /* ignore */
   }
 }
 

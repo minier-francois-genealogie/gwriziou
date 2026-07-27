@@ -9,10 +9,11 @@ interface UnionNodeProps {
   union: NoeudUnion;
   x: number;
   y: number;
+  radius?: number;
   onActeClick?: (url: string) => void;
 }
 
-export function UnionNode({ union, x, y, onActeClick }: UnionNodeProps) {
+export function UnionNode({ union, x, y, radius = UNION_R, onActeClick }: UnionNodeProps) {
   const title = [union.date ?? union.date_brute, union.lieu].filter(Boolean).join(" — ");
   const canOpen = union.acte_m && union.acte?.url && onActeClick;
 
@@ -35,14 +36,14 @@ export function UnionNode({ union, x, y, onActeClick }: UnionNodeProps) {
       <circle
         cx={0}
         cy={0}
-        r={UNION_R}
+        r={radius}
         className={union.acte_m ? "fill-amber-500" : "fill-icon-absent-bg"}
         stroke={TREE_BRANCH_STROKE}
         strokeWidth={1}
       />
       <EvenementIconG
         type="mariage"
-        size={16}
+        size={radius >= 16 ? 16 : 12}
         className={union.acte_m ? "text-white" : "text-icon-absent"}
       />
     </g>

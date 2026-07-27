@@ -7,7 +7,8 @@ import {
 } from "react";
 import type { ArbreResponse } from "../types/api";
 import { useSvgViewport } from "../hooks/useSvgViewport";
-import { layoutTree } from "../utils/treeLayout";
+import { layoutTree, type TreeViewMode } from "../utils/treeLayout";
+import { getTreeLayoutMetrics } from "../utils/treeLayoutMetrics";
 import { PersonNode } from "./PersonNode";
 import { UnionNode, TREE_BRANCH_STROKE } from "./UnionNode";
 
@@ -23,6 +24,7 @@ interface TreeViewProps {
   arbre: ArbreResponse;
   focusId: string;
   ancreId: string;
+  viewMode?: TreeViewMode;
   onFocus: (id: string) => void;
   onAncre: (id: string) => void;
   onActeClick: (type: "naissance" | "mariage" | "deces", url: string, label?: string) => void;
@@ -30,9 +32,10 @@ interface TreeViewProps {
 }
 
 export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeView(
-  { arbre, focusId, ancreId, onFocus, onAncre, onActeClick, onPhotoClick },
+  { arbre, focusId, ancreId, viewMode = "detail", onFocus, onAncre, onActeClick, onPhotoClick },
   ref,
 ) {
+  const metrics = getTreeLayoutMetrics(viewMode);
   const [highlightIds, setHighlightIds] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
@@ -46,8 +49,9 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
         arbre.aretes,
         arbre.ancetres,
         arbre.descendants,
+        viewMode,
       ),
-    [arbre],
+    [arbre, viewMode],
   );
 
   const nodeMap = useMemo(
@@ -57,7 +61,7 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
 
   const {
     containerRef,
-    viewBoxString,
+    svgTransform,
     recenterOn: panRecenterWithZoom,
     panTo: panRecenter,
     fitAll,
@@ -118,8 +122,15 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
         onPointerCancel={onPointerUp}
       >
         <svg
-          viewBox={viewBoxString}
-          className={`h-full w-full ${isPanning ? "cursor-grabbing" : "cursor-grab"}`}
+          width={layout.width}
+          height={layout.height}
+          viewBox={`0 0 ${layout.width} ${layout.height}`}
+          style={{
+            transform: svgTransform,
+            transformOrigin: "0 0",
+            willChange: isPanning ? "transform" : undefined,
+          }}
+          className={`block max-w-none ${isPanning ? "cursor-grabbing" : "cursor-grab"}`}
           role="img"
           aria-label="Arbre généalogique"
         >
@@ -161,6 +172,7 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
                   union={u.union}
                   x={u.x}
                   y={u.y}
+                  radius={metrics.unionR}
                   onActeClick={
                     u.union.acte?.url
                       ? (url) => onActeClick("mariage", url, unionLabel)
@@ -180,6 +192,7 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
                 focused={node.id === focusId}
                 isAncre={node.id === ancreId}
                 highlighted={highlightIds.has(node.id)}
+                viewMode={viewMode}
                 parentsAilleurs={node.parentsAilleurs}
                 onFocus={onFocus}
                 onAncre={onAncre}
