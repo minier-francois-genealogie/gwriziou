@@ -90,12 +90,11 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
     zoomOut,
     onWheel,
     onPointerDown,
-    onPointerMove,
-    onPointerUp,
     isPanning,
   } = useSvgViewport({
     contentWidth: layout.width,
     contentHeight: layout.height,
+    onPersonTap: onFocus,
   });
 
   const recenterOnNode = useCallback(
@@ -133,14 +132,12 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
     <div className="relative flex min-h-0 flex-1 flex-col">
       <div
         ref={containerRef}
-        className={`min-h-0 flex-1 touch-none overscroll-none overflow-hidden bg-slate-50/80 ${
+        className={`min-h-0 flex-1 touch-none select-none overscroll-none overflow-hidden bg-slate-50/80 ${
           isPanning ? "cursor-grabbing" : "cursor-grab"
         }`}
         onWheel={onWheel}
         onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
+        onDragStart={(e) => e.preventDefault()}
       >
         {/*
           Conteneur unique transformé : SVG (traits/unions) + HTML (cellules).

@@ -14,7 +14,7 @@ export interface TreeLayoutMetrics {
 
 const DETAIL: TreeLayoutMetrics = {
   nodeW: 192,
-  nodeH: 128,
+  nodeH: 140,
   gapX: 24,
   gapY: 56,
   unionDescStem: 56,

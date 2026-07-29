@@ -1,4 +1,8 @@
-import { ICON_ABSENT_BTN, ICON_ABSENT_BTN_HOVER } from "../utils/iconStyles";
+import {
+  ICON_ABSENT_BTN,
+  ICON_ABSENT_BTN_HOVER,
+  ICON_ACTIVE_BLACK,
+} from "../utils/iconStyles";
 import { FloatingTooltip } from "./FloatingTooltip";
 
 interface AncreButtonProps {
@@ -49,7 +53,7 @@ export function AncreButton({
         onPointerDown={(e) => e.stopPropagation()}
         className={`inline-flex ${SIZE[size]} items-center justify-center transition ${
           active
-            ? "cursor-default rounded-md border border-slate-800 bg-slate-900 text-white"
+            ? `cursor-default ${ICON_ACTIVE_BLACK}`
             : `${ICON_ABSENT_BTN} ${ICON_ABSENT_BTN_HOVER}`
         }`}
       >

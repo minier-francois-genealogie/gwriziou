@@ -3,15 +3,9 @@ import avatarFemmePng from "../assets/icons/avatar_femme.png";
 import { FloatingTooltip } from "./FloatingTooltip";
 
 const SIZE = {
-  xs: "h-6 w-6",
-  sm: "h-7 w-7",
-  md: "h-8 w-8",
-} as const;
-
-const PLUS = {
-  xs: "h-3 w-3 text-[8px]",
-  sm: "h-3.5 w-3.5 text-[9px]",
-  md: "h-4 w-4 text-[10px]",
+  xs: "h-8 w-8",
+  sm: "h-9 w-9",
+  md: "h-10 w-10",
 } as const;
 
 interface AvatarIconProps {
@@ -19,14 +13,13 @@ interface AvatarIconProps {
   avatarUrl?: string | null;
   size?: keyof typeof SIZE;
   className?: string;
-  /** Affiche le « + » et rend l'avatar cliquable pour choisir une photo. */
+  /** Rend l'avatar cliquable pour choisir / cadrer une photo. */
   editable?: boolean;
   onEdit?: () => void;
 }
 
 /**
  * Avatar : photo type A si présente, sinon glyphe gris homme/femme.
- * Mode editable : pastille « + » pour cadrer / uploader.
  */
 export function AvatarIcon({
   sexe,
@@ -54,7 +47,7 @@ export function AvatarIcon({
   const disk = (
     <span
       aria-label={label}
-      className={`relative inline-flex ${SIZE[size]} items-center justify-center overflow-hidden rounded-full bg-slate-200 text-slate-500 ${
+      className={`relative inline-flex ${SIZE[size]} items-center justify-center overflow-hidden rounded-full bg-slate-200 text-slate-600 ${
         editable ? "cursor-pointer ring-1 ring-slate-300 hover:ring-slate-400" : ""
       }`}
     >
@@ -82,14 +75,6 @@ export function AvatarIcon({
         />
       ) : (
         <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
-      )}
-      {editable && (
-        <span
-          className={`absolute bottom-0 right-0 flex ${PLUS[size]} items-center justify-center rounded-full bg-slate-700 font-bold leading-none text-white shadow`}
-          aria-hidden="true"
-        >
-          +
-        </span>
       )}
     </span>
   );

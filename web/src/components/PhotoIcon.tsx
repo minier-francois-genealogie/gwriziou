@@ -1,4 +1,4 @@
-import { ICON_ABSENT_BTN } from "../utils/iconStyles";
+import { ICON_ABSENT_BTN, ICON_ACTIVE_AMBER, ICON_ACTIVE_AMBER_HOVER } from "../utils/iconStyles";
 import { FloatingTooltip } from "./FloatingTooltip";
 import { GlyphIcon } from "./GlyphIcon";
 
@@ -49,9 +49,9 @@ export function PhotoIcon({
         }}
         onPointerDown={(e) => e.stopPropagation()}
         onPointerUp={(e) => e.stopPropagation()}
-        className={`inline-flex items-center justify-center rounded-full p-0 leading-none transition-colors ${DISK[size]} ${
+        className={`inline-flex items-center justify-center p-0 leading-none transition-colors ${DISK[size]} ${
           hasPhotos
-            ? "bg-slate-900 text-white hover:bg-slate-800"
+            ? `${ICON_ACTIVE_AMBER} ${ICON_ACTIVE_AMBER_HOVER}`
             : ICON_ABSENT_BTN
         }`}
       >

@@ -1,4 +1,9 @@
-import { ICON_ABSENT_BTN, ICON_ABSENT_BTN_HOVER } from "../utils/iconStyles";
+import {
+  ICON_ABSENT_BTN,
+  ICON_ABSENT_BTN_HOVER,
+  ICON_ACTIVE_GREEN,
+  ICON_ACTIVE_GREEN_HOVER,
+} from "../utils/iconStyles";
 import { useAuth } from "../context/AuthContext";
 import { FloatingTooltip } from "./FloatingTooltip";
 import { GlyphIcon } from "./GlyphIcon";
@@ -47,7 +52,7 @@ export function CheckedIcon({
     : "Marquer l'individu comme validé";
 
   const diskClass = checked
-    ? "rounded-full border border-emerald-700 bg-emerald-600 text-white"
+    ? ICON_ACTIVE_GREEN
     : `${ICON_ABSENT_BTN} ${ICON_ABSENT_BTN_HOVER}`;
 
   if (!isAdmin) {
@@ -88,7 +93,7 @@ export function CheckedIcon({
         onPointerDown={(e) => e.stopPropagation()}
         className={`inline-flex ${SIZE[size]} items-center justify-center transition ${
           checked
-            ? "cursor-pointer rounded-full border border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
+            ? `cursor-pointer ${ICON_ACTIVE_GREEN} ${ICON_ACTIVE_GREEN_HOVER}`
             : `cursor-pointer ${ICON_ABSENT_BTN} ${ICON_ABSENT_BTN_HOVER}`
         } ${disabled ? "opacity-60" : ""}`}
       >

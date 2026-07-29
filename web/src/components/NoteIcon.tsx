@@ -1,4 +1,9 @@
-import { ICON_ABSENT_SURFACE, ICON_ABSENT_BTN_HOVER } from "../utils/iconStyles";
+import {
+  ICON_ABSENT_BTN,
+  ICON_ABSENT_BTN_HOVER,
+  ICON_ACTIVE_AMBER,
+  ICON_ACTIVE_AMBER_HOVER,
+} from "../utils/iconStyles";
 import { FloatingTooltip } from "./FloatingTooltip";
 import { GlyphIcon } from "./GlyphIcon";
 
@@ -42,10 +47,10 @@ export function NoteIcon({
         }}
         onPointerDown={(e) => e.stopPropagation()}
         onPointerUp={(e) => e.stopPropagation()}
-        className={`inline-flex items-center justify-center rounded-full p-0 leading-none transition-colors ${DISK[size]} ${
+        className={`inline-flex items-center justify-center p-0 leading-none transition-colors ${DISK[size]} ${
           hasNotes
-            ? "cursor-pointer bg-slate-900 text-white hover:bg-slate-800"
-            : `cursor-pointer ${ICON_ABSENT_SURFACE} ${ICON_ABSENT_BTN_HOVER}`
+            ? `cursor-pointer ${ICON_ACTIVE_AMBER} ${ICON_ACTIVE_AMBER_HOVER}`
+            : `cursor-pointer ${ICON_ABSENT_BTN} ${ICON_ABSENT_BTN_HOVER}`
         }`}
       >
         <GlyphIcon name="note" size={GLYPH[size]} />

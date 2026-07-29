@@ -26,6 +26,8 @@ interface UseSvgViewportOptions {
   wheelZoom?: boolean;
   /** Pincement à deux doigts : zoom si true. */
   pinchZoom?: boolean;
+  /** Clic court sur une cellule `[data-person-id]` (sans drag). */
+  onPersonTap?: (id: string) => void;
 }
 
 /** Même logique que preserveAspectRatio="xMidYMid meet" sur un SVG viewBox. */
@@ -50,8 +52,10 @@ export function useSvgViewport({
   contentHeight,
   enabled = true,
   wheelZoom = false,
-  pinchZoom = false,
+  pinchZoom: _pinchZoom = false,
+  onPersonTap,
 }: UseSvgViewportOptions) {
+  void _pinchZoom;
   const containerRef = useRef<HTMLDivElement>(null);
   const [viewBox, setViewBox] = useState<ViewBox>(() => {
     if (persistedViewBox) {
@@ -66,21 +70,20 @@ export function useSvgViewport({
   });
   const [containerSize, setContainerSize] = useState({ w: 1, h: 1 });
   const [isPanning, setIsPanning] = useState(false);
-  const panRef = useRef<{ x: number; y: number; vb: ViewBox; pid: number } | null>(
-    null,
-  );
-  /** Pan en attente tant que le déplacement n'a pas dépassé le seuil (clic ≠ drag). */
-  const panCandidateRef = useRef<{
+  const panRef = useRef<{
     x: number;
     y: number;
     vb: ViewBox;
     pid: number;
+    moved: boolean;
+    target: EventTarget | null;
   } | null>(null);
-  const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
   const viewBoxRef = useRef(viewBox);
   const animFrameRef = useRef<number | null>(null);
+  const onPersonTapRef = useRef(onPersonTap);
 
   viewBoxRef.current = viewBox;
+  onPersonTapRef.current = onPersonTap;
 
   const PAN_DRAG_THRESHOLD_PX = 6;
 
@@ -122,8 +125,11 @@ export function useSvgViewport({
       const minH = Math.min(contentHeight, 80);
       const w = Math.max(minW, Math.min(contentWidth * 3, vb.w));
       const h = Math.max(minH, Math.min(contentHeight * 3, vb.h));
-      const x = Math.max(-contentWidth * 0.5, Math.min(contentWidth, vb.x));
-      const y = Math.max(-contentHeight * 0.5, Math.min(contentHeight, vb.y));
+      // Marge = une demi-fenêtre : on peut sortir un peu du contenu sans se bloquer.
+      const marginX = w * 0.5;
+      const marginY = h * 0.5;
+      const x = Math.max(-marginX, Math.min(contentWidth - w + marginX, vb.x));
+      const y = Math.max(-marginY, Math.min(contentHeight - h + marginY, vb.y));
       return { x, y, w, h };
     },
     [contentWidth, contentHeight],
@@ -297,122 +303,114 @@ export function useSvgViewport({
     e.stopPropagation();
   }, []);
 
+  const detachWindowPanListeners = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    return () => {
+      detachWindowPanListeners.current?.();
+      detachWindowPanListeners.current = null;
+    };
+  }, []);
+
+  /**
+   * Pan via listeners sur window (pas de setPointerCapture).
+   * Pattern fiable pour enchaîner plusieurs glisser-déposer à la souris.
+   */
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
-      if (!enabled) return;
+      if (!enabled || e.button !== 0) return;
+      // Un seul pan à la fois
+      detachWindowPanListeners.current?.();
+      detachWindowPanListeners.current = null;
+
       cancelPanAnimation();
       const target = e.target;
-      // Uniquement les vrais contrôles (boutons) — pas les cellules entières.
       if (target instanceof Element && target.closest("[data-tree-interactive]")) {
         return;
       }
-      pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      if (pointersRef.current.size === 1 && e.button === 0) {
-        panCandidateRef.current = {
-          x: e.clientX,
-          y: e.clientY,
-          vb: viewBox,
-          pid: e.pointerId,
+
+      const pointerId = e.pointerId;
+      let originX = e.clientX;
+      let originY = e.clientY;
+      let originVb = { ...viewBoxRef.current };
+      const tapTarget = e.target;
+      let moved = false;
+
+      panRef.current = {
+        x: originX,
+        y: originY,
+        vb: originVb,
+        pid: pointerId,
+        moved: false,
+        target: tapTarget,
+      };
+      setIsPanning(true);
+
+      const onMove = (ev: PointerEvent) => {
+        if (ev.pointerId !== pointerId) return;
+        const dist = Math.hypot(ev.clientX - originX, ev.clientY - originY);
+        if (!moved && dist < PAN_DRAG_THRESHOLD_PX) return;
+        moved = true;
+        if (panRef.current) panRef.current.moved = true;
+
+        const el = containerRef.current;
+        if (!el) return;
+        const dx = ev.clientX - originX;
+        const dy = ev.clientY - originY;
+        const { scale } = getSvgViewportMapping(
+          el.clientWidth,
+          el.clientHeight,
+          originVb,
+        );
+        const desired = {
+          ...originVb,
+          x: originVb.x - dx / scale,
+          y: originVb.y - dy / scale,
         };
+        const clamped = clampViewBox(desired);
+        setViewBox(clamped);
+
+        // Au bord du clamp : recentrer l'origine souris pour éviter une zone morte
+        // (sinon il faut « remonter » tout le surplus avant que le pan reparte).
+        if (clamped.x !== desired.x || clamped.y !== desired.y) {
+          originX = ev.clientX;
+          originY = ev.clientY;
+          originVb = { ...clamped };
+          if (panRef.current) {
+            panRef.current.x = originX;
+            panRef.current.y = originY;
+            panRef.current.vb = originVb;
+          }
+        }
+      };
+
+      const onUp = (ev: PointerEvent) => {
+        if (ev.pointerId !== pointerId) return;
+        detachWindowPanListeners.current?.();
+        detachWindowPanListeners.current = null;
+
+        const wasTap = !moved;
         panRef.current = null;
         setIsPanning(false);
-      }
-    },
-    [cancelPanAnimation, enabled, viewBox],
-  );
 
-  const onPointerMove = useCallback(
-    (e: React.PointerEvent) => {
-      if (!enabled) return;
-      if (pointersRef.current.has(e.pointerId)) {
-        pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      }
-
-      if (pointersRef.current.size === 2) {
-        if (!pinchZoom) return;
-        panCandidateRef.current = null;
-        const pts = [...pointersRef.current.values()];
-        const dist = Math.hypot(pts[0]!.x - pts[1]!.x, pts[0]!.y - pts[1]!.y);
-        const el = containerRef.current;
-        if (!el) return;
-        const midX = (pts[0]!.x + pts[1]!.x) / 2;
-        const midY = (pts[0]!.y + pts[1]!.y) / 2;
-        const prev = panRef.current;
-        if (prev && "pinchDist" in prev && typeof prev.pinchDist === "number") {
-          const factor = prev.pinchDist / dist;
-          const rect = el.getBoundingClientRect();
-          const mx = ((midX - rect.left) / rect.width) * prev.vb.w + prev.vb.x;
-          const my = ((midY - rect.top) / rect.height) * prev.vb.h + prev.vb.y;
-          setViewBox((vb) => {
-            const nw = vb.w * factor;
-            const nh = vb.h * factor;
-            return clampViewBox({
-              w: nw,
-              h: nh,
-              x: mx - (mx - vb.x) * (nw / vb.w),
-              y: my - (my - vb.y) * (nh / vb.h),
-            });
-          });
+        if (wasTap && tapTarget instanceof Element) {
+          const person = tapTarget.closest("[data-person-id]");
+          const id = person?.getAttribute("data-person-id");
+          if (id) onPersonTapRef.current?.(id);
         }
-        panRef.current = {
-          x: midX,
-          y: midY,
-          vb: viewBox,
-          pid: -1,
-          pinchDist: dist,
-        } as typeof panRef.current & { pinchDist: number };
-        setIsPanning(true);
-        return;
-      }
+      };
 
-      const candidate = panCandidateRef.current;
-      if (
-        candidate &&
-        candidate.pid === e.pointerId &&
-        !panRef.current
-      ) {
-        const dist = Math.hypot(e.clientX - candidate.x, e.clientY - candidate.y);
-        if (dist < PAN_DRAG_THRESHOLD_PX) return;
-        const el = e.currentTarget as HTMLElement;
-        el.setPointerCapture(e.pointerId);
-        panRef.current = candidate;
-        panCandidateRef.current = null;
-        setIsPanning(true);
-      }
-
-      // Sur iOS Safari, `buttons` peut rester à 0 pendant le drag tactile.
-      if (panRef.current && panRef.current.pid === e.pointerId) {
-        const el = containerRef.current;
-        if (!el) return;
-        const dx = e.clientX - panRef.current.x;
-        const dy = e.clientY - panRef.current.y;
-        const vb = panRef.current.vb;
-        const { scale } = getSvgViewportMapping(el.clientWidth, el.clientHeight, vb);
-        setViewBox(
-          clampViewBox({
-            ...vb,
-            x: vb.x - dx / scale,
-            y: vb.y - dy / scale,
-          }),
-        );
-      }
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp);
+      window.addEventListener("pointercancel", onUp);
+      detachWindowPanListeners.current = () => {
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+        window.removeEventListener("pointercancel", onUp);
+      };
     },
-    [clampViewBox, enabled, pinchZoom, viewBox],
+    [cancelPanAnimation, clampViewBox, enabled],
   );
-
-  const endPan = useCallback((e: React.PointerEvent) => {
-    pointersRef.current.delete(e.pointerId);
-    if (panCandidateRef.current?.pid === e.pointerId) {
-      panCandidateRef.current = null;
-    }
-    if (pointersRef.current.size === 0) {
-      panRef.current = null;
-      panCandidateRef.current = null;
-      setIsPanning(false);
-    }
-  }, []);
-
-  const onPointerUp = endPan;
 
   /**
    * Pan/zoom via CSS transform (viewBox SVG fixe).
@@ -439,8 +437,6 @@ export function useSvgViewport({
     zoomOut,
     onWheel,
     onPointerDown,
-    onPointerMove,
-    onPointerUp,
     isPanning,
   };
 }

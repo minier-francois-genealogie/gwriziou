@@ -1,5 +1,5 @@
 import type { ActeType, NoeudArbre } from "../types/api";
-import { useRef, type CSSProperties } from "react";
+import { type CSSProperties } from "react";
 import {
   formatNom,
   hasMultiplePrenoms,
@@ -67,6 +67,8 @@ export function PersonNode({
   const isMale = noeud.sexe === "M";
   const isFemale = noeud.sexe === "F";
 
+  void onFocus;
+
   const innerBorder = highlighted
     ? "border-amber-400"
     : focused
@@ -92,34 +94,6 @@ export function PersonNode({
     : undefined;
   const hasRef = !!parentsAilleurs && !isOverview;
   const extraTop = hasRef ? REF_BADGE_H : 0;
-  const tapRef = useRef<{ x: number; y: number } | null>(null);
-
-  const handleCellFocus = () => {
-    onFocus(noeud.id_gedcom);
-  };
-
-  const onCellPointerDown = (e: React.PointerEvent) => {
-    // Laisser remonter pour permettre le pan depuis la cellule ;
-    // seuls les boutons (data-tree-interactive) bloquent le déplacement.
-    tapRef.current = { x: e.clientX, y: e.clientY };
-  };
-
-  const onCellPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (
-      e.target !== e.currentTarget &&
-      e.target instanceof Element &&
-      e.target.closest("button, [data-tree-interactive]")
-    ) {
-      return;
-    }
-    const start = tapRef.current;
-    tapRef.current = null;
-    if (!start) return;
-    const moved = Math.hypot(e.clientX - start.x, e.clientY - start.y);
-    if (moved > 8) return;
-    handleCellFocus();
-  };
-
   const shellStyle: CSSProperties = {
     position: "absolute",
     left: x - m.nodeW / 2,
@@ -149,7 +123,7 @@ export function PersonNode({
     );
 
     return (
-      <div style={shellStyle}>
+      <div style={shellStyle} data-person-id={noeud.id_gedcom}>
         <div
           className={`flex h-full w-full flex-col items-center rounded-md border bg-white p-0.5 shadow-sm ${border}`}
         >
@@ -158,8 +132,6 @@ export function PersonNode({
           >
             <div
               role="button"
-              onPointerDown={onCellPointerDown}
-              onPointerUp={onCellPointerUp}
               className="flex min-h-0 w-full flex-1 cursor-pointer flex-col justify-end overflow-hidden outline-none"
             >
               <div className="flex min-h-0 flex-1 w-full flex-col justify-end overflow-hidden">
@@ -203,7 +175,7 @@ export function PersonNode({
   }
 
   return (
-    <div style={shellStyle}>
+    <div style={shellStyle} data-person-id={noeud.id_gedcom}>
       <div className="flex h-full flex-col">
         {parentsAilleurs && (
           <div className="flex shrink-0 justify-center pb-0.5" data-tree-interactive>
@@ -257,22 +229,20 @@ export function PersonNode({
           >
             <div
               role="button"
-              onPointerDown={onCellPointerDown}
-              onPointerUp={onCellPointerUp}
               className="flex min-h-0 min-w-0 flex-1 cursor-pointer flex-col overflow-hidden p-1.5 text-left outline-none"
             >
               <div className="flex min-w-0 shrink-0 items-center justify-between gap-1">
-                <span className="flex min-w-0 items-center gap-1">
+                <span className="flex min-w-0 items-center gap-1" data-tree-interactive>
                   <PhotoIcon
                     hasPhotos={noeud.photos}
-                    size="xs"
+                    size="sm"
                     onClick={() =>
                       onPhotoClick?.(noeud.id_gedcom, noeud.nom, noeud.prenoms)
                     }
                   />
                   <NoteIcon
                     hasNotes={hasNotes}
-                    size="xs"
+                    size="sm"
                     onClick={() =>
                       onNoteClick?.(
                         noeud.chemin_dossier ?? null,
@@ -281,6 +251,16 @@ export function PersonNode({
                       )
                     }
                   />
+                  {noeud.chemin_dossier && (
+                    <CheckedIcon
+                      checked={isChecked}
+                      disabled={checkedPending}
+                      onToggle={(next) =>
+                        onToggleChecked?.(noeud.chemin_dossier!, next)
+                      }
+                      size="sm"
+                    />
+                  )}
                 </span>
                 <div className="shrink-0" data-tree-interactive>
                   <AncreButton
@@ -331,7 +311,7 @@ export function PersonNode({
                   </span>
                 </FloatingTooltip>
               </div>
-              <div className="mt-1 min-w-0 shrink-0 pr-5">
+              <div className="mt-1 min-w-0 shrink-0">
                 <EvenementsList
                   evenements={noeud.evenements ?? []}
                   onActeClick={handleActeClick}
@@ -351,26 +331,11 @@ export function PersonNode({
                 />
               </div>
               {noeud.profession && (
-                <span className="mt-0.5 truncate pr-5 text-[10px] leading-tight italic text-slate-400">
+                <span className="mt-0.5 truncate text-[10px] leading-tight italic text-slate-400">
                   {noeud.profession}
                 </span>
               )}
             </div>
-            {noeud.chemin_dossier && (
-              <div
-                className="absolute bottom-0.5 right-0.5 z-10"
-                data-tree-interactive
-              >
-                <CheckedIcon
-                  checked={isChecked}
-                  disabled={checkedPending}
-                  onToggle={(next) =>
-                    onToggleChecked?.(noeud.chemin_dossier!, next)
-                  }
-                  size="xs"
-                />
-              </div>
-            )}
           </div>
         </div>
       </div>
