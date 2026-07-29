@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { ActeModal } from "../components/ActeModal";
 import { PhotoModal } from "../components/PhotoModal";
+import { NotesModal } from "../components/NotesModal";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { PersonPanel } from "../components/PersonPanel";
 import { PersonVieResume } from "../components/PersonVieResume";
@@ -10,6 +11,8 @@ import { PersonName } from "../components/SexeIcon";
 import { useApp } from "../context/AppContext";
 import { useAsync } from "../hooks/useApi";
 import { usePhotoModal } from "../hooks/usePhotoModal";
+import { useNotesIndex, useNotesModal } from "../hooks/useNotesModal";
+import { useCheckedIndex } from "../hooks/useCheckedIndex";
 import type { ActeType, PersonneResume } from "../types/api";
 
 const PAGE_GUTTER = "pl-[calc(env(safe-area-inset-left,0px)+3.75rem)]";
@@ -29,6 +32,19 @@ export function SearchPage() {
   } | null>(null);
 
   const { photoModal, openPhotos, openPhotosForPerson, closePhotos } = usePhotoModal();
+  const { hasNotes, refresh: refreshNotesIndex } = useNotesIndex();
+  const {
+    isChecked,
+    toggleChecked,
+    isPending: isCheckedPending,
+  } = useCheckedIndex();
+  const {
+    notesModal,
+    openNotes,
+    openNotesForPerson,
+    closeNotes,
+    handleChanged: onNotesChanged,
+  } = useNotesModal(refreshNotesIndex);
 
   const trimmed = query.trim();
   const { data, loading, error } = useAsync(
@@ -120,6 +136,13 @@ export function SearchPage() {
                         nom={person.nom}
                         prenoms={person.prenoms}
                         sexe={person.sexe}
+                        onNoteClick={() => {
+                          void openNotesForPerson(
+                            person.id_gedcom,
+                            person.nom,
+                            person.prenoms,
+                          );
+                        }}
                       />
                       <PersonVieResume
                         naissance={person.naissance}
@@ -210,6 +233,25 @@ export function SearchPage() {
           onRelationPhotoClick={(id, nom, prenoms) => {
             void openPhotosForPerson(id, nom, prenoms);
           }}
+          hasNotes={hasNotes(personne?.dossier_actes?.chemin)}
+          onNoteClick={() => {
+            if (!personne) return;
+            openNotes(
+              personne.dossier_actes?.chemin,
+              personne.nom,
+              personne.prenoms,
+            );
+          }}
+          onRelationNoteClick={(id, nom, prenoms) => {
+            void openNotesForPerson(id, nom, prenoms);
+          }}
+          isChecked={isChecked(personne?.dossier_actes?.chemin)}
+          checkedPending={isCheckedPending(personne?.dossier_actes?.chemin)}
+          onToggleChecked={(next) => {
+            const chemin = personne?.dossier_actes?.chemin;
+            if (!chemin) return;
+            void toggleChecked(chemin, next);
+          }}
         />
       </div>
 
@@ -227,6 +269,14 @@ export function SearchPage() {
           photos={photoModal.photos}
           personName={photoModal.personName}
           onClose={closePhotos}
+        />
+      )}
+
+      {notesModal && (
+        <NotesModal
+          target={notesModal}
+          onClose={closeNotes}
+          onChanged={onNotesChanged}
         />
       )}
     </div>

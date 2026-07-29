@@ -41,6 +41,8 @@ interface RelationPersonLabelProps {
   photos?: boolean;
   photoCount?: number;
   onPhotoClick?: () => void;
+  hasNotes?: boolean;
+  onNoteClick?: () => void;
   className?: string;
   datesClassName?: string;
   photoSize?: "xs" | "sm";
@@ -58,6 +60,8 @@ export function RelationPersonLabel({
   photos = false,
   photoCount,
   onPhotoClick,
+  hasNotes = false,
+  onNoteClick,
   className = "",
   datesClassName = "text-slate-500",
   photoSize = "xs",
@@ -73,6 +77,8 @@ export function RelationPersonLabel({
         photoCount={photoCount}
         onPhotoClick={onPhotoClick}
         photoSize={photoSize}
+        hasNotes={hasNotes}
+        onNoteClick={onNoteClick}
         actes={actes}
         onActeClick={onActeClick}
         acteSize={acteSize}

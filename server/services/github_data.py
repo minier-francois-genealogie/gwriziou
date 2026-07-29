@@ -83,10 +83,15 @@ def get_file(rel_path: str) -> tuple[str, str] | None:
 
 
 def list_files(rel_dir: str) -> list[str]:
-    """Liste les chemins relatifs des fichiers d'un dossier."""
+    """Liste les chemins relatifs des fichiers d'un dossier (vide si absent)."""
     if not GITHUB_TOKEN:
         raise GitHubDataError("GITHUB_TOKEN non configuré")
-    payload = _request("GET", contents_url(rel_dir.rstrip("/")))
+    try:
+        payload = _request("GET", contents_url(rel_dir.rstrip("/")))
+    except GitHubDataError as exc:
+        if "404" in str(exc):
+            return []
+        raise
     if not isinstance(payload, list):
         return []
     paths: list[str] = []
@@ -100,15 +105,50 @@ def list_files(rel_dir: str) -> list[str]:
 
 
 def put_file(rel_path: str, content: str, *, message: str, sha: str | None = None) -> None:
+    put_bytes(rel_path, content.encode("utf-8"), message=message, sha=sha)
+
+
+def put_bytes(
+    rel_path: str, content: bytes, *, message: str, sha: str | None = None
+) -> None:
     if not GITHUB_TOKEN:
         raise GitHubDataError("GITHUB_TOKEN non configuré")
     encoded = "/".join(urllib.parse.quote(part) for part in rel_path.split("/"))
     url = f"{API_BASE}/{encoded}"
     body: dict = {
         "message": message,
-        "content": base64.b64encode(content.encode("utf-8")).decode("ascii"),
+        "content": base64.b64encode(content).decode("ascii"),
         "branch": DATA_REPO_BRANCH,
     }
     if sha:
         body["sha"] = sha
     _request("PUT", url, body=body)
+
+
+def get_file_sha(rel_path: str) -> str | None:
+    """Retourne le sha GitHub d'un blob, ou None si absent (sans décoder le contenu)."""
+    if not GITHUB_TOKEN:
+        return None
+    try:
+        payload = _request("GET", contents_url(rel_path))
+    except GitHubDataError as exc:
+        if "404" in str(exc):
+            return None
+        raise
+    if not isinstance(payload, dict) or payload.get("type") != "file":
+        return None
+    sha = str(payload.get("sha") or "")
+    return sha or None
+
+
+def delete_file(rel_path: str, *, message: str, sha: str) -> None:
+    if not GITHUB_TOKEN:
+        raise GitHubDataError("GITHUB_TOKEN non configuré")
+    encoded = "/".join(urllib.parse.quote(part) for part in rel_path.split("/"))
+    url = f"{API_BASE}/{encoded}"
+    body = {
+        "message": message,
+        "sha": sha,
+        "branch": DATA_REPO_BRANCH,
+    }
+    _request("DELETE", url, body=body)

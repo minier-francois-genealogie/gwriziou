@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Indexe actes (N/M/D) et photos (P) depuis GitHub (API) dans SQLite."""
+"""Indexe actes (N/M/D) et photos (P/A) depuis GitHub (API) dans SQLite."""
 
 from __future__ import annotations
 
@@ -246,7 +246,7 @@ def match_acte(
 
     act_year = birth_year(act.date_acte_iso)
 
-    if act.type == "N" or act.type == "P":
+    if act.type == "N" or act.type == "P" or act.type == "A":
         for score, person in candidates:
             if act_year and person.naissance_iso:
                 if birth_year(person.naissance_iso) != act_year:
@@ -321,7 +321,7 @@ def import_actes(conn: sqlite3.Connection, blobs: list[dict]) -> dict[str, int]:
             skipped += 1
             continue
         ext = PurePosixPath(acte.nom_fichier).suffix.lower()
-        if acte.type == "P":
+        if acte.type in ("P", "A"):
             if ext not in PHOTO_EXTENSIONS:
                 skipped += 1
                 continue

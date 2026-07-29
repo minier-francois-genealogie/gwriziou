@@ -1,23 +1,6 @@
 import { ICON_ABSENT_BTN } from "../utils/iconStyles";
 import { FloatingTooltip } from "./FloatingTooltip";
-
-function CameraIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
-      <circle cx="12" cy="13" r="3" />
-    </svg>
-  );
-}
+import { GlyphIcon } from "./GlyphIcon";
 
 export function photoTooltip(hasPhotos: boolean, count?: number): string {
   if (!hasPhotos) return "Aucune photo";
@@ -25,6 +8,16 @@ export function photoTooltip(hasPhotos: boolean, count?: number): string {
   if (count != null && count > 1) return `${count} photos`;
   return "Photo(s) disponible(s)";
 }
+
+const DISK = {
+  xs: "h-4 w-4",
+  sm: "h-5 w-5",
+} as const;
+
+const GLYPH = {
+  xs: "xs",
+  sm: "sm",
+} as const;
 
 interface PhotoIconProps {
   hasPhotos: boolean;
@@ -41,8 +34,6 @@ export function PhotoIcon({
   size = "sm",
   className = "",
 }: PhotoIconProps) {
-  const dim = size === "xs" ? "h-3 w-3" : "h-3.5 w-3.5";
-  const btnDim = size === "xs" ? "h-4 w-4" : "h-5 w-5";
   const tooltip = photoTooltip(hasPhotos, photoCount);
 
   return (
@@ -58,13 +49,13 @@ export function PhotoIcon({
         }}
         onPointerDown={(e) => e.stopPropagation()}
         onPointerUp={(e) => e.stopPropagation()}
-        className={`inline-flex items-center justify-center rounded-full transition-colors ${btnDim} ${
+        className={`inline-flex items-center justify-center rounded-full p-0 leading-none transition-colors ${DISK[size]} ${
           hasPhotos
-            ? "text-slate-900 hover:bg-slate-100"
+            ? "bg-slate-900 text-white hover:bg-slate-800"
             : ICON_ABSENT_BTN
         }`}
       >
-        <CameraIcon className={dim} />
+        <GlyphIcon name="photo" size={GLYPH[size]} />
       </button>
     </FloatingTooltip>
   );

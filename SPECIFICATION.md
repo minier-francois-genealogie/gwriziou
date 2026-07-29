@@ -18,7 +18,8 @@ https://github.com/minier-francois-genealogie/data
 │   ├── faits-historiques/     →  import SQLite (faits historiques)
 │   └── dirigeants-france/     →  import SQLite (dirigeants)
 └── app/
-    └── comptes/{email}.json   →  un fichier JSON par compte
+    ├── comptes/{email}.json   →  un fichier JSON par compte
+    └── notes/{A-Z}/{NOM}/{CLE}/*.json  →  notes (file de travail)
 ```
 
 | Contexte | GEDCOM | Actes |
@@ -171,6 +172,46 @@ Référentiel **public** : **[minier-francois-genealogie/data](https://github.co
 | [`referentiels/faits-historiques/`](https://github.com/minier-francois-genealogie/data/tree/main/referentiels/faits-historiques) | Faits historiques (JSON) |
 | [`referentiels/dirigeants-france/`](https://github.com/minier-francois-genealogie/data/tree/main/referentiels/dirigeants-france) | Dirigeants France (JSON) |
 | [`app/comptes/`](https://github.com/minier-francois-genealogie/data/tree/main/app/comptes) | Comptes applicatifs |
+| [`app/notes/`](https://github.com/minier-francois-genealogie/data/tree/main/app/notes) | Notes utilisateurs (file de travail) |
+| [`app/checked/`](https://github.com/minier-francois-genealogie/data/tree/main/app/checked) | Individus validés (marqueur admin) |
+
+**Notes** (`app/notes/`) — même arborescence que les documents (`{A-Z}/{NOM}/{CLE}/`), un fichier JSON par message. Lorsqu'un administrateur clique « pris en compte », le fichier est supprimé ; un dossier vide disparaît (Git / nettoyage local).
+
+Exemple :
+
+```text
+app/notes/D/DUPONT/DUPONT__Charles_Marie__1850-03-12__56__Vannes/
+  20260729T164012Z__francois.minier__a1b2c3.json
+```
+
+```json
+{
+  "id": "a1b2c3",
+  "cle": "DUPONT__Charles_Marie__1850-03-12__56__Vannes",
+  "auteur_email": "francois.minier@example.com",
+  "auteur_nom": "François Minier",
+  "cree_le": "2026-07-29T16:40:12Z",
+  "texte": "Date de naissance confirmée par l'acte…"
+}
+```
+
+**Checked** (`app/checked/`) — un fichier JSON par individu validé (`{A-Z}/{NOM}/{CLE}.json`). Présence du fichier = validé ; suppression = retrait. Seuls les administrateurs peuvent basculer le marqueur ; tous les utilisateurs le voient lorsqu'il est actif.
+
+Exemple :
+
+```text
+app/checked/D/DUPONT/DUPONT__Charles_Marie__1850-03-12__56__Vannes.json
+```
+
+```json
+{
+  "cle": "DUPONT__Charles_Marie__1850-03-12__56__Vannes",
+  "chemin": "D/DUPONT/DUPONT__Charles_Marie__1850-03-12__56__Vannes",
+  "par": "francois.minier@example.com",
+  "par_nom": "François Minier",
+  "le": "2026-07-29T16:40:12Z"
+}
+```
 
 **Fichiers GEDCOM disponibles** (`sources/gedcom/`) :
 
@@ -190,6 +231,7 @@ Clone local du dépôt — **données Git uniquement** (pas de scripts) :
 - **Documents** : `…\github\data\sources\documents\`
 - **Référentiels** : `…\github\data\referentiels\`
 - **Comptes** : `…\github\data\app\comptes\{email}.json`
+- **Notes** : `…\github\data\app\notes\{A-Z}\{NOM}\{CLE}\*.json`
 
 Les scripts `cursor_ws/` pointent vers ce clone via `paths.py`. En prod, le serveur utilise les URLs GitHub (voir ci-dessous).
 
@@ -345,6 +387,24 @@ sources/documents/
 - **Rattachement** : clé personne du dossier parent → `id_gedcom` au re-import.
 - **Ordre d'affichage (serveur + IHM)** : tri **alphabétique** sur `{suffixe}` (nom de fichier) — pas de sémantique imposée sur le suffixe.
 - **Import** : indexé par `import_actes.py` → table `photos` (même listing GitHub que les actes).
+
+#### Avatars (type A)
+
+Photo de profil carrée affichée sur la cellule d'arbre. Un seul fichier par personne :
+
+```text
+{NOM}__{prenoms}__A__{AAAA-MM-JJ}__{dept}__{commune}.jpg
+```
+
+| Segment | Description |
+|---------|-------------|
+| `{TYPE}` | **A** = avatar |
+| Date / dept / commune | Identiques à la clé dossier (naissance), comme pour **P** |
+
+**Exemple :** `MINIER__Francois_Xavier__A__1981-11-03__56__Ploermel.jpg`
+
+- Déposé via l'IHM (cadrage + enregistrement) ou manuellement dans Git.
+- Indexé comme les photos **P** ; exposé séparément en `avatar_url` (exclu de la galerie photos).
 
 #### Mariage — un dossier par conjoint
 

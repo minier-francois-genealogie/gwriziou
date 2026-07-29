@@ -29,6 +29,7 @@ export type AppView =
   | "analyse-noms"
   | "gestion-professions"
   | "gestion-warnings"
+  | "gestion-notes"
   | "admin-comptes"
   | "a-savoir";
 
@@ -117,10 +118,13 @@ export function loadDerniereVue(): AppView {
       v === "analyse-noms" ||
       v === "gestion-professions" ||
       v === "gestion-warnings" ||
+      v === "gestion-notes" ||
       v === "admin-comptes" ||
       v === "a-savoir"
-    )
+    ) {
       return v;
+    }
+    if (v === "admin-notes" || v === "admin-remarques") return "gestion-notes";
   } catch {
     /* ignore */
   }

@@ -13,6 +13,12 @@ import type {
   FaitsHistoriquesStatsResponse,
   GeolocResponse,
   HashPasswordResponse,
+  NoteListResponse,
+  NoteIndexResponse,
+  NoteLigne,
+  CheckedIndexResponse,
+  CheckedStateResponse,
+  AvatarResponse,
   PersonneDetail,
   ProfessionMappingListResponse,
   ProfessionMappingLigne,
@@ -217,6 +223,52 @@ export const api = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password }),
+    }),
+
+  notes: (chemin: string) =>
+    request<NoteListResponse>(
+      `/api/notes?chemin=${encodeURIComponent(chemin)}`,
+    ),
+
+  notesIndex: () => request<NoteIndexResponse>("/api/notes/index"),
+
+  createNote: (chemin: string, texte: string) =>
+    request<NoteLigne>("/api/notes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chemin, texte }),
+    }),
+
+  deleteNote: (chemin: string, fichier: string) =>
+    request<{ ok: boolean }>("/api/notes", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chemin, fichier }),
+    }),
+
+  adminNotes: () => request<NoteListResponse>("/api/admin/notes"),
+
+  adminDeleteNote: (chemin: string, fichier: string) =>
+    request<{ ok: boolean }>("/api/admin/notes", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chemin, fichier }),
+    }),
+
+  checkedIndex: () => request<CheckedIndexResponse>("/api/checked/index"),
+
+  setChecked: (chemin: string, checked: boolean) =>
+    request<CheckedStateResponse>("/api/checked", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chemin, checked }),
+    }),
+
+  uploadAvatar: (id_gedcom: string, image_base64: string) =>
+    request<AvatarResponse>("/api/avatars", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id_gedcom, image_base64 }),
     }),
 };
 

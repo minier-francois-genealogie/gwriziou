@@ -150,6 +150,7 @@ export interface PersonneDetail {
   actes: ActesPersonne;
   evenements: EvenementArbre[];
   photos: PhotoPersonne[];
+  avatar_url?: string | null;
   dossier_actes?: DossierActes | null;
   relations: RelationsPersonne;
   faits_historiques?: FaitHistorique[];
@@ -175,6 +176,8 @@ export interface NoeudArbre {
   profession: string | null;
   naissance_tri: string | null;
   photos: boolean;
+  avatar_url?: string | null;
+  chemin_dossier?: string | null;
   evenements: EvenementArbre[];
   date_naissance_min?: string | null;
   date_naissance_min_approximation?: string | null;
@@ -393,6 +396,44 @@ export interface CompteLigne {
 export interface CompteListResponse {
   comptes: CompteLigne[];
   source_fichier: string;
+}
+
+export interface NoteLigne {
+  id: string;
+  cle: string;
+  chemin: string;
+  fichier: string;
+  auteur_email: string;
+  auteur_nom: string;
+  cree_le: string;
+  texte: string;
+}
+
+export interface NoteListResponse {
+  notes: NoteLigne[];
+  source: string;
+}
+
+export interface NoteIndexResponse {
+  chemins: string[];
+  total: number;
+}
+
+export interface CheckedIndexResponse {
+  chemins: string[];
+  total: number;
+}
+
+export interface CheckedStateResponse {
+  chemin: string;
+  checked: boolean;
+}
+
+export interface AvatarResponse {
+  id_gedcom: string;
+  url: string;
+  nom_fichier: string;
+  chemin: string;
 }
 
 export interface HashPasswordResponse {

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Debug icône photo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #fff;
+      color: #000;
+      font: 14px/1.4 Consolas, monospace;
+      padding: 24px;
+    }
+    h1 { font-size: 16px; margin-bottom: 16px; }
+    h2 { font-size: 13px; margin: 20px 0 8px; }
+    .row { display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; }
+    .panel { border: 1px solid #000; padding: 12px; }
+    .label { margin-top: 8px; white-space: pre; }
+
+    /* Grille 24×24 agrandie : 1 unité = 20 px → 480×480 */
+    .grid24 {
+      width: 480px;
+      height: 480px;
+      position: relative;
+      background:
+        repeating-linear-gradient(0deg, #ccc 0 1px, transparent 1px 20px),
+        repeating-linear-gradient(90deg, #ccc 0 1px, transparent 1px 20px),
+        #fff;
+      image-rendering: pixelated;
+    }
+    .grid24 svg {
+      position: absolute;
+      inset: 0;
+      width: 480px;
+      height: 480px;
+      overflow: visible;
+    }
+    .crosshair {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(#f00 0 0) center/100% 1px no-repeat,
+        linear-gradient(#f00 0 0) center/1px 100% no-repeat;
+      opacity: 0.35;
+    }
+
+    /* Disques à taille réelle CSS, puis on zoomera en post */
+    .disk {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 9999px;
+      background: #000;
+      padding: 0;
+      line-height: 0;
+    }
+    .disk svg { display: block; color: #fff; overflow: visible; }
+    .disk-xs { width: 16px; height: 16px; }
+    .disk-xs svg { width: 10px; height: 10px; }
+    .disk-sm { width: 20px; height: 20px; }
+    .disk-sm svg { width: 12px; height: 12px; }
+
+    .zoom-wrap {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+  </style>
+</head>
+<body>
+  <h1>Debug PhotoIcon — bicolore / pixels</h1>
+
+  <h2>1) Glyphe seul dans viewBox 24×24 (1 case = 1 unité SVG = 20 px écran)</h2>
+  <div class="row">
+    <div class="panel">
+      <div class="grid24" id="grid">
+        <div class="crosshair"></div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 7h-4l-1.5 2H6.5A1.5 1.5 0 0 0 5 10.5v5A1.5 1.5 0 0 0 6.5 17h11A1.5 1.5 0 0 0 19 15.5v-5A1.5 1.5 0 0 0 17.5 9H15.5L14 7z" />
+          <circle cx="12" cy="13" r="2.5" />
+        </svg>
+      </div>
+      <div class="label">Croix rouge = centre (12,12)
+Disque CSS xs = 16×16, glyphe = 10×10
+Disque CSS sm = 20×20, glyphe = 12×12</div>
+    </div>
+  </div>
+
+  <h2>2) Taille réelle CSS (puis zoom ×20 en post-traitement)</h2>
+  <div class="row">
+    <div class="panel">
+      <div id="real-xs" class="disk disk-xs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 7h-4l-1.5 2H6.5A1.5 1.5 0 0 0 5 10.5v5A1.5 1.5 0 0 0 6.5 17h11A1.5 1.5 0 0 0 19 15.5v-5A1.5 1.5 0 0 0 17.5 9H15.5L14 7z" />
+          <circle cx="12" cy="13" r="2.5" />
+        </svg>
+      </div>
+      <div class="label">xs : disque 16×16 / appareil 10×10</div>
+    </div>
+    <div class="panel">
+      <div id="real-sm" class="disk disk-sm">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 7h-4l-1.5 2H6.5A1.5 1.5 0 0 0 5 10.5v5A1.5 1.5 0 0 0 6.5 17h11A1.5 1.5 0 0 0 19 15.5v-5A1.5 1.5 0 0 0 17.5 9H15.5L14 7z" />
+          <circle cx="12" cy="13" r="2.5" />
+        </svg>
+      </div>
+      <div class="label">sm : disque 20×20 / appareil 12×12</div>
+    </div>
+  </div>
+
+  <h2>3) Même chose zoom ×20 (pixel nearest-neighbor via CSS scale)</h2>
+  <div class="row">
+    <div class="panel">
+      <div class="zoom-wrap" style="width:320px;height:320px;overflow:hidden">
+        <div style="width:16px;height:16px;transform:scale(20);transform-origin:top left">
+          <div class="disk disk-xs">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 7h-4l-1.5 2H6.5A1.5 1.5 0 0 0 5 10.5v5A1.5 1.5 0 0 0 6.5 17h11A1.5 1.5 0 0 0 19 15.5v-5A1.5 1.5 0 0 0 17.5 9H15.5L14 7z" />
+              <circle cx="12" cy="13" r="2.5" />
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="label">xs ×20 → 320×320</div>
+    </div>
+    <div class="panel">
+      <div class="zoom-wrap" style="width:400px;height:400px;overflow:hidden">
+        <div style="width:20px;height:20px;transform:scale(20);transform-origin:top left">
+          <div class="disk disk-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 7h-4l-1.5 2H6.5A1.5 1.5 0 0 0 5 10.5v5A1.5 1.5 0 0 0 6.5 17h11A1.5 1.5 0 0 0 19 15.5v-5A1.5 1.5 0 0 0 17.5 9H15.5L14 7z" />
+              <circle cx="12" cy="13" r="2.5" />
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="label">sm ×20 → 400×400</div>
+    </div>
+  </div>
+</body>
+</html>

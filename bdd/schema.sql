@@ -165,7 +165,7 @@ CREATE INDEX idx_actes_cle_personne ON actes (cle_personne);
 CREATE INDEX idx_actes_type ON actes (id_gedcom, type);
 
 -- ---------------------------------------------------------------------------
--- Photos (métadonnées + URL GitHub, type P dans sources/documents/)
+-- Photos (métadonnées + URL GitHub, types P et A dans sources/documents/)
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE photos (

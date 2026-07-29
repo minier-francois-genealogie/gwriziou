@@ -141,6 +141,7 @@ class PersonneDetail(BaseModel):
     actes: ActesPersonne
     evenements: list[EvenementArbre] = Field(default_factory=list)
     photos: list[PhotoPersonne] = Field(default_factory=list)
+    avatar_url: str | None = None
     dossier_actes: DossierActes | None = None
     relations: RelationsPersonne
     faits_historiques: list[FaitHistorique] = Field(default_factory=list)
@@ -155,7 +156,10 @@ class NoeudArbre(BaseModel):
     profession: str | None = None
     naissance_tri: str | None = None
     photos: bool = False
+    avatar_url: str | None = None
+    chemin_dossier: str | None = None
     evenements: list[EvenementArbre] = Field(default_factory=list)
+    date_naissance_min: str | None = None
     date_naissance_min_approximation: str | None = None
     date_naissance_min_regle: str | None = None
     date_deces_max: str | None = None

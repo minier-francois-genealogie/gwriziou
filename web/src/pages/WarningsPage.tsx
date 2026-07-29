@@ -158,6 +158,7 @@ export function WarningsPage() {
                               prenoms={row.prenoms}
                               sexe={row.sexe}
                               showPhoto={false}
+                              showNote={false}
                             />
                           </button>
                         </td>

@@ -1,4 +1,5 @@
 import type { ActeType } from "../types/api";
+import { GlyphIcon, type GlyphSize } from "./GlyphIcon";
 
 export type EvenementType = ActeType | "naissance_enfant";
 
@@ -11,32 +12,7 @@ const STROKE = {
   strokeLinejoin: "round" as const,
 };
 
-/** Naissance : astérisque à 8 branches (symbole courant en généalogie). */
-function NaissanceShape() {
-  return (
-    <>
-      <path d="M12 3v18M3 12h18" {...STROKE} />
-      <path d="M6.34 6.34l11.32 11.32M17.66 6.34 6.34 17.66" {...STROKE} />
-    </>
-  );
-}
-
-/** Mariage : lemniscate ∞ (symbole d'union en généalogie). */
-function MariageShape() {
-  return (
-    <path
-      d="M6 12 C6 8, 9 8, 12 12 C15 16, 18 16, 18 12 C18 8, 15 8, 12 12 C9 16, 6 16, 6 12"
-      {...STROKE}
-    />
-  );
-}
-
-/** Décès : croix latine † (symbole de fin de vie en généalogie). */
-function DecesShape() {
-  return <path d="M12 4v16M8 8h8" {...STROKE} strokeWidth={2.25} />;
-}
-
-/** Naissance d'un enfant : silhouette enfant. */
+/** Naissance d'un enfant : silhouette (listes d'événements, pas disque). */
 function NaissanceEnfantShape() {
   return (
     <>
@@ -46,16 +22,26 @@ function NaissanceEnfantShape() {
   );
 }
 
-function shapeFor(type: EvenementType | string) {
+function shapeForSvgNative(type: EvenementType | string) {
   switch (type) {
     case "naissance":
-      return <NaissanceShape />;
+      return (
+        <>
+          <path d="M12 3.5v17M3.5 12h17" {...STROKE} />
+          <path d="M6.5 6.5l11 11M17.5 6.5l-11 11" {...STROKE} />
+        </>
+      );
     case "naissance_enfant":
       return <NaissanceEnfantShape />;
     case "mariage":
-      return <MariageShape />;
+      return (
+        <path
+          d="M6 12 C6 8.2, 9 8.2, 12 12 C15 15.8, 18 15.8, 18 12 C18 8.2, 15 8.2, 12 12 C9 15.8, 6 15.8, 6 12"
+          {...STROKE}
+        />
+      );
     case "deces":
-      return <DecesShape />;
+      return <path d="M12 5.25v14.5M8 9.5h8" {...STROKE} strokeWidth={2.25} />;
     default:
       return null;
   }
@@ -74,13 +60,22 @@ interface EvenementIconProps {
   className?: string;
 }
 
-/** Icône événement pour HTML (fiche, arbre foreignObject, actes). */
+/** Icône événement HTML — PNG masqué (N/M/D) pour centrage stable. */
 export function EvenementIcon({
   type,
   size = "xs",
   className = "",
 }: EvenementIconProps) {
-  const shape = shapeFor(type);
+  if (type === "naissance" || type === "mariage" || type === "deces") {
+    return (
+      <GlyphIcon
+        name={type}
+        size={size as GlyphSize}
+        className={className}
+      />
+    );
+  }
+  const shape = shapeForSvgNative(type);
   if (!shape) {
     return (
       <span
@@ -94,7 +89,7 @@ export function EvenementIcon({
   return (
     <svg
       viewBox={VIEWBOX}
-      className={`inline-block shrink-0 ${SIZE_CLASS[size]} ${className}`}
+      className={`block shrink-0 ${SIZE_CLASS[size]} ${className}`}
       aria-hidden="true"
     >
       {shape}
@@ -115,7 +110,7 @@ export function EvenementIconG({
   className,
 }: EvenementIconGProps) {
   const scale = size / 24;
-  const shape = shapeFor(type);
+  const shape = shapeForSvgNative(type);
   if (!shape) return null;
   return (
     <g

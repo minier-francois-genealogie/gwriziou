@@ -94,6 +94,8 @@ app = FastAPI(
 )
 
 _origins = [o.strip() for o in CORS_ORIGINS if o.strip()]
+# Auth d'abord (interne), CORS en dernier = exécuté en premier (réponses 401 avec en-têtes CORS).
+app.add_middleware(AuthMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_origins or ["*"],
@@ -101,7 +103,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(AuthMiddleware)
 
 app.include_router(auth_router)
 app.include_router(api_router)

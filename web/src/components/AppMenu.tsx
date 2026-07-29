@@ -205,6 +205,16 @@ function ComptesIcon() {
   );
 }
 
+function NotesIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+      <path d="M12 11v6M9 14h6" />
+    </svg>
+  );
+}
+
 function PadlockOpenIcon() {
   return (
     <svg
@@ -227,13 +237,17 @@ export function AppMenu() {
   const { menuOpen, setMenuOpen, toggleMenu, ancrePersonneId, ancetres, descendants, dataRefreshTick } =
     useApp();
   const { user, logout } = useAuth();
+  const isAdmin = user?.role === "admin";
   const navigate = useNavigate();
   const location = useLocation();
   const panelRef = useRef<HTMLDivElement>(null);
 
   const { data: warningStats } = useAsync(
-    () => api.warningsStats(ancrePersonneId, ancetres, descendants),
-    [ancrePersonneId, ancetres, descendants, dataRefreshTick],
+    () =>
+      isAdmin
+        ? api.warningsStats(ancrePersonneId, ancetres, descendants)
+        : Promise.resolve(null),
+    [isAdmin, ancrePersonneId, ancetres, descendants, dataRefreshTick],
   );
 
   const { data: faitsStats } = useAsync(
@@ -244,6 +258,11 @@ export function AppMenu() {
   const { data: dirigeantsStats } = useAsync(
     () => api.dirigeantsFranceStats(ancrePersonneId, ancetres, descendants),
     [ancrePersonneId, ancetres, descendants, dataRefreshTick],
+  );
+
+  const { data: notesIndex } = useAsync(
+    () => (isAdmin ? api.notesIndex() : Promise.resolve(null)),
+    [isAdmin, dataRefreshTick, menuOpen],
   );
 
   const onHistoireRoute =
@@ -311,6 +330,9 @@ export function AppMenu() {
   const dirigeantsBadge = dirigeantsStats
     ? `${dirigeantsStats.nombre_dirigeants_zone} / ${dirigeantsStats.nombre_dirigeants_total}`
     : undefined;
+
+  const notesBadge =
+    notesIndex && notesIndex.total > 0 ? String(notesIndex.total) : undefined;
 
   const onMap = location.pathname === "/geoloc";
 
@@ -498,90 +520,102 @@ export function AppMenu() {
               </div>
             )}
           </div>
-          <div>
-            <button
-              type="button"
-              onClick={() => setGestionOpen((open) => !open)}
-              className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium ${
-                onGestionRoute
-                  ? "bg-sky-50 text-sky-900"
-                  : "text-slate-700 hover:bg-slate-100"
-              }`}
-              aria-expanded={gestionOpen}
-            >
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center" aria-hidden="true">
-                <GestionDataIcon />
-              </span>
-              <span className="min-w-0 flex-1 text-left">Gestion data</span>
-              <svg
-                viewBox="0 0 24 24"
-                className={`h-3.5 w-3.5 shrink-0 transition-transform ${gestionOpen ? "rotate-180" : ""}`}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                aria-hidden="true"
-              >
-                <path d="m6 9 6 6 6-6" />
-              </svg>
-            </button>
-            {gestionOpen && (
-              <div className="mt-0.5 space-y-0.5">
-                <NavItem
-                  to="/gestion/professions"
-                  label="Professions"
-                  indent
-                  onNavigate={() => closeAndGo("gestion-professions", "/gestion/professions")}
-                  icon={<ProfessionsGestionIcon />}
-                />
-                <NavItem
-                  to="/gestion/warnings"
-                  label="Warnings"
-                  badge={warningBadge}
-                  indent
-                  onNavigate={() => closeAndGo("gestion-warnings", "/gestion/warnings")}
-                  icon={<WarningsIcon />}
-                />
+          {isAdmin && (
+            <div className="space-y-0.5 rounded-xl bg-amber-50 p-1">
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setGestionOpen((open) => !open)}
+                  className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium ${
+                    onGestionRoute
+                      ? "bg-amber-100 text-amber-950"
+                      : "text-slate-700 hover:bg-amber-100/80"
+                  }`}
+                  aria-expanded={gestionOpen}
+                >
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center" aria-hidden="true">
+                    <GestionDataIcon />
+                  </span>
+                  <span className="min-w-0 flex-1 text-left">Gestion data</span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    className={`h-3.5 w-3.5 shrink-0 transition-transform ${gestionOpen ? "rotate-180" : ""}`}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
+                {gestionOpen && (
+                  <div className="mt-0.5 space-y-0.5">
+                    <NavItem
+                      to="/gestion/professions"
+                      label="Professions"
+                      indent
+                      onNavigate={() => closeAndGo("gestion-professions", "/gestion/professions")}
+                      icon={<ProfessionsGestionIcon />}
+                    />
+                    <NavItem
+                      to="/gestion/warnings"
+                      label="Warnings"
+                      badge={warningBadge}
+                      indent
+                      onNavigate={() => closeAndGo("gestion-warnings", "/gestion/warnings")}
+                      icon={<WarningsIcon />}
+                    />
+                    <NavItem
+                      to="/gestion/notes"
+                      label="Notes"
+                      badge={notesBadge}
+                      indent
+                      onNavigate={() => closeAndGo("gestion-notes", "/gestion/notes")}
+                      icon={<NotesIcon />}
+                    />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          <div>
-            <button
-              type="button"
-              onClick={() => setAdminOpen((open) => !open)}
-              className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium ${
-                onAdminRoute
-                  ? "bg-sky-50 text-sky-900"
-                  : "text-slate-700 hover:bg-slate-100"
-              }`}
-              aria-expanded={adminOpen}
-            >
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center" aria-hidden="true">
-                <AdminIcon />
-              </span>
-              <span className="min-w-0 flex-1 text-left">Admin</span>
-              <svg
-                viewBox="0 0 24 24"
-                className={`h-3.5 w-3.5 shrink-0 transition-transform ${adminOpen ? "rotate-180" : ""}`}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                aria-hidden="true"
-              >
-                <path d="m6 9 6 6 6-6" />
-              </svg>
-            </button>
-            {adminOpen && (
-              <div className="mt-0.5 space-y-0.5">
-                <NavItem
-                  to="/admin/comptes"
-                  label="Gestion de compte"
-                  indent
-                  onNavigate={() => closeAndGo("admin-comptes", "/admin/comptes")}
-                  icon={<ComptesIcon />}
-                />
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setAdminOpen((open) => !open)}
+                  className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium ${
+                    onAdminRoute
+                      ? "bg-amber-100 text-amber-950"
+                      : "text-slate-700 hover:bg-amber-100/80"
+                  }`}
+                  aria-expanded={adminOpen}
+                >
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center" aria-hidden="true">
+                    <AdminIcon />
+                  </span>
+                  <span className="min-w-0 flex-1 text-left">Admin</span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    className={`h-3.5 w-3.5 shrink-0 transition-transform ${adminOpen ? "rotate-180" : ""}`}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
+                {adminOpen && (
+                  <div className="mt-0.5 space-y-0.5">
+                    <NavItem
+                      to="/admin/comptes"
+                      label="Gestion de compte"
+                      indent
+                      onNavigate={() => closeAndGo("admin-comptes", "/admin/comptes")}
+                      icon={<ComptesIcon />}
+                    />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </div>
+          )}
           <div>
             <button
               type="button"

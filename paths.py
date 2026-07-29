@@ -5,6 +5,8 @@ Source de vérité : https://github.com/minier-francois-genealogie/data
   - Documents   : sources/documents/  (actes N/M/D + photos P)
   - Référentiels: referentiels/faits-historiques/, referentiels/dirigeants-france/
   - Comptes app : app/comptes/{email}.json
+  - Notes app   : app/notes/{A-Z}/{NOM}/{CLE}/*.json
+  - Checked app : app/checked/{A-Z}/{NOM}/{CLE}.json
 
 En développement : clone local sous ../data/ (dépôt minier-francois-genealogie/data).
 En production (serveur + IHM déployés) : fetch depuis GitHub (raw ou git), pas le disque local.
@@ -75,6 +77,24 @@ AUTH_ACCOUNTS_DIR = Path(
     )
 )
 AUTH_ACCOUNTS_RAW_BASE = f"{DATA_REPO_RAW_BASE}/{AUTH_ACCOUNTS_REL_PREFIX}"
+
+NOTES_REL_PREFIX = "app/notes"
+NOTES_DIR = Path(
+    os.environ.get(
+        "NOTES_DIR",
+        DATA_ROOT / NOTES_REL_PREFIX,
+    )
+)
+NOTES_RAW_BASE = f"{DATA_REPO_RAW_BASE}/{NOTES_REL_PREFIX}"
+
+CHECKED_REL_PREFIX = "app/checked"
+CHECKED_DIR = Path(
+    os.environ.get(
+        "CHECKED_DIR",
+        DATA_ROOT / CHECKED_REL_PREFIX,
+    )
+)
+CHECKED_RAW_BASE = f"{DATA_REPO_RAW_BASE}/{CHECKED_REL_PREFIX}"
 
 # Alias rétrocompatibilité
 FAITS_HISTORIQUES_DIR = HISTOIRE_FAITS_DIR

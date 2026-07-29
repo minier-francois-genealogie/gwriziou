@@ -2,6 +2,7 @@ import type { ActeType, ActesPersonne } from "../types/api";
 import { formatNom } from "../utils/format";
 import { ActeIcons } from "./ActeIcons";
 import { FloatingTooltip } from "./FloatingTooltip";
+import { NoteIcon } from "./NoteIcon";
 import { PhotoIcon } from "./PhotoIcon";
 const ICON_CLASS = "h-3.5 w-3.5 shrink-0";
 
@@ -84,6 +85,9 @@ interface PersonNameProps {
   onPhotoClick?: () => void;
   photoSize?: "xs" | "sm";
   showPhoto?: boolean;
+  hasNotes?: boolean;
+  onNoteClick?: () => void;
+  showNote?: boolean;
   actes?: ActesPersonne;
   onActeClick?: (type: ActeType, url: string) => void;
   acteSize?: "xs" | "sm";
@@ -99,6 +103,9 @@ export function PersonName({
   onPhotoClick,
   photoSize = "sm",
   showPhoto = true,
+  hasNotes = false,
+  onNoteClick,
+  showNote = true,
   actes,
   onActeClick,
   acteSize = "xs",
@@ -113,6 +120,9 @@ export function PersonName({
           onClick={onPhotoClick}
           size={photoSize}
         />
+      )}
+      {showNote && (
+        <NoteIcon hasNotes={hasNotes} onClick={onNoteClick} size={photoSize} />
       )}
       {actes && (
         <ActeIcons actes={actes} onActeClick={onActeClick} size={acteSize} />

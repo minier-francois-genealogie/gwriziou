@@ -69,11 +69,20 @@ export function useSvgViewport({
   const panRef = useRef<{ x: number; y: number; vb: ViewBox; pid: number } | null>(
     null,
   );
+  /** Pan en attente tant que le déplacement n'a pas dépassé le seuil (clic ≠ drag). */
+  const panCandidateRef = useRef<{
+    x: number;
+    y: number;
+    vb: ViewBox;
+    pid: number;
+  } | null>(null);
   const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
   const viewBoxRef = useRef(viewBox);
   const animFrameRef = useRef<number | null>(null);
 
   viewBoxRef.current = viewBox;
+
+  const PAN_DRAG_THRESHOLD_PX = 6;
 
   useEffect(() => {
     const el = containerRef.current;
@@ -293,14 +302,20 @@ export function useSvgViewport({
       if (!enabled) return;
       cancelPanAnimation();
       const target = e.target;
+      // Uniquement les vrais contrôles (boutons) — pas les cellules entières.
       if (target instanceof Element && target.closest("[data-tree-interactive]")) {
         return;
       }
       pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (pointersRef.current.size === 1 && e.button === 0) {
-        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-        panRef.current = { x: e.clientX, y: e.clientY, vb: viewBox, pid: e.pointerId };
-        setIsPanning(true);
+        panCandidateRef.current = {
+          x: e.clientX,
+          y: e.clientY,
+          vb: viewBox,
+          pid: e.pointerId,
+        };
+        panRef.current = null;
+        setIsPanning(false);
       }
     },
     [cancelPanAnimation, enabled, viewBox],
@@ -315,6 +330,7 @@ export function useSvgViewport({
 
       if (pointersRef.current.size === 2) {
         if (!pinchZoom) return;
+        panCandidateRef.current = null;
         const pts = [...pointersRef.current.values()];
         const dist = Math.hypot(pts[0]!.x - pts[1]!.x, pts[0]!.y - pts[1]!.y);
         const el = containerRef.current;
@@ -345,7 +361,23 @@ export function useSvgViewport({
           pid: -1,
           pinchDist: dist,
         } as typeof panRef.current & { pinchDist: number };
+        setIsPanning(true);
         return;
+      }
+
+      const candidate = panCandidateRef.current;
+      if (
+        candidate &&
+        candidate.pid === e.pointerId &&
+        !panRef.current
+      ) {
+        const dist = Math.hypot(e.clientX - candidate.x, e.clientY - candidate.y);
+        if (dist < PAN_DRAG_THRESHOLD_PX) return;
+        const el = e.currentTarget as HTMLElement;
+        el.setPointerCapture(e.pointerId);
+        panRef.current = candidate;
+        panCandidateRef.current = null;
+        setIsPanning(true);
       }
 
       // Sur iOS Safari, `buttons` peut rester à 0 pendant le drag tactile.
@@ -370,8 +402,12 @@ export function useSvgViewport({
 
   const endPan = useCallback((e: React.PointerEvent) => {
     pointersRef.current.delete(e.pointerId);
+    if (panCandidateRef.current?.pid === e.pointerId) {
+      panCandidateRef.current = null;
+    }
     if (pointersRef.current.size === 0) {
       panRef.current = null;
+      panCandidateRef.current = null;
       setIsPanning(false);
     }
   }, []);

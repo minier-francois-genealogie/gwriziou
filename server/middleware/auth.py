@@ -25,6 +25,9 @@ def _is_public(path: str) -> bool:
 
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
+        # Laisser passer le préflight CORS (sinon PATCH/POST cross-origin échouent côté navigateur).
+        if request.method == "OPTIONS":
+            return await call_next(request)
         path = request.url.path
         if not path.startswith("/api") or _is_public(path):
             return await call_next(request)

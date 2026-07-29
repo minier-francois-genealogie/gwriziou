@@ -89,7 +89,7 @@ export function ActeIconSingle({
         }}
         onPointerDown={(e) => e.stopPropagation()}
         onPointerUp={(e) => e.stopPropagation()}
-        className={`inline-flex items-center justify-center rounded-full transition-colors ${dim} ${
+        className={`inline-flex items-center justify-center rounded-full p-0 leading-none transition-colors ${dim} ${
           active
             ? canOpen
               ? meta.activeClass

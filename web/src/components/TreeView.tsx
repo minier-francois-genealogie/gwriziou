@@ -29,10 +29,31 @@ interface TreeViewProps {
   onAncre: (id: string) => void;
   onActeClick: (type: "naissance" | "mariage" | "deces", url: string, label?: string) => void;
   onPhotoClick: (id: string, nom: string, prenoms: string | null) => void;
+  onNoteClick?: (chemin: string | null, nom: string, prenoms: string | null) => void;
+  hasNotes?: (chemin: string | null | undefined) => boolean;
+  isChecked?: (chemin: string | null | undefined) => boolean;
+  isCheckedPending?: (chemin: string | null | undefined) => boolean;
+  onToggleChecked?: (chemin: string, next: boolean) => void;
+  onAvatarEdit?: (id: string, nom: string, prenoms: string | null) => void;
 }
 
 export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeView(
-  { arbre, focusId, ancreId, viewMode = "detail", onFocus, onAncre, onActeClick, onPhotoClick },
+  {
+    arbre,
+    focusId,
+    ancreId,
+    viewMode = "detail",
+    onFocus,
+    onAncre,
+    onActeClick,
+    onPhotoClick,
+    onNoteClick,
+    hasNotes,
+    isChecked,
+    isCheckedPending,
+    onToggleChecked,
+    onAvatarEdit,
+  },
   ref,
 ) {
   const metrics = getTreeLayoutMetrics(viewMode);
@@ -211,6 +232,12 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
                 onAncre={onAncre}
                 onActeClick={onActeClick}
                 onPhotoClick={onPhotoClick}
+                onNoteClick={onNoteClick}
+                hasNotes={hasNotes?.(node.noeud.chemin_dossier)}
+                isChecked={isChecked?.(node.noeud.chemin_dossier)}
+                checkedPending={isCheckedPending?.(node.noeud.chemin_dossier)}
+                onToggleChecked={onToggleChecked}
+                onAvatarEdit={onAvatarEdit}
                 onParentsRefClick={handleParentsRefClick}
               />
             ))}

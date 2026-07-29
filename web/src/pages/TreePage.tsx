@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api/client";
 import { ActeModal } from "../components/ActeModal";
 import { PhotoModal } from "../components/PhotoModal";
+import { NotesModal } from "../components/NotesModal";
+import { AvatarCropModal } from "../components/AvatarCropModal";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { TreeViewControls } from "../components/TreeViewControls";
 import { TreeNavPad } from "../components/TreeNavPad";
@@ -12,7 +14,10 @@ import { useAsync } from "../hooks/useApi";
 import { useKeyboardNav } from "../hooks/useKeyboardNav";
 import { hasSavedTreeZoom } from "../hooks/useSvgViewport";
 import { usePhotoModal } from "../hooks/usePhotoModal";
+import { useNotesIndex, useNotesModal } from "../hooks/useNotesModal";
+import { useCheckedIndex } from "../hooks/useCheckedIndex";
 import type { ActeType, ArbreResponse } from "../types/api";
+import { formatNom } from "../utils/format";
 import { layoutTree, type TreeViewMode } from "../utils/treeLayout";
 import { loadTreeViewMode, saveTreeViewMode } from "../utils/appStorage";
 import { buildTreeNavIndex, type TreeNavDirection } from "../utils/treeNav";
@@ -49,6 +54,23 @@ export function TreePage() {
   } | null>(null);
 
   const { photoModal, openPhotosForPerson, closePhotos } = usePhotoModal();
+  const { hasNotes, refresh: refreshNotesIndex } = useNotesIndex();
+  const {
+    isChecked,
+    toggleChecked,
+    isPending: isCheckedPending,
+  } = useCheckedIndex();
+  const {
+    notesModal,
+    openNotes,
+    closeNotes,
+    handleChanged: onNotesChanged,
+  } = useNotesModal(refreshNotesIndex);
+
+  const [avatarModal, setAvatarModal] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   useEffect(() => {
     setFetchKey((k) => k + 1);
@@ -179,6 +201,38 @@ export function TreePage() {
     [openPhotosForPerson],
   );
 
+  const handleNoteClick = useCallback(
+    (chemin: string | null, nom: string, prenoms: string | null) => {
+      openNotes(chemin, nom, prenoms);
+    },
+    [openNotes],
+  );
+
+  const handleAvatarEdit = useCallback(
+    (id: string, nom: string, prenoms: string | null) => {
+      setAvatarModal({ id, name: formatNom(nom, prenoms) });
+    },
+    [],
+  );
+
+  const handleAvatarSaved = useCallback(
+    (url: string) => {
+      const id = avatarModal?.id;
+      if (!id) return;
+      const bust = `${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`;
+      setDisplayArbre((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          noeuds: prev.noeuds.map((n) =>
+            n.id_gedcom === id ? { ...n, avatar_url: bust } : n,
+          ),
+        };
+      });
+    },
+    [avatarModal?.id],
+  );
+
   const canUp = navIndex?.canMove(focusPersonneId, "up") ?? false;
   const canDown = navIndex?.canMove(focusPersonneId, "down") ?? false;
   const canLeft = navIndex?.canMove(focusPersonneId, "left") ?? false;
@@ -213,6 +267,12 @@ export function TreePage() {
             onAncre={handleAncre}
             onActeClick={handleActeClick}
             onPhotoClick={handlePhotoClick}
+            onNoteClick={handleNoteClick}
+            hasNotes={hasNotes}
+            isChecked={isChecked}
+            isCheckedPending={isCheckedPending}
+            onToggleChecked={toggleChecked}
+            onAvatarEdit={handleAvatarEdit}
           />
           <div className="pointer-events-none absolute right-3 top-3 z-40 pt-[calc(env(safe-area-inset-top,0px)+0.25rem)]">
             <TreeViewControls
@@ -255,6 +315,23 @@ export function TreePage() {
           photos={photoModal.photos}
           personName={photoModal.personName}
           onClose={closePhotos}
+        />
+      )}
+
+      {notesModal && (
+        <NotesModal
+          target={notesModal}
+          onClose={closeNotes}
+          onChanged={onNotesChanged}
+        />
+      )}
+
+      {avatarModal && (
+        <AvatarCropModal
+          idGedcom={avatarModal.id}
+          personName={avatarModal.name}
+          onClose={() => setAvatarModal(null)}
+          onSaved={handleAvatarSaved}
         />
       )}
     </div>

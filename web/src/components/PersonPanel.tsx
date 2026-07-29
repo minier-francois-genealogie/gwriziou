@@ -4,6 +4,7 @@ import type { ActeType, EvenementArbre, PersonneDetail, PhotoPersonne, RelationR
 import { formatNom } from "../utils/format";
 
 import { AncreButton } from "./AncreButton";
+import { CheckedIcon } from "./CheckedIcon";
 import { ActesDossierRow } from "./ActesDossierRow";
 import { EvenementsList, normalizeEvenements } from "./EvenementsList";
 
@@ -48,6 +49,12 @@ interface PersonPanelProps {
   onNavigate: (id: string) => void;
   onPhotoClick: (photos: PhotoPersonne[], personName: string) => void;
   onRelationPhotoClick: (id: string, nom: string, prenoms: string | null) => void;
+  hasNotes?: boolean;
+  onNoteClick?: () => void;
+  onRelationNoteClick?: (id: string, nom: string, prenoms: string | null) => void;
+  isChecked?: boolean;
+  checkedPending?: boolean;
+  onToggleChecked?: (next: boolean) => void;
 }
 
 export function PersonPanel({
@@ -59,6 +66,12 @@ export function PersonPanel({
   onNavigate,
   onPhotoClick,
   onRelationPhotoClick,
+  hasNotes = false,
+  onNoteClick,
+  onRelationNoteClick,
+  isChecked = false,
+  checkedPending = false,
+  onToggleChecked,
 }: PersonPanelProps) {
   const [activeTab, setActiveTab] = useState<PersonPanelTab>("individu");
 
@@ -130,13 +143,25 @@ export function PersonPanel({
               className="text-lg font-bold text-slate-900"
               datesClassName="text-sm text-slate-500"
               onPhotoClick={() => onPhotoClick(personne.photos, name)}
+              hasNotes={hasNotes}
+              onNoteClick={onNoteClick}
             />
           </h2>
-          <AncreButton
-            active={personne.id_gedcom === ancrePersonneId}
-            onAncre={() => onAncre(personne.id_gedcom)}
-            size="md"
-          />
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <AncreButton
+              active={personne.id_gedcom === ancrePersonneId}
+              onAncre={() => onAncre(personne.id_gedcom)}
+              size="md"
+            />
+            {personne.dossier_actes?.chemin && (
+              <CheckedIcon
+                checked={isChecked}
+                disabled={checkedPending}
+                onToggle={onToggleChecked}
+                size="md"
+              />
+            )}
+          </div>
         </div>
         {personne.profession && (
           <p className="text-sm text-slate-600">{personne.profession}</p>
@@ -224,6 +249,7 @@ export function PersonPanel({
               items={personne.relations.parents}
               onNavigate={onNavigate}
               onRelationPhotoClick={onRelationPhotoClick}
+              onRelationNoteClick={onRelationNoteClick}
               onActeClick={onActeClick}
             />
             <RelationList
@@ -231,6 +257,7 @@ export function PersonPanel({
               items={personne.relations.conjoints}
               onNavigate={onNavigate}
               onRelationPhotoClick={onRelationPhotoClick}
+              onRelationNoteClick={onRelationNoteClick}
               onActeClick={onActeClick}
             />
             <RelationList
@@ -238,6 +265,7 @@ export function PersonPanel({
               items={personne.relations.enfants}
               onNavigate={onNavigate}
               onRelationPhotoClick={onRelationPhotoClick}
+              onRelationNoteClick={onRelationNoteClick}
               onActeClick={onActeClick}
             />
             <RelationList
@@ -247,6 +275,7 @@ export function PersonPanel({
               )}
               onNavigate={onNavigate}
               onRelationPhotoClick={onRelationPhotoClick}
+              onRelationNoteClick={onRelationNoteClick}
               onActeClick={onActeClick}
             />
           </>
@@ -320,12 +349,14 @@ function RelationList({
   items,
   onNavigate,
   onRelationPhotoClick,
+  onRelationNoteClick,
   onActeClick,
 }: {
   title: string;
   items: RelationResume[];
   onNavigate: (id: string) => void;
   onRelationPhotoClick: (id: string, nom: string, prenoms: string | null) => void;
+  onRelationNoteClick?: (id: string, nom: string, prenoms: string | null) => void;
   onActeClick: (type: ActeType, url: string, label?: string) => void;
 }) {
   if (items.length === 0) return null;
@@ -356,6 +387,12 @@ function RelationList({
                 photos={item.photos ?? false}
                 onPhotoClick={() =>
                   onRelationPhotoClick(item.id_gedcom, item.nom, item.prenoms)
+                }
+                onNoteClick={
+                  onRelationNoteClick
+                    ? () =>
+                        onRelationNoteClick(item.id_gedcom, item.nom, item.prenoms)
+                    : undefined
                 }
               />
             </button>

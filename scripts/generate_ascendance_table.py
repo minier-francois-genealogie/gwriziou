@@ -20,7 +20,7 @@ from paths import ACTES_DIR, GEDCOM_PATH
 OUT_XLSX = Path(__file__).resolve().parent.parent.parent / "data" / "ascendance_ged_actes.xlsx"
 
 ACT_FILE_RE = re.compile(
-    r"^(?P<nom>[^_]+)__(?P<prenoms>.+)__(?P<type>[NDMP])__"
+    r"^(?P<nom>[^_]+)__(?P<prenoms>.+)__(?P<type>[NDMPA])__"
     r"(?P<date>(?:\d{4}|XXXX)-(?:\d{2}|XX)-(?:\d{2}|XX))__"
     r"(?P<dept>\d+|XX)__(?P<commune>.+?)"
     r"(?:__(?P<suffix>[^.]+))?\.(?P<ext>\w+)$",

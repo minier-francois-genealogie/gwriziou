@@ -124,6 +124,8 @@ def _fetch_photos_map(
         SELECT DISTINCT id_gedcom
         FROM photos
         WHERE id_gedcom IN ({placeholders})
+          AND nom_fichier NOT LIKE '%__A__%'
+          AND nom_fichier NOT LIKE '%__a__%'
         """,
         id_gedcoms,
     ):
@@ -268,6 +270,8 @@ def _fetch_photos(conn: sqlite3.Connection, id_gedcom: str) -> list[PhotoPersonn
             SELECT url, suffixe
             FROM photos
             WHERE id_gedcom = ?
+              AND nom_fichier NOT LIKE '%__A__%'
+              AND nom_fichier NOT LIKE '%__a__%'
             ORDER BY suffixe COLLATE NOCASE, nom_fichier
             """,
             (id_gedcom,),
@@ -275,9 +279,30 @@ def _fetch_photos(conn: sqlite3.Connection, id_gedcom: str) -> list[PhotoPersonn
     ]
 
 
+def _fetch_avatar_url(conn: sqlite3.Connection, id_gedcom: str) -> str | None:
+    row = conn.execute(
+        """
+        SELECT url
+        FROM photos
+        WHERE id_gedcom = ?
+          AND (nom_fichier LIKE '%__A__%' OR nom_fichier LIKE '%__a__%')
+        ORDER BY id DESC
+        LIMIT 1
+        """,
+        (id_gedcom,),
+    ).fetchone()
+    return row["url"] if row else None
+
+
 def _has_photos(conn: sqlite3.Connection, id_gedcom: str) -> bool:
     row = conn.execute(
-        "SELECT 1 FROM photos WHERE id_gedcom = ? LIMIT 1",
+        """
+        SELECT 1 FROM photos
+        WHERE id_gedcom = ?
+          AND nom_fichier NOT LIKE '%__A__%'
+          AND nom_fichier NOT LIKE '%__a__%'
+        LIMIT 1
+        """,
         (id_gedcom,),
     ).fetchone()
     return row is not None
@@ -495,6 +520,7 @@ def get_personne(conn: sqlite3.Connection, id_gedcom: str) -> PersonneDetail | N
             exclude_warning_codes=_UI_EXCLUDED_WARNING_CODES,
         ),
         photos=_fetch_photos(conn, id_gedcom),
+        avatar_url=_fetch_avatar_url(conn, id_gedcom),
         dossier_actes=fetch_dossier_actes(
             conn, id_gedcom, row["nom"], row["prenoms"]
         ),
@@ -744,6 +770,7 @@ def _noeud_arbre(conn: sqlite3.Connection, id_gedcom: str) -> NoeudArbre | None:
     naissance_tri = None
     if naissance_row:
         naissance_tri = naissance_row["date_tri"] or naissance_row["date_iso"]
+    dossier = fetch_dossier_actes(conn, id_gedcom, row["nom"], row["prenoms"])
     return NoeudArbre(
         id_gedcom=row["id_gedcom"],
         nom=row["nom"],
@@ -752,6 +779,8 @@ def _noeud_arbre(conn: sqlite3.Connection, id_gedcom: str) -> NoeudArbre | None:
         profession=row["profession"],
         naissance_tri=naissance_tri,
         photos=_has_photos(conn, id_gedcom),
+        chemin_dossier=dossier.chemin,
+        avatar_url=_fetch_avatar_url(conn, id_gedcom),
         evenements=_build_evenements_arbre(
             conn,
             id_gedcom,

@@ -39,7 +39,31 @@ from server.schemas.accounts import (
     HashPasswordRequest,
     HashPasswordResponse,
 )
+from server.schemas.notes import (
+    NoteCreate,
+    NoteDelete,
+    NoteIndexResponse,
+    NoteListResponse,
+    NoteLigne,
+)
+from server.schemas.checked import (
+    CheckedIndexResponse,
+    CheckedStateResponse,
+    CheckedUpdate,
+)
+from server.schemas.avatars import AvatarResponse, AvatarUpload
 from server.services.accounts import hash_password, list_accounts_public, set_account_actif
+from server.services.notes import (
+    create_note,
+    delete_note,
+    get_note,
+    list_all_notes,
+    list_notes_index,
+    list_notes_for_chemin,
+    normalize_chemin,
+)
+from server.services.checked import list_chemins_checked, set_checked
+from server.services.avatars import save_avatar
 from server.services.github_data import GitHubDataError
 
 router = APIRouter(prefix="/api", tags=["api"])
@@ -340,13 +364,15 @@ def api_analyse_noms(
 
 
 @router.get("/gestion/professions", response_model=ProfessionMappingListResponse)
-def api_gestion_professions_list():
+def api_gestion_professions_list(request: Request):
+    _require_admin(request)
     with connection(read_only=False) as conn:
         return list_profession_mappings(conn)
 
 
 @router.put("/gestion/professions", response_model=ProfessionMappingLigne)
-def api_gestion_professions_update(payload: ProfessionMappingUpdate):
+def api_gestion_professions_update(payload: ProfessionMappingUpdate, request: Request):
+    _require_admin(request)
     try:
         with connection(read_only=False) as conn:
             return upsert_profession_mapping(conn, payload)
@@ -356,8 +382,10 @@ def api_gestion_professions_update(payload: ProfessionMappingUpdate):
 
 @router.delete("/gestion/professions")
 def api_gestion_professions_reset(
+    request: Request,
     profession_brute: str = Query(..., description="Profession brute à réinitialiser"),
 ):
+    _require_admin(request)
     try:
         with connection(read_only=False) as conn:
             reset_profession_mapping(conn, profession_brute)
@@ -400,3 +428,143 @@ def api_admin_hash_password(
 ) -> HashPasswordResponse:
     _require_admin(request)
     return HashPasswordResponse(password_hash=hash_password(payload.password))
+
+
+@router.get("/notes/index", response_model=NoteIndexResponse)
+def api_notes_index() -> NoteIndexResponse:
+    chemins, total = list_notes_index()
+    return NoteIndexResponse(chemins=chemins, total=total)
+
+
+@router.get("/notes", response_model=NoteListResponse)
+def api_notes_list(
+    chemin: str = Query(..., min_length=3, description="Chemin L/NOM/CLE"),
+) -> NoteListResponse:
+    try:
+        rows, source = list_notes_for_chemin(chemin)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except FileNotFoundError:
+        return NoteListResponse(notes=[], source="app/notes")
+    except (RuntimeError, GitHubDataError) as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return NoteListResponse(notes=[NoteLigne(**row) for row in rows], source=source)
+
+
+@router.post("/notes", response_model=NoteLigne)
+def api_notes_create(payload: NoteCreate, request: Request) -> NoteLigne:
+    session = require_session(request)
+    try:
+        row = create_note(
+            chemin=payload.chemin,
+            texte=payload.texte,
+            auteur_email=str(session.get("sub") or ""),
+            auteur_prenom=str(session.get("prenom") or ""),
+            auteur_nom=str(session.get("nom") or ""),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (RuntimeError, GitHubDataError) as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return NoteLigne(**row)
+
+
+@router.delete("/notes", response_model=dict)
+def api_notes_delete(payload: NoteDelete, request: Request) -> dict:
+    """Suppression par le propriétaire de la note (ou un admin)."""
+    session = require_session(request)
+    email = str(session.get("sub") or "").strip().lower()
+    is_admin = str(session.get("role") or "") == "admin"
+    try:
+        note = get_note(chemin=payload.chemin, fichier=payload.fichier)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if note is None:
+        raise HTTPException(status_code=404, detail="Note introuvable")
+    auteur = str(note.get("auteur_email") or "").strip().lower()
+    if not is_admin and auteur != email:
+        raise HTTPException(status_code=403, detail="Seuls l'auteur ou un admin peuvent supprimer cette note")
+    try:
+        delete_note(chemin=payload.chemin, fichier=payload.fichier)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (RuntimeError, GitHubDataError) as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return {"ok": True}
+
+
+@router.get("/admin/notes", response_model=NoteListResponse)
+def api_admin_notes(request: Request) -> NoteListResponse:
+    _require_admin(request)
+    try:
+        rows, source = list_all_notes()
+    except FileNotFoundError:
+        return NoteListResponse(notes=[], source="app/notes")
+    except (RuntimeError, GitHubDataError, ValueError) as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return NoteListResponse(notes=[NoteLigne(**row) for row in rows], source=source)
+
+
+@router.delete("/admin/notes", response_model=dict)
+def api_admin_notes_delete(payload: NoteDelete, request: Request) -> dict:
+    _require_admin(request)
+    try:
+        delete_note(chemin=payload.chemin, fichier=payload.fichier)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (RuntimeError, GitHubDataError) as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return {"ok": True}
+
+
+@router.get("/checked/index", response_model=CheckedIndexResponse)
+def api_checked_index() -> CheckedIndexResponse:
+    chemins = list_chemins_checked()
+    return CheckedIndexResponse(chemins=chemins, total=len(chemins))
+
+
+@router.put("/checked", response_model=CheckedStateResponse)
+def api_checked_update(payload: CheckedUpdate, request: Request) -> CheckedStateResponse:
+    session = _require_admin(request)
+    try:
+        state = set_checked(
+            chemin=payload.chemin,
+            checked=payload.checked,
+            auteur_email=str(session.get("sub") or ""),
+            auteur_nom=" ".join(
+                p
+                for p in (
+                    str(session.get("prenom") or "").strip(),
+                    str(session.get("nom") or "").strip(),
+                )
+                if p
+            ),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (RuntimeError, GitHubDataError) as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return CheckedStateResponse(chemin=normalize_chemin(payload.chemin), checked=state)
+
+
+@router.put("/avatars", response_model=AvatarResponse)
+def api_avatar_upload(payload: AvatarUpload, request: Request) -> AvatarResponse:
+    require_session(request)
+    try:
+        gid = normalize_gedcom_id(payload.id_gedcom)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    try:
+        with connection(read_only=False) as conn:
+            result = save_avatar(conn, id_gedcom=gid, image_b64=payload.image_base64)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (RuntimeError, GitHubDataError) as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return AvatarResponse(**result)
