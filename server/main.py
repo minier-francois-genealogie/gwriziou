@@ -23,7 +23,9 @@ from server.config import (
 )
 from server.db import database_exists
 from server.import_service import ensure_database, run_import
+from server.middleware.auth import AuthMiddleware
 from server.routers.api import router as api_router
+from server.routers.auth import router as auth_router
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +101,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(AuthMiddleware)
 
+app.include_router(auth_router)
 app.include_router(api_router)
 
 

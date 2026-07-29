@@ -3,6 +3,7 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { TreeMenuIcon } from "./GenealogyIcons";
 import { useApp } from "../context/AppContext";
+import { useAuth } from "../context/AuthContext";
 import { useAsync } from "../hooks/useApi";
 import { saveDerniereVue, type AppView } from "../utils/appStorage";
 
@@ -185,9 +186,47 @@ function ProfessionsGestionIcon() {
   );
 }
 
+function AdminIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3 4 7v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V7l-8-4z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  );
+}
+
+function ComptesIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="10" cy="8" r="4" />
+      <path d="M3 20c0-3.3 3.6-6 7-6s7 2.7 7 6" />
+      <path d="M19 8v6M22 11h-6" />
+    </svg>
+  );
+}
+
+function PadlockOpenIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-4 w-4 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M7 11V7a5 5 0 0 1 9.9-1" />
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+    </svg>
+  );
+}
+
 export function AppMenu() {
   const { menuOpen, setMenuOpen, toggleMenu, ancrePersonneId, ancetres, descendants, dataRefreshTick } =
     useApp();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -221,6 +260,9 @@ export function AppMenu() {
   const onGestionRoute = location.pathname.startsWith("/gestion");
   const [gestionOpen, setGestionOpen] = useState(onGestionRoute);
 
+  const onAdminRoute = location.pathname.startsWith("/admin");
+  const [adminOpen, setAdminOpen] = useState(onAdminRoute);
+
   useEffect(() => {
     if (onHistoireRoute) setHistoireOpen(true);
   }, [onHistoireRoute]);
@@ -236,6 +278,10 @@ export function AppMenu() {
   useEffect(() => {
     if (onGestionRoute) setGestionOpen(true);
   }, [onGestionRoute]);
+
+  useEffect(() => {
+    if (onAdminRoute) setAdminOpen(true);
+  }, [onAdminRoute]);
 
   const closeAndGo = (view: AppView, path: string) => {
     saveDerniereVue(view);
@@ -268,6 +314,11 @@ export function AppMenu() {
 
   const onMap = location.pathname === "/geoloc";
 
+  const onLogout = async () => {
+    await logout();
+    navigate("/login", { replace: true });
+  };
+
   return (
     <div
       ref={panelRef}
@@ -296,6 +347,19 @@ export function AppMenu() {
           <span className="whitespace-nowrap text-base font-bold text-sky-900">Gwriziou</span>
         )}
       </button>
+
+      {menuOpen && user && (
+        <button
+          type="button"
+          onClick={() => void onLogout()}
+          className="flex w-full items-center gap-2 px-3 py-1 text-sm font-medium text-slate-600 hover:text-slate-900"
+          aria-label={`Déconnexion (${user.prenom})`}
+          title="Se déconnecter"
+        >
+          <PadlockOpenIcon />
+          <span>{user.prenom}</span>
+        </button>
+      )}
 
       {menuOpen && (
         <>
@@ -476,6 +540,44 @@ export function AppMenu() {
                   indent
                   onNavigate={() => closeAndGo("gestion-warnings", "/gestion/warnings")}
                   icon={<WarningsIcon />}
+                />
+              </div>
+            )}
+          </div>
+          <div>
+            <button
+              type="button"
+              onClick={() => setAdminOpen((open) => !open)}
+              className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium ${
+                onAdminRoute
+                  ? "bg-sky-50 text-sky-900"
+                  : "text-slate-700 hover:bg-slate-100"
+              }`}
+              aria-expanded={adminOpen}
+            >
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center" aria-hidden="true">
+                <AdminIcon />
+              </span>
+              <span className="min-w-0 flex-1 text-left">Admin</span>
+              <svg
+                viewBox="0 0 24 24"
+                className={`h-3.5 w-3.5 shrink-0 transition-transform ${adminOpen ? "rotate-180" : ""}`}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+            {adminOpen && (
+              <div className="mt-0.5 space-y-0.5">
+                <NavItem
+                  to="/admin/comptes"
+                  label="Gestion de compte"
+                  indent
+                  onNavigate={() => closeAndGo("admin-comptes", "/admin/comptes")}
+                  icon={<ComptesIcon />}
                 />
               </div>
             )}

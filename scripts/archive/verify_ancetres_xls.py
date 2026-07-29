@@ -17,7 +17,7 @@ from analyze_ascendance import analyze, find_root, load_gedcom, person_label
 
 XLS_PATH = Path(r"C:\Projet\Perso\genealogie\data\ancetres.xls")
 OUT_XLSX = Path(r"C:\Projet\Perso\genealogie\data\ancetres_corrige.xlsx")
-ACTES_DIR = Path(r"C:\Projet\Perso\genealogie\data\actes")
+ACTES_DIR = Path(r"C:\Projet\Perso\genealogie\github\data\sources\documents")
 REPORT_PATH = Path(__file__).resolve().parent / "ancetres_verification.json"
 
 PERSON_FOLDER_RE = re.compile(

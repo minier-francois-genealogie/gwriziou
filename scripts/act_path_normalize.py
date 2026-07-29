@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Normalize text for actes/ paths (ASCII, no accents, underscores).
+"""Normalize text for sources/documents/ paths (ASCII, no accents, underscores).
 
 GEDCOM, SQLite and the UI keep full UTF-8 (François, Ploërmel).
-Only filesystem paths under actes/ use this module.
+Only filesystem paths under sources/documents/ use this module.
 """
 
 from __future__ import annotations

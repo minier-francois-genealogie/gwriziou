@@ -14,7 +14,7 @@ sys.path.insert(0, str(WS_ROOT / "scripts"))
 
 from act_path_normalize import normalize_commune  # noqa: E402
 from analyze_ascendance import parse_line  # noqa: E402
-from paths import GEDCOM_PATH  # noqa: E402
+from paths import GEDCOM_PATH, HISTOIRE_FAITS_DIR  # noqa: E402
 
 
 def parse_plac(raw: str) -> tuple[str, str | None, str | None, str | None, str | None]:
@@ -231,8 +231,8 @@ def main() -> None:
     parser.add_argument(
         "--output",
         type=Path,
-        default=GEDCOM_PATH.resolve().parent.parent / "histoire" / "faits",
-        help="Répertoire de sortie (défaut: data/histoire/faits)",
+        default=HISTOIRE_FAITS_DIR,
+        help="Répertoire de sortie (défaut: data/referentiels/faits-historiques)",
     )
     parser.add_argument(
         "--overwrite-readme",

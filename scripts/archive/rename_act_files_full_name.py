@@ -9,7 +9,7 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
-ACTES_DIR = Path(r"C:\Projet\Perso\genealogie\data\actes")
+ACTES_DIR = Path(r"C:\Projet\Perso\genealogie\github\data\sources\documents")
 
 PERSON_FOLDER_RE = re.compile(
     r"^(?P<nom>[^_]+)__(?P<prenoms>.+)__(?P<bdate>\d{4}-\d{2}-\d{2}|XXXX-XX-XX)__(?P<dept>\d+)__(?P<bcommune>.+)$"

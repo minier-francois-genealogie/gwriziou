@@ -1,4 +1,4 @@
-# Scripts BDD
+﻿# Scripts BDD
 
 
 
@@ -46,7 +46,7 @@ bdd/
 
 |--------|-----------|---------------------|
 
-| **GEDCOM** | Clone : `github/data/ged/fminier.ged` | [raw GitHub](https://raw.githubusercontent.com/minier-francois-genealogie/data/main/ged/fminier.ged) |
+| **GEDCOM** | Clone : `github/data/sources/gedcom/fminier.ged` | [raw GitHub](https://raw.githubusercontent.com/minier-francois-genealogie/data/main/sources/gedcom/fminier.ged) |
 
 | **Actes** | *(non utilisé par import_actes)* | [API GitHub](https://api.github.com/repos/minier-francois-genealogie/data/git/trees/main?recursive=1) + URLs `raw.githubusercontent.com` |
 
@@ -130,7 +130,7 @@ Indexe les scans **N/M/D** et les photos **P** depuis **GitHub** (tables `actes`
 
 1. Appel API `git/trees/…?recursive=1` sur `minier-francois-genealogie/data`
 
-2. Filtre `actes/` — jpg, pdf, png ; ignore placeholders (0 octet)
+2. Filtre `sources/documents/` — jpg, pdf, png ; ignore placeholders (0 octet)
 
 3. Parse noms v2 (`N`, `M`, `D`, **`P`**), construit URLs publiques
 
@@ -140,7 +140,7 @@ Indexe les scans **N/M/D** et les photos **P** depuis **GitHub** (tables `actes`
 
 
 
-**Ne modifie pas** les tables GEDCOM. **Ne lit pas** le dossier local `github/data/actes/`.
+**Ne modifie pas** les tables GEDCOM. **Ne lit pas** le dossier local `github/data/sources/documents/`.
 
 
 

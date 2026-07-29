@@ -31,6 +31,13 @@ from server.services.profession_mapping import (
 )
 from server.services.warnings import get_warnings_stats, list_warnings
 from server.schemas.status import RafraichirResponse, StatusResponse
+from server.schemas.accounts import (
+    CompteListResponse,
+    CompteLigne,
+    HashPasswordRequest,
+    HashPasswordResponse,
+)
+from server.services.accounts import hash_password, list_accounts_public
 
 router = APIRouter(prefix="/api", tags=["api"])
 
@@ -347,3 +354,22 @@ def api_gestion_professions_reset(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"ok": True}
+
+
+@router.get("/admin/comptes", response_model=CompteListResponse)
+def api_admin_comptes() -> CompteListResponse:
+    try:
+        rows, source = list_accounts_public()
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return CompteListResponse(
+        comptes=[CompteLigne(**row) for row in rows],
+        source_fichier=source,
+    )
+
+
+@router.post("/admin/hash-password", response_model=HashPasswordResponse)
+def api_admin_hash_password(payload: HashPasswordRequest) -> HashPasswordResponse:
+    return HashPasswordResponse(password_hash=hash_password(payload.password))

@@ -62,7 +62,7 @@ export function SettingsPage() {
           <li>↑ père (ou mère) · ↓ enfant aîné · ←→ même génération</li>
           <li>+ / − : zoom avant / arrière</li>
           <li>Icône ancre : centre de l&apos;arbre (reload)</li>
-          <li>Interrupteur « Compresser » : cellules portrait (nom, prénom, ancre)</li>
+          <li>Roue crantée en haut à droite : ancêtres, descendants, compresser</li>
           <li>Clic cellule = focus · chevrons en bas à droite</li>
           <li>Glisser : déplacer · boutons + / − à droite des chevrons</li>
         </ul>

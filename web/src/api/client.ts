@@ -1,12 +1,17 @@
 import type {
+  AccountRequestPayload,
+  AccountRequestResponse,
   AnalyseStatsResponse,
   ArbreResponse,
+  AuthMeResponse,
+  CompteListResponse,
   DirigeantsFranceListResponse,
   DirigeantsFranceStatsResponse,
   EvolutionNomsResponse,
   FaitsHistoriquesListResponse,
   FaitsHistoriquesStatsResponse,
   GeolocResponse,
+  HashPasswordResponse,
   PersonneDetail,
   ProfessionMappingListResponse,
   ProfessionMappingLigne,
@@ -42,6 +47,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
   try {
     response = await fetch(`${API_BASE}${path}`, {
+      credentials: "include",
       ...init,
       headers: {
         Accept: "application/json",
@@ -60,8 +66,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     let detail = response.statusText;
     try {
-      const body = (await response.json()) as { detail?: string };
-      if (body.detail) detail = body.detail;
+      const body = (await response.json()) as { detail?: string | { msg: string }[] };
+      if (typeof body.detail === "string") {
+        detail = body.detail;
+      } else if (Array.isArray(body.detail) && body.detail[0]?.msg) {
+        detail = body.detail[0].msg;
+      }
     } catch {
       /* ignore */
     }
@@ -72,6 +82,27 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  authMe: () => request<AuthMeResponse>("/api/auth/me"),
+
+  authLogin: (email: string, password: string) =>
+    request<AuthMeResponse>("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    }),
+
+  authLogout: () =>
+    request<{ ok: boolean }>("/api/auth/logout", {
+      method: "POST",
+    }),
+
+  authRequestAccount: (payload: AccountRequestPayload) =>
+    request<AccountRequestResponse>("/api/auth/request-account", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }),
+
   status: () => request<StatusResponse>("/api/status"),
 
   rafraichir: (force = false) =>
@@ -170,6 +201,15 @@ export const api = {
       `/api/gestion/professions?profession_brute=${encodeURIComponent(profession_brute)}`,
       { method: "DELETE" },
     ),
+
+  adminComptes: () => request<CompteListResponse>("/api/admin/comptes"),
+
+  adminHashPassword: (password: string) =>
+    request<HashPasswordResponse>("/api/admin/hash-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    }),
 };
 
 export { ApiError };

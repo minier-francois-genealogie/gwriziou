@@ -22,6 +22,7 @@ function viewFromPath(pathname: string): AppView {
   if (pathname === "/analyse/professions") return "analyse-professions";
   if (pathname === "/gestion/professions") return "gestion-professions";
   if (pathname === "/gestion/warnings") return "gestion-warnings";
+  if (pathname === "/admin/comptes") return "admin-comptes";
   if (pathname === "/aide/a-propos") return "aide-a-propos";
   if (pathname === "/aide/warnings" || pathname === "/warnings") return "aide-warnings";
   if (pathname === "/aide/a-savoir" || pathname === "/a-savoir") return "aide-a-savoir";

@@ -15,7 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from act_path_normalize import normalize_commune, normalize_given_full, normalize_surname
 
-ACTES_DIR = Path(r"C:\Projet\Perso\genealogie\data\actes")
+ACTES_DIR = Path(r"C:\Projet\Perso\genealogie\github\data\sources\documents")
 ACT_EXTENSIONS = {".jpg", ".jpeg", ".pdf", ".png"}
 
 PERSON_FOLDER_RE = re.compile(

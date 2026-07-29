@@ -3,7 +3,7 @@ import json
 import re
 from pathlib import Path
 
-GED = Path(r"C:\Projet\Perso\genealogie\data\ged\fminier.ged")
+GED = Path(r"C:\Projet\Perso\genealogie\github\data\sources\gedcom\fminier.ged")
 
 individuals = {}
 families = {}

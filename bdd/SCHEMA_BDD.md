@@ -1,8 +1,8 @@
-# Schéma SQLite — index généalogique
+﻿# Schéma SQLite — index généalogique
 
 Document de référence pour le répertoire `bdd/`.  
 La base est un **index dérivé** : recréée ou reconstruite à chaque import GEDCOM + indexation actes.  
-**Source de vérité** : GEDCOM ([`ged/fminier.ged`](https://github.com/minier-francois-genealogie/data/blob/main/ged/fminier.ged)) + fichiers [`actes/`](https://github.com/minier-francois-genealogie/data/tree/main/actes) sur GitHub. Dev local : clone sous `github/data/`.
+**Source de vérité** : GEDCOM ([`sources/gedcom/fminier.ged`](https://github.com/minier-francois-genealogie/data/blob/main/sources/gedcom/fminier.ged)) + fichiers [`sources/documents/`](https://github.com/minier-francois-genealogie/data/tree/main/sources/documents) sur GitHub. Dev local : clone sous `github/data/`.
 
 **Scripts d'import :** voir [`bdd/scripts/README.md`](scripts/README.md).
 
@@ -15,7 +15,7 @@ La base est un **index dérivé** : recréée ou reconstruite à chaque import G
 | Principe | Détail |
 |----------|--------|
 | **Lecture seule côté app** | Aucune édition manuelle de SQLite ; corrections dans Heredis → réexport GEDCOM → re-import |
-| **UTF-8** | Noms, prénoms, communes affichés avec accents (contrairement aux chemins `actes/` en ASCII) |
+| **UTF-8** | Noms, prénoms, communes affichés avec accents (contrairement aux chemins `sources/documents/` en ASCII) |
 | **Id GEDCOM** | Clé technique courante (`@655@`) ; peut changer si réexport → re-calcul du rattachement actes via **clé sémantique** |
 | **Navigation arbre** | Par **`id_gedcom`** et tables de parenté — pas de numérotation SOSA en base |
 | **Actes** | Métadonnées + URL GitHub ; **pas** de binaire en base ni sur le serveur |
@@ -225,7 +225,7 @@ Naissances, décès (individu) et mariages (famille).
 
 ### `actes`
 
-Un fichier scan indexé sous `actes/` (jpg, pdf, png…).
+Un fichier scan indexé sous `sources/documents/` (jpg, pdf, png…).
 
 | Colonne | Type | Contraintes | Description |
 |---------|------|-------------|-------------|
@@ -234,7 +234,7 @@ Un fichier scan indexé sous `actes/` (jpg, pdf, png…).
 | `cle_personne` | TEXT NOT NULL | | Clé sémantique dossier ex. `BELLAMY__Joseph_Marie__1805-06-10__56__Guer` |
 | `chemin_dossier` | TEXT NOT NULL | | Chemin relatif du dossier personne |
 | `nom_fichier` | TEXT NOT NULL | | Nom du fichier |
-| `chemin_relatif` | TEXT NOT NULL UNIQUE | | Chemin relatif depuis `actes/` |
+| `chemin_relatif` | TEXT NOT NULL UNIQUE | | Chemin relatif depuis `sources/documents/` |
 | `url` | TEXT NOT NULL | | URL publique (`ACTES_BASE_URL` + `chemin_relatif`) |
 | `date_acte_iso` | TEXT | | Date dans le nom de fichier |
 | `departement` | TEXT | | Département acte |
@@ -257,7 +257,7 @@ Un fichier scan indexé sous `actes/` (jpg, pdf, png…).
 
 ### `photos`
 
-Photos de l'individu indexées sous `actes/` (fichiers type **`P`**, voir `SPECIFICATION.md`).
+Photos de l'individu indexées sous `sources/documents/` (fichiers type **`P`**, voir `SPECIFICATION.md`).
 
 | Colonne | Type | Contraintes | Description |
 |---------|------|-------------|-------------|
@@ -265,7 +265,7 @@ Photos de l'individu indexées sous `actes/` (fichiers type **`P`**, voir `SPECI
 | `cle_personne` | TEXT NOT NULL | | Clé sémantique du dossier personne |
 | `chemin_dossier` | TEXT NOT NULL | | Chemin relatif du dossier personne |
 | `nom_fichier` | TEXT NOT NULL | | Nom du fichier |
-| `chemin_relatif` | TEXT NOT NULL UNIQUE | | Chemin relatif depuis `actes/` |
+| `chemin_relatif` | TEXT NOT NULL UNIQUE | | Chemin relatif depuis `sources/documents/` |
 | `url` | TEXT NOT NULL | | URL publique GitHub |
 | `suffixe` | TEXT | | Suffixe libre (`Photo_01`, `Portrait`…) — tri alphabétique à l'affichage |
 | `taille_fichier` | INTEGER | | Octets |
@@ -281,7 +281,7 @@ Photos de l'individu indexées sous `actes/` (fichiers type **`P`**, voir `SPECI
 
 ```text
 1. Lire GEDCOM → personnes, familles, famille_conjoints, famille_enfants, evenements, lieux
-2. Lister actes/ via API GitHub → actes N/M/D + photos P (+ URLs raw.githubusercontent.com)
+2. Lister sources/documents/ via API GitHub → actes N/M/D + photos P (+ URLs raw.githubusercontent.com)
 3. Matcher actes.id_gedcom et photos.id_gedcom
 4. Mettre à jour meta (empreintes, compteurs, importe_le)
 ```

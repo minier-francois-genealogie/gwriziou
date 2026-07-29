@@ -3,7 +3,7 @@ import { api } from "../api/client";
 import { ActeModal } from "../components/ActeModal";
 import { PhotoModal } from "../components/PhotoModal";
 import { LoadingSpinner } from "../components/LoadingSpinner";
-import { TreeOverviewToggle } from "../components/TreeOverviewToggle";
+import { TreeViewControls } from "../components/TreeViewControls";
 import { TreeNavPad } from "../components/TreeNavPad";
 import { TreeZoomPad } from "../components/TreeZoomPad";
 import { TreeView, type TreeViewHandle } from "../components/TreeView";
@@ -27,6 +27,8 @@ export function TreePage() {
     setFocusPersonneId,
     ancetres,
     descendants,
+    setAncetres,
+    setDescendants,
   } = useApp();
 
   const [fetchKey, setFetchKey] = useState(0);
@@ -213,9 +215,13 @@ export function TreePage() {
             onPhotoClick={handlePhotoClick}
           />
           <div className="pointer-events-none absolute right-3 top-3 z-40 pt-[calc(env(safe-area-inset-top,0px)+0.25rem)]">
-            <TreeOverviewToggle
-              active={treeViewMode === "overview"}
-              onChange={handleTreeViewModeChange}
+            <TreeViewControls
+              compress={treeViewMode === "overview"}
+              onCompressChange={handleTreeViewModeChange}
+              ancetres={ancetres}
+              descendants={descendants}
+              onAncetresChange={setAncetres}
+              onDescendantsChange={setDescendants}
             />
           </div>
           <div className="pointer-events-none absolute bottom-3 right-3 z-40 flex items-end gap-2">

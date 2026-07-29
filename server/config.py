@@ -29,6 +29,34 @@ CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "*").split(",")
 _RENDER_EXTERNAL_URL = os.environ.get("RENDER_EXTERNAL_URL", "").strip().rstrip("/")
 _ON_RENDER = bool(_RENDER_EXTERNAL_URL)
 
+# Session auth (cookie HttpOnly + JWT)
+AUTH_SECRET = os.environ.get("AUTH_SECRET", "dev-change-me-in-production")
+AUTH_COOKIE_NAME = os.environ.get("AUTH_COOKIE_NAME", "gwriziou_session")
+AUTH_SESSION_MAX_AGE_SECONDS = int(
+    os.environ.get("AUTH_SESSION_MAX_AGE_SECONDS", str(30 * 24 * 3600))
+)  # 30 jours
+AUTH_COOKIE_SECURE = os.environ.get(
+    "AUTH_COOKIE_SECURE",
+    "true" if _ON_RENDER else "false",
+).lower() in {"1", "true", "yes"}
+AUTH_COOKIE_SAMESITE = os.environ.get(
+    "AUTH_COOKIE_SAMESITE",
+    "none" if _ON_RENDER else "lax",
+).lower()
+if AUTH_COOKIE_SAMESITE not in {"lax", "strict", "none"}:
+    AUTH_COOKIE_SAMESITE = "lax"
+
+# Resend — demandes de création de compte
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "").strip()
+RESEND_FROM = os.environ.get(
+    "RESEND_FROM",
+    "Gwriziou <onboarding@resend.dev>",
+).strip()
+ACCOUNT_REQUEST_TO = os.environ.get(
+    "ACCOUNT_REQUEST_TO",
+    "minier.francois@gmail.com",
+).strip()
+
 _self_ping_enabled_raw = os.environ.get(
     "SELF_PING_ENABLED",
     "true" if _ON_RENDER else "false",

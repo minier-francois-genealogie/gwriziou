@@ -18,7 +18,15 @@ services:
       - key: SQLITE_PATH
         value: /data/genealogie.sqlite
       - key: CORS_ORIGINS
-        value: "*"
+        value: https://gwriziou.onrender.com
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM
+        value: Gwriziou <onboarding@resend.dev>
+      - key: ACCOUNT_REQUEST_TO
+        value: minier.francois@gmail.com
 
   - type: web
     name: gwriziou

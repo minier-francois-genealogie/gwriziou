@@ -29,6 +29,7 @@ export type AppView =
   | "analyse-noms"
   | "gestion-professions"
   | "gestion-warnings"
+  | "admin-comptes"
   | "a-savoir";
 
 const DEFAULT_ANCETRES = 4;
@@ -116,6 +117,7 @@ export function loadDerniereVue(): AppView {
       v === "analyse-noms" ||
       v === "gestion-professions" ||
       v === "gestion-warnings" ||
+      v === "admin-comptes" ||
       v === "a-savoir"
     )
       return v;

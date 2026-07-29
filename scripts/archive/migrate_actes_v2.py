@@ -18,8 +18,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from act_path_normalize import normalize_commune, normalize_given_full, normalize_surname
 
 UNKNOWN_BIRTH_DATE = "XXXX-XX-XX"
-ACTES_DIR = Path(r"C:\Projet\Perso\genealogie\data\actes")
-GEDCOM_PATH = Path(r"C:\Projet\Perso\genealogie\data\ged\fminier.ged")
+ACTES_DIR = Path(r"C:\Projet\Perso\genealogie\github\data\sources\documents")
+GEDCOM_PATH = Path(r"C:\Projet\Perso\genealogie\github\data\sources\gedcom\fminier.ged")
 
 MONTHS = {
     "JAN": "01", "FEB": "02", "MAR": "03", "APR": "04", "MAY": "05", "JUN": "06",

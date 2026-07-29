@@ -9,7 +9,7 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
-ACTES_DIR = Path(r"C:\Projet\Perso\genealogie\data\actes")
+ACTES_DIR = Path(r"C:\Projet\Perso\genealogie\github\data\sources\documents")
 MANIFEST_V1 = ACTES_DIR / "_migration_v1_manifest.json"
 
 FOLDER_RE = re.compile(

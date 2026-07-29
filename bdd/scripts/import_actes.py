@@ -23,7 +23,7 @@ sys.path.insert(0, str(SCRIPTS_DIR))
 
 from act_path_normalize import normalize_commune, normalize_surname  # noqa: E402
 from generate_ascendance_table import ACT_FILE_RE, birth_year, match_score, norm_tokens  # noqa: E402
-from paths import ACTES_BASE_URL, GITHUB_API_TREE_URL  # noqa: E402
+from paths import ACTES_BASE_URL, DOCUMENTS_REL_PREFIX, GITHUB_API_TREE_URL  # noqa: E402
 
 DEFAULT_DB = BDD_DIR / "genealogie.sqlite"
 ACT_EXTENSIONS = {".jpg", ".jpeg", ".pdf", ".png"}
@@ -85,7 +85,7 @@ def fetch_github_actes_tree(tree_url: str = GITHUB_API_TREE_URL) -> list[dict]:
     if payload.get("truncated"):
         raise SystemExit("Arbre GitHub tronqué — trop de fichiers ; contacter le maintainer.")
 
-    prefix = "actes/"
+    prefix = f"{DOCUMENTS_REL_PREFIX}/"
     blobs: list[dict] = []
     for item in payload.get("tree", []):
         if item.get("type") != "blob":

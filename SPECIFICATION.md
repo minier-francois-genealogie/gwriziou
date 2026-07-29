@@ -1,4 +1,4 @@
-# Spécification
+﻿# Spécification
 
 ## Objectif
 
@@ -11,20 +11,26 @@ Architecture **hybride** : le serveur reste **léger** (pas de stockage des scan
 ```text
 GitHub (repo public data) — source de vérité
 https://github.com/minier-francois-genealogie/data
-├── ged/fminier.ged     →  serveur : téléchargement / clone  →  SQLite
-└── actes/…/*.jpg       →  restent sur GitHub ; IHM charge via raw.githubusercontent.com
+├── sources/
+│   ├── gedcom/fminier.ged     →  serveur : téléchargement / clone  →  SQLite
+│   └── documents/…/*.jpg      →  restent sur GitHub ; IHM charge via raw.githubusercontent.com
+├── referentiels/
+│   ├── faits-historiques/     →  import SQLite (faits historiques)
+│   └── dirigeants-france/     →  import SQLite (dirigeants)
+└── app/
+    └── auth/accounts.json     →  comptes applicatifs (auth)
 ```
 
 | Contexte | GEDCOM | Actes |
 |----------|--------|-------|
-| **Production** (serveur + IHM déployés) | [raw `ged/fminier.ged`](https://raw.githubusercontent.com/minier-francois-genealogie/data/main/ged/fminier.ged) ou clone git au démarrage | Listing GitHub (`git ls-tree` / API) ; scans servis par **URL GitHub** |
-| **Développement local** | Clone : `github/data/ged/fminier.ged` | Clone : `github/data/actes/` |
+| **Production** (serveur + IHM déployés) | [raw `sources/gedcom/fminier.ged`](https://raw.githubusercontent.com/minier-francois-genealogie/data/main/sources/gedcom/fminier.ged) ou clone git au démarrage | Listing GitHub (`git ls-tree` / API) ; scans servis par **URL GitHub** |
+| **Développement local** | Clone : `github/data/sources/gedcom/fminier.ged` | Clone : `github/data/sources/documents/` |
 
 Le dépôt GitHub est la **seule source de vérité** en prod. Le clone local (`C:\Projet\Perso\genealogie\github\data\`) est un miroir pour le dev et les scripts — **aucun script** dans ce dossier.
 
 Le **fichier GEDCOM** est la **source de vérité** pour les personnes et liens (versionné dans Git, édité via un logiciel de généalogie). Au **démarrage du serveur**, l'application lit le GEDCOM et **initialise une base SQLite** — index dérivé, non édité manuellement.
 
-- **Import au démarrage** : parse du `.ged`, **indexation** des noms de fichiers dans `actes/` (sans télécharger les binaires), peuplement des tables (personnes, événements, lieux, relations, actes).
+- **Import au démarrage** : parse du `.ged`, **indexation** des noms de fichiers dans `sources/documents/` (sans télécharger les binaires), peuplement des tables (personnes, événements, lieux, relations, actes).
 - **Actes** : données **non sensibles** (archives déjà publiques sur le net). Stockés dans Git pour le **versionnement** et parce qu'ils seront **volumineux** — le serveur Render n'a pas besoin d'un gros espace disque. L'API renvoie des **métadonnées + URL publique** ; l'IHM charge les scans **directement depuis GitHub**.
 - **Géocodage** : une fois par **lieu unique** (commune, code postal…), coordonnées lat/lng mises en cache dans SQLite (et optionnellement dans un fichier cache versionné).
 - **Re-import sans redémarrage** : bouton **Rafraîchir** → re-sync GEDCOM + re-indexation des actes (noms de fichiers) → reconstruction SQLite. Comparaison par hash pour éviter un re-import inutile.
@@ -36,7 +42,7 @@ L'API **ne transmet pas** les images ; elle renvoie des liens que le navigateur 
 ```json
 {
   "actes": {
-    "naissance_url": "https://raw.githubusercontent.com/minier-francois-genealogie/data/main/actes/B/BELLAMY/…/….jpg",
+    "naissance_url": "https://raw.githubusercontent.com/minier-francois-genealogie/data/main/sources/documents/B/BELLAMY/…/….jpg",
     "mariage_url": null,
     "deces_url": null
   }
@@ -148,9 +154,9 @@ Détail complet : `bdd/SCHEMA_BDD.md`.
 - Expose un **service web** (API + IHM)
 - Import GEDCOM → SQLite au **démarrage** du conteneur
 - **Données en production** (référentiel GitHub, pas de copie locale permanente des scans) :
-  - **GEDCOM** : [`ged/fminier.ged`](https://github.com/minier-francois-genealogie/data/blob/main/ged/fminier.ged) — téléchargé via URL raw ou clone `--depth 1` du dépôt [minier-francois-genealogie/data](https://github.com/minier-francois-genealogie/data) au démarrage / rafraîchissement
-  - **Actes** : **non copiés** sur le serveur ; indexation via `git ls-tree` ou API GitHub ; URLs `https://raw.githubusercontent.com/minier-francois-genealogie/data/main/actes/…`
-- Bouton **Rafraîchir** : re-fetch du GEDCOM + re-liste des fichiers `actes/`
+  - **GEDCOM** : [`sources/gedcom/fminier.ged`](https://github.com/minier-francois-genealogie/data/blob/main/sources/gedcom/fminier.ged) — téléchargé via URL raw ou clone `--depth 1` du dépôt [minier-francois-genealogie/data](https://github.com/minier-francois-genealogie/data) au démarrage / rafraîchissement
+  - **Actes** : **non copiés** sur le serveur ; indexation via `git ls-tree` ou API GitHub ; URLs `https://raw.githubusercontent.com/minier-francois-genealogie/data/main/sources/documents/…`
+- Bouton **Rafraîchir** : re-fetch du GEDCOM + re-liste des fichiers `sources/documents/`
 
 ## Données
 
@@ -160,10 +166,13 @@ Référentiel **public** : **[minier-francois-genealogie/data](https://github.co
 
 | Chemin dans le repo | Contenu |
 |---------------------|---------|
-| [`ged/`](https://github.com/minier-francois-genealogie/data/tree/main/ged) | Fichiers GEDCOM |
-| [`actes/`](https://github.com/minier-francois-genealogie/data/tree/main/actes) | Scans d'état civil |
+| [`sources/gedcom/`](https://github.com/minier-francois-genealogie/data/tree/main/sources/gedcom) | Fichiers GEDCOM |
+| [`sources/documents/`](https://github.com/minier-francois-genealogie/data/tree/main/sources/documents) | Scans d'état civil + photos |
+| [`referentiels/faits-historiques/`](https://github.com/minier-francois-genealogie/data/tree/main/referentiels/faits-historiques) | Faits historiques (JSON) |
+| [`referentiels/dirigeants-france/`](https://github.com/minier-francois-genealogie/data/tree/main/referentiels/dirigeants-france) | Dirigeants France (JSON) |
+| [`app/auth/`](https://github.com/minier-francois-genealogie/data/tree/main/app/auth) | Comptes applicatifs |
 
-**Fichiers GEDCOM disponibles** (`ged/`) :
+**Fichiers GEDCOM disponibles** (`sources/gedcom/`) :
 
 | Fichier | Usage |
 |---------|-------|
@@ -177,8 +186,10 @@ Référentiel **public** : **[minier-francois-genealogie/data](https://github.co
 Clone local du dépôt — **données Git uniquement** (pas de scripts) :
 
 - **Racine** : `C:\Projet\Perso\genealogie\github\data\`
-- **GEDCOM** : `…\github\data\ged\fminier.ged`
-- **Actes** : `…\github\data\actes\`
+- **GEDCOM** : `…\github\data\sources\gedcom\fminier.ged`
+- **Documents** : `…\github\data\sources\documents\`
+- **Référentiels** : `…\github\data\referentiels\`
+- **Auth** : `…\github\data\app\auth\accounts.json`
 
 Les scripts `cursor_ws/` pointent vers ce clone via `paths.py`. En prod, le serveur utilise les URLs GitHub (voir ci-dessous).
 
@@ -186,11 +197,11 @@ Variables d'environnement :
 
 | Variable | Dev (défaut) | Production |
 |----------|--------------|------------|
-| `GEDCOM_PATH` | `github/data/ged/fminier.ged` | Chemin temporaire après fetch, ou URL raw |
-| `ACTES_INDEX_PATH` | `github/data/actes` | Non utilisé (listing GitHub) |
-| `ACTES_BASE_URL` | — | `https://raw.githubusercontent.com/minier-francois-genealogie/data/main/actes` |
+| `GEDCOM_PATH` | `github/data/sources/gedcom/fminier.ged` | Chemin temporaire après fetch, ou URL raw |
+| `ACTES_INDEX_PATH` | `github/data/sources/documents` | Non utilisé (listing GitHub) |
+| `ACTES_BASE_URL` | — | `https://raw.githubusercontent.com/minier-francois-genealogie/data/main/sources/documents` |
 | `DATA_REPO_URL` | — | `https://github.com/minier-francois-genealogie/data.git` |
-| `GEDCOM_RAW_URL` | — | `https://raw.githubusercontent.com/minier-francois-genealogie/data/main/ged/fminier.ged` |
+| `GEDCOM_RAW_URL` | — | `https://raw.githubusercontent.com/minier-francois-genealogie/data/main/sources/gedcom/fminier.ged` |
 
 Constantes centralisées : `cursor_ws/paths.py`.
 
@@ -199,7 +210,7 @@ Constantes centralisées : `cursor_ws/paths.py`.
 
 ### Actes d'état civil — répertoire et nommage
 
-Les scans sont organisés en **un dossier par personne** sous `actes/`. La **clé personne** est **sémantique**, **agnostique** du logiciel de généalogie et **indépendante** des id GEDCOM (`@I…@`, instables entre réexportations) et du numéro SOSA (absent pour les collatéraux).
+Les scans sont organisés en **un dossier par personne** sous `sources/documents/`. La **clé personne** est **sémantique**, **agnostique** du logiciel de généalogie et **indépendante** des id GEDCOM (`@I…@`, instables entre réexportations) et du numéro SOSA (absent pour les collatéraux).
 
 #### Clé personne (nom du dossier)
 
@@ -215,14 +226,14 @@ Les scans sont organisés en **un dossier par personne** sous `actes/`. La **cl�
 | `{dept}` | `56` | Numéro de département de naissance |
 | `{commune}` | `Guer` | Commune de naissance (peut contenir des `_`, ex. `La_Gacilly`) |
 
-**Exemple de dossier :** `actes/B/BELLAMY/BELLAMY__Joseph_Marie_Jean_Barnabe__1805-06-10__56__Guer/`
+**Exemple de dossier :** `sources/documents/B/BELLAMY/BELLAMY__Joseph_Marie_Jean_Barnabe__1805-06-10__56__Guer/`
 
 #### Organisation par lettre et nom de famille
 
-Les dossiers sont regroupés sous **`actes/{A-Z}/{NOM}/`**. Le **dossier personne** conserve la **clé complète** (nom inclus) — pas de raccourci.
+Les dossiers sont regroupés sous **`sources/documents/{A-Z}/{NOM}/`**. Le **dossier personne** conserve la **clé complète** (nom inclus) — pas de raccourci.
 
 ```text
-actes/
+sources/documents/
   B/
     BELLAMY/
       BELLAMY__Joseph_Marie_Jean_Barnabe__1805-06-10__56__Guer/
@@ -242,14 +253,14 @@ Tous les **segments** du nom de dossier sont séparés par `__`. À l'intérieur
 
 Date de naissance inconnue : utiliser **`XXXX-XX-XX`** — lisible à l'œil nu (contrairement à `0000-00-00` qui ressemble à une vraie date).
 
-#### Normalisation des chemins `actes/` (ASCII)
+#### Normalisation des chemins `sources/documents/` (ASCII)
 
-Les **dossiers et fichiers** sous `actes/` utilisent une orthographe **ASCII sans accents**. Le GEDCOM, SQLite et l'IHM conservent l'**UTF-8 complet** (accents, cédilles, ligatures).
+Les **dossiers et fichiers** sous `sources/documents/` utilisent une orthographe **ASCII sans accents**. Le GEDCOM, SQLite et l'IHM conservent l'**UTF-8 complet** (accents, cédilles, ligatures).
 
 | Couche | Exemple |
 |--------|---------|
 | GEDCOM / SQLite / affichage | François, Ploërmel, Sérent |
-| Chemins `actes/` | `Francois`, `Ploermel`, `Serent` |
+| Chemins `sources/documents/` | `Francois`, `Ploermel`, `Serent` |
 
 **Règles** (appliquées à `{NOM}`, prénoms et `{commune}` dans les chemins) :
 
@@ -260,12 +271,12 @@ Les **dossiers et fichiers** sous `actes/` utilisent une orthographe **ASCII san
 5. **Caractères interdits** — supprimer guillemets, crochets, `" * ? < > | : \ /`
 6. **Dates et départements** — inchangés (`1805-06-10`, `56`, `XX`, `XXXX-XX-XX`)
 
-Implémentation de référence : `scripts/act_path_normalize.py`. Tout script créant ou parsant des chemins `actes/` doit l'utiliser.
+Implémentation de référence : `scripts/act_path_normalize.py`. Tout script créant ou parsant des chemins `sources/documents/` doit l'utiliser.
 
 **Exemple de correspondance :**
 
 ```text
-GEDCOM (Heredis)     →  chemin actes/
+GEDCOM (Heredis)     →  chemin sources/documents/
 François MINIER      →  MINIER__Francois__…
 Ploërmel, Morbihan   →  …__56__Ploermel
 Saint-Grégoire       →  …__Saint_Gregoire
@@ -291,7 +302,7 @@ Chaque fichier est **auto-suffisant** : nom et prénoms repris du dossier parent
 **Exemple complet :**
 
 ```text
-actes/
+sources/documents/
   B/BELLAMY/BELLAMY__Joseph_Marie_Jean_Barnabe__1805-06-10__56__Guer/
     BELLAMY__Joseph_Marie_Jean_Barnabe__N__1805-06-10__56__Guer.jpg
     BELLAMY__Joseph_Marie_Jean_Barnabe__M__1846-07-25__56__La_Gacilly.jpg
@@ -303,7 +314,7 @@ actes/
 
 #### Photos (dans le dossier personne)
 
-Même arborescence que les actes : un dossier par personne sous `actes/{A-Z}/{NOM}/`, fichiers **à côté** des actes N/M/D.
+Même arborescence que les actes : un dossier par personne sous `sources/documents/{A-Z}/{NOM}/`, fichiers **à côté** des actes N/M/D.
 
 ```text
 {NOM}__{prenom1}_{prenom2}_{…}__P__{AAAA-MM-JJ}__{dept}__{commune}__{suffixe}.{ext}
@@ -323,7 +334,7 @@ La date et le lieu ne décrivent pas la photo elle-même : ce sont ceux de **nai
 **Exemple :**
 
 ```text
-actes/
+sources/documents/
   M/MINIER/MINIER__Francois_Xavier__1981-11-03__56__Ploermel/
     MINIER__Francois_Xavier__N__1981-11-03__56__Ploermel.jpg
     MINIER__Francois_Xavier__P__1981-11-03__56__Ploermel__Photo_01.jpg
@@ -357,7 +368,7 @@ L'ancien format plat (`NOM_prénoms.sosa_XX.date.N.dept-ville`) reste **parsable
 
 **Import et liaison au GEDCOM :**
 
-1. Au démarrage (ou au rafraîchissement), le serveur **liste** dossiers et fichiers dans `actes/` (local en dev, `git ls-tree` ou API GitHub en prod) — **sans copier les binaires**.
+1. Au démarrage (ou au rafraîchissement), le serveur **liste** dossiers et fichiers dans `sources/documents/` (local en dev, `git ls-tree` ou API GitHub en prod) — **sans copier les binaires**.
 2. Chaque fichier est enregistré dans la table `acts` (clé personne, type, date, département, commune, **URL publique** = `ACTES_BASE_URL` + chemin relatif).
 3. **Rattachement à une personne** : la clé personne du dossier est recoupée avec l'événement **naissance** du GEDCOM (nom, prénom principal, date, département, commune) ; pour les actes D et M, correspondance sur le type d'événement, la date et le lieu.
 4. **Réexport GEDCOM** (autre outil, nouveaux `@I…@`) : les fichiers actes **ne changent pas** ; le rattachement se refait automatiquement via la clé sémantique.

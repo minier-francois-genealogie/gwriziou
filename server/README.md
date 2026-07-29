@@ -1,4 +1,4 @@
-# Serveur API (FastAPI)
+﻿# Serveur API (FastAPI)
 
 API REST en lecture sur `bdd/genealogie.sqlite`. Les scans et photos restent sur GitHub (URLs dans les réponses).
 
@@ -44,7 +44,7 @@ Exemple bloc `photos` dans la fiche :
 | `AUTO_IMPORT` | `false` | Import au démarrage (ou si empreintes changées) |
 | `CORS_ORIGINS` | `*` | Origines IHM autorisées (virgules) |
 | `GEDCOM_PATH` | clone local | GEDCOM local (dev) ; prod = téléchargement raw GitHub |
-| `GITHUB_ACTES_TREE_URL` | API GitHub | Listing `actes/` distant |
+| `GITHUB_ACTES_TREE_URL` | API GitHub | Listing `sources/documents/` distant |
 | `PORT` | `8000` | Port HTTP (injecté par Render) |
 | `SELF_PING_ENABLED` | `true` sur Render, `false` en local | Active le self-ping pour éviter le spin-down du plan gratuit |
 | `SELF_PING_URL` | `RENDER_EXTERNAL_URL/healthz` sur Render | URL publique pingée (doit être l'URL Render, pas `localhost`) |

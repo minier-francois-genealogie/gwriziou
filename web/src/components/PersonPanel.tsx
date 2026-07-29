@@ -4,7 +4,7 @@ import type { ActeType, EvenementArbre, PersonneDetail, PhotoPersonne, RelationR
 import { formatNom } from "../utils/format";
 
 import { AncreButton } from "./AncreButton";
-
+import { ActesDossierRow } from "./ActesDossierRow";
 import { EvenementsList, normalizeEvenements } from "./EvenementsList";
 
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -193,6 +193,9 @@ export function PersonPanel({
         {activeTab === "individu" ? (
           <>
             <div>
+              {personne.dossier_actes && (
+                <ActesDossierRow dossier={personne.dossier_actes} />
+              )}
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
                 Événement(s)
               </h3>

@@ -25,6 +25,7 @@ from server.schemas.personnes import (
     RelationResume,
     WarningEvenement,
 )
+from server.services.acte_dossier import fetch_dossier_actes
 from server.services.dirigeants_france import get_dirigeants_france_personne
 from server.services.faits_historiques import get_faits_historiques_personne
 
@@ -494,6 +495,9 @@ def get_personne(conn: sqlite3.Connection, id_gedcom: str) -> PersonneDetail | N
             exclude_warning_codes=_UI_EXCLUDED_WARNING_CODES,
         ),
         photos=_fetch_photos(conn, id_gedcom),
+        dossier_actes=fetch_dossier_actes(
+            conn, id_gedcom, row["nom"], row["prenoms"]
+        ),
         relations=_fetch_relations(conn, id_gedcom),
         faits_historiques=get_faits_historiques_personne(conn, id_gedcom),
         dirigeants_france=get_dirigeants_france_personne(conn, id_gedcom),

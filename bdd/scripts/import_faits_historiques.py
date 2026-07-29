@@ -55,7 +55,7 @@ def normalize_pays(niveau: str, slug: str, pays: str | None) -> str | None:
 
 
 def parse_fichier(relative: str) -> tuple[str, str] | None:
-    """Retourne (niveau, slug) à partir du chemin relatif sous histoire/faits/."""
+    """Retourne (niveau, slug) à partir du chemin relatif sous referentiels/faits-historiques/."""
     if relative == "communal/_index.json":
         return None
     parts = PurePosixPath(relative).parts

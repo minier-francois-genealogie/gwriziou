@@ -10,13 +10,14 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-DATA_FILE = (
-    Path(__file__).resolve().parent.parent.parent
-    / "data"
-    / "histoire"
-    / "dirigeants"
-    / "france.json"
-)
+import sys
+
+WS_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(WS_ROOT))
+
+from paths import DIRIGEANTS_FRANCE_FILE  # noqa: E402
+
+DATA_FILE = DIRIGEANTS_FRANCE_FILE
 USER_AGENT = "gwriziou/1.0 (genealogie personnelle; fix photos dirigeants)"
 THUMB_SIZE = 220
 SLEEP_S = 3.0

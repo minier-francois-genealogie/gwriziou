@@ -43,7 +43,7 @@ def main() -> None:
     parser.add_argument(
         "--tree-url",
         default=os.environ.get("GITHUB_ACTES_TREE_URL"),
-        help="URL API GitHub pour lister actes/",
+        help="URL API GitHub pour lister sources/documents/",
     )
     args = parser.parse_args()
 

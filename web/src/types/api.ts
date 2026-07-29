@@ -83,6 +83,12 @@ export interface PhotoPersonne {
   suffixe: string | null;
 }
 
+/** Chemin relatif sous sources/documents/ : L/NOM/CLE */
+export interface DossierActes {
+  chemin: string;
+  existe: boolean;
+}
+
 export interface RelationResume {
   id_gedcom: string;
   nom: string;
@@ -144,6 +150,7 @@ export interface PersonneDetail {
   actes: ActesPersonne;
   evenements: EvenementArbre[];
   photos: PhotoPersonne[];
+  dossier_actes?: DossierActes | null;
   relations: RelationsPersonne;
   faits_historiques?: FaitHistorique[];
   dirigeants_france?: DirigeantFranceLigne[];
@@ -373,4 +380,45 @@ export interface EvolutionNomsResponse {
   personnes_sans_date: number;
   nombre_personnes_total: number;
   nombre_personnes_scope: number;
+}
+
+export interface CompteLigne {
+  email: string;
+  nom: string;
+  prenom: string;
+  role: string;
+  actif: boolean;
+}
+
+export interface CompteListResponse {
+  comptes: CompteLigne[];
+  source_fichier: string;
+}
+
+export interface HashPasswordResponse {
+  password_hash: string;
+}
+
+export interface SessionUser {
+  email: string;
+  nom: string;
+  prenom: string;
+  role: string;
+}
+
+export interface AuthMeResponse {
+  authenticated: boolean;
+  user: SessionUser | null;
+}
+
+export interface AccountRequestPayload {
+  email: string;
+  nom: string;
+  prenom: string;
+  password: string;
+}
+
+export interface AccountRequestResponse {
+  ok: boolean;
+  message: string;
 }

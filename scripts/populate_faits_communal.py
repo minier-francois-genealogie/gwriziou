@@ -6,7 +6,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-COMMUNAL_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "histoire" / "faits" / "communal"
+import sys
+
+WS_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(WS_ROOT))
+
+from paths import HISTOIRE_FAITS_DIR  # noqa: E402
+
+COMMUNAL_DIR = HISTOIRE_FAITS_DIR / "communal"
 
 
 def _evt(

@@ -86,6 +86,13 @@ class PhotoPersonne(BaseModel):
     suffixe: str | None = None
 
 
+class DossierActes(BaseModel):
+    """Chemin relatif sous sources/documents/ (clé sémantique) + existence indexée."""
+
+    chemin: str
+    existe: bool = False
+
+
 class RelationsPersonne(BaseModel):
     parents: list[RelationResume] = Field(default_factory=list)
     enfants: list[RelationResume] = Field(default_factory=list)
@@ -134,6 +141,7 @@ class PersonneDetail(BaseModel):
     actes: ActesPersonne
     evenements: list[EvenementArbre] = Field(default_factory=list)
     photos: list[PhotoPersonne] = Field(default_factory=list)
+    dossier_actes: DossierActes | None = None
     relations: RelationsPersonne
     faits_historiques: list[FaitHistorique] = Field(default_factory=list)
     dirigeants_france: list[DirigeantFranceLigne] = Field(default_factory=list)

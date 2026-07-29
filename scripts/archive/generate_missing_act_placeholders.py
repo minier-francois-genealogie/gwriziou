@@ -13,8 +13,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from act_path_normalize import normalize_commune, normalize_given_full, normalize_surname
 
-ACTES_DIR = Path(r"C:\Projet\Perso\genealogie\data\actes")
-GEDCOM_PATH = Path(r"C:\Projet\Perso\genealogie\data\ged\fminier.ged")
+ACTES_DIR = Path(r"C:\Projet\Perso\genealogie\github\data\sources\documents")
+GEDCOM_PATH = Path(r"C:\Projet\Perso\genealogie\github\data\sources\gedcom\fminier.ged")
 
 UNKNOWN_DATE = "XXXX-XX-XX"
 UNKNOWN_DEPT = "XX"

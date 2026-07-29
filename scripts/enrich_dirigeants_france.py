@@ -6,13 +6,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-DATA_FILE = (
-    Path(__file__).resolve().parent.parent.parent
-    / "data"
-    / "histoire"
-    / "dirigeants"
-    / "france.json"
-)
+import sys
+
+WS_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(WS_ROOT))
+
+from paths import DIRIGEANTS_FRANCE_FILE  # noqa: E402
+
+DATA_FILE = DIRIGEANTS_FRANCE_FILE
 
 ENRICHMENT: dict[str, dict] = {
     "louis_xii": {

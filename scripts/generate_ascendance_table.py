@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate ascendance table from GEDCOM + actes/ with explicit column names."""
+"""Generate ascendance table from GEDCOM + sources/documents/ with explicit column names."""
 
 from __future__ import annotations
 
