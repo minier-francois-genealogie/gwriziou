@@ -26,7 +26,7 @@ services:
       - key: RESEND_FROM
         value: Gwriziou <onboarding@resend.dev>
       - key: ACCOUNT_REQUEST_TO
-        value: minier.francois@gmail.com
+        value: minier.francois.genealogie@gmail.com
 
   - type: web
     name: gwriziou

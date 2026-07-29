@@ -54,7 +54,7 @@ RESEND_FROM = os.environ.get(
 ).strip()
 ACCOUNT_REQUEST_TO = os.environ.get(
     "ACCOUNT_REQUEST_TO",
-    "minier.francois@gmail.com",
+    "minier.francois.genealogie@gmail.com",
 ).strip()
 
 _self_ping_enabled_raw = os.environ.get(
