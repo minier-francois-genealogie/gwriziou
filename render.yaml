@@ -27,6 +27,8 @@ services:
         value: Gwriziou <onboarding@resend.dev>
       - key: ACCOUNT_REQUEST_TO
         value: minier.francois.genealogie@gmail.com
+      - key: GITHUB_TOKEN
+        sync: false
 
   - type: web
     name: gwriziou

@@ -4,7 +4,7 @@ Source de vérité : https://github.com/minier-francois-genealogie/data
   - GEDCOM      : sources/gedcom/fminier.ged
   - Documents   : sources/documents/  (actes N/M/D + photos P)
   - Référentiels: referentiels/faits-historiques/, referentiels/dirigeants-france/
-  - Auth app    : app/auth/accounts.json
+  - Comptes app : app/comptes/{email}.json
 
 En développement : clone local sous ../data/ (dépôt minier-francois-genealogie/data).
 En production (serveur + IHM déployés) : fetch depuis GitHub (raw ou git), pas le disque local.
@@ -67,14 +67,14 @@ DIRIGEANTS_FRANCE_FILE = Path(
 )
 DIRIGEANTS_FRANCE_RAW_URL = f"{DATA_REPO_RAW_BASE}/{DIRIGEANTS_FRANCE_REL_PATH}"
 
-AUTH_ACCOUNTS_REL_PATH = "app/auth/accounts.json"
-AUTH_ACCOUNTS_FILE = Path(
+AUTH_ACCOUNTS_REL_PREFIX = "app/comptes"
+AUTH_ACCOUNTS_DIR = Path(
     os.environ.get(
-        "AUTH_ACCOUNTS_FILE",
-        DATA_ROOT / AUTH_ACCOUNTS_REL_PATH,
+        "AUTH_ACCOUNTS_DIR",
+        DATA_ROOT / AUTH_ACCOUNTS_REL_PREFIX,
     )
 )
-AUTH_ACCOUNTS_RAW_URL = f"{DATA_REPO_RAW_BASE}/{AUTH_ACCOUNTS_REL_PATH}"
+AUTH_ACCOUNTS_RAW_BASE = f"{DATA_REPO_RAW_BASE}/{AUTH_ACCOUNTS_REL_PREFIX}"
 
 # Alias rétrocompatibilité
 FAITS_HISTORIQUES_DIR = HISTOIRE_FAITS_DIR

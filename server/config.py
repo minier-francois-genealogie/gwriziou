@@ -57,6 +57,9 @@ ACCOUNT_REQUEST_TO = os.environ.get(
     "minier.francois.genealogie@gmail.com",
 ).strip()
 
+# Token GitHub (écriture app/comptes dans le dépôt data)
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "").strip()
+
 _self_ping_enabled_raw = os.environ.get(
     "SELF_PING_ENABLED",
     "true" if _ON_RENDER else "false",

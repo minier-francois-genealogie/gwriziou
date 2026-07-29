@@ -49,3 +49,8 @@ class AccountRequestPayload(BaseModel):
 class AccountRequestResponse(BaseModel):
     ok: bool
     message: str
+
+
+class CompteActifUpdate(BaseModel):
+    email: str = Field(..., min_length=3, max_length=256)
+    actif: bool

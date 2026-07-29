@@ -5,6 +5,7 @@ import type {
   ArbreResponse,
   AuthMeResponse,
   CompteListResponse,
+  CompteLigne,
   DirigeantsFranceListResponse,
   DirigeantsFranceStatsResponse,
   EvolutionNomsResponse,
@@ -203,6 +204,13 @@ export const api = {
     ),
 
   adminComptes: () => request<CompteListResponse>("/api/admin/comptes"),
+
+  adminSetCompteActif: (email: string, actif: boolean) =>
+    request<CompteLigne>("/api/admin/comptes/actif", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, actif }),
+    }),
 
   adminHashPassword: (password: string) =>
     request<HashPasswordResponse>("/api/admin/hash-password", {

@@ -1,51 +1,42 @@
-"""Envoi d'e-mails via Resend (demandes de compte)."""
+"""Envoi d'e-mails via Resend (notifications)."""
 
 from __future__ import annotations
 
 import json
+import logging
 import urllib.error
 import urllib.request
 
 from server.config import ACCOUNT_REQUEST_TO, RESEND_API_KEY, RESEND_FROM
-from server.services.accounts import hash_password
+from server.services.accounts import account_filename
+
+logger = logging.getLogger(__name__)
 
 
-def send_account_request_email(
-    *,
-    email: str,
-    nom: str,
-    prenom: str,
-    password: str,
-) -> None:
-    if not RESEND_API_KEY:
-        raise RuntimeError("RESEND_API_KEY non configurée")
-    if not ACCOUNT_REQUEST_TO:
-        raise RuntimeError("ACCOUNT_REQUEST_TO non configurée")
+def notify_account_request(compte: dict) -> None:
+    """Notification optionnelle ; n'échoue pas si Resend n'est pas configuré."""
+    if not RESEND_API_KEY or not ACCOUNT_REQUEST_TO:
+        logger.info("Notification compte ignorée (RESEND_API_KEY / ACCOUNT_REQUEST_TO)")
+        return
 
-    password_hash = hash_password(password)
-    compte_json = {
-        "email": email.strip(),
-        "nom": nom.strip(),
-        "prenom": prenom.strip(),
-        "password_hash": password_hash,
-        "role": "user",
-        "actif": True,
-    }
+    filename = account_filename(compte["email"])
     body_text = (
-        "Nouvelle demande de création de compte Gwriziou.\n\n"
-        f"Email : {compte_json['email']}\n"
-        f"Nom : {compte_json['nom']}\n"
-        f"Prénom : {compte_json['prenom']}\n"
-        f"Rôle : {compte_json['role']}\n"
-        f"Actif : {compte_json['actif']}\n\n"
-        "Entrée à ajouter dans app/auth/accounts.json :\n\n"
-        f"{json.dumps(compte_json, ensure_ascii=False, indent=2)}\n"
+        "Nouvelle demande de compte Gwriziou (fichier créé, actif=false).\n\n"
+        f"Email : {compte.get('email')}\n"
+        f"Nom : {compte.get('nom')}\n"
+        f"Prénom : {compte.get('prenom')}\n"
+        f"Rôle : {compte.get('role')}\n"
+        f"Actif : {compte.get('actif')}\n"
+        f"Fichier : app/comptes/{filename}\n\n"
+        "Activez le compte depuis Admin → Gestion de compte.\n"
     )
-
     payload = {
         "from": RESEND_FROM,
         "to": [ACCOUNT_REQUEST_TO],
-        "subject": f"[Gwriziou] Demande de compte — {prenom.strip()} {nom.strip()}",
+        "subject": (
+            f"[Gwriziou] Demande de compte — "
+            f"{compte.get('prenom', '')} {compte.get('nom', '')}"
+        ).strip(),
         "text": body_text,
     }
     request = urllib.request.Request(
@@ -63,6 +54,6 @@ def send_account_request_email(
             response.read()
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"Resend a refusé l'envoi ({exc.code}): {detail}") from exc
+        logger.warning("Resend a refusé la notification (%s): %s", exc.code, detail)
     except OSError as exc:
-        raise RuntimeError(f"Impossible de joindre Resend: {exc}") from exc
+        logger.warning("Impossible de joindre Resend: %s", exc)

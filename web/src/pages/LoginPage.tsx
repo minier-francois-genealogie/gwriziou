@@ -228,8 +228,8 @@ export function LoginPage() {
               />
             </label>
             <p className="text-xs text-slate-500">
-              Rôle attribué : <span className="font-medium text-slate-700">user</span> ·
-              compte activé après validation.
+              Le compte sera créé inactif (<span className="font-mono">actif: false</span>
+              ). Un administrateur devra l&apos;activer avant votre première connexion.
             </p>
             {reqError && (
               <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

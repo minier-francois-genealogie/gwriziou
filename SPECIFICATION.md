@@ -18,7 +18,7 @@ https://github.com/minier-francois-genealogie/data
 │   ├── faits-historiques/     →  import SQLite (faits historiques)
 │   └── dirigeants-france/     →  import SQLite (dirigeants)
 └── app/
-    └── auth/accounts.json     →  comptes applicatifs (auth)
+    └── comptes/{email}.json   →  un fichier JSON par compte
 ```
 
 | Contexte | GEDCOM | Actes |
@@ -170,7 +170,7 @@ Référentiel **public** : **[minier-francois-genealogie/data](https://github.co
 | [`sources/documents/`](https://github.com/minier-francois-genealogie/data/tree/main/sources/documents) | Scans d'état civil + photos |
 | [`referentiels/faits-historiques/`](https://github.com/minier-francois-genealogie/data/tree/main/referentiels/faits-historiques) | Faits historiques (JSON) |
 | [`referentiels/dirigeants-france/`](https://github.com/minier-francois-genealogie/data/tree/main/referentiels/dirigeants-france) | Dirigeants France (JSON) |
-| [`app/auth/`](https://github.com/minier-francois-genealogie/data/tree/main/app/auth) | Comptes applicatifs |
+| [`app/comptes/`](https://github.com/minier-francois-genealogie/data/tree/main/app/comptes) | Comptes applicatifs |
 
 **Fichiers GEDCOM disponibles** (`sources/gedcom/`) :
 
@@ -189,7 +189,7 @@ Clone local du dépôt — **données Git uniquement** (pas de scripts) :
 - **GEDCOM** : `…\github\data\sources\gedcom\fminier.ged`
 - **Documents** : `…\github\data\sources\documents\`
 - **Référentiels** : `…\github\data\referentiels\`
-- **Auth** : `…\github\data\app\auth\accounts.json`
+- **Comptes** : `…\github\data\app\comptes\{email}.json`
 
 Les scripts `cursor_ws/` pointent vers ce clone via `paths.py`. En prod, le serveur utilise les URLs GitHub (voir ci-dessous).
 

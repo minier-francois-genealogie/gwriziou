@@ -1,4 +1,4 @@
-"""Routes d'authentification (login / logout / session)."""
+"""Routes d'authentification (login / logout / session / demande de compte)."""
 
 from __future__ import annotations
 
@@ -17,8 +17,9 @@ from server.schemas.accounts import (
     LoginRequest,
     SessionUser,
 )
-from server.services.accounts import authenticate
-from server.services.mail import send_account_request_email
+from server.services.accounts import authenticate, create_pending_account
+from server.services.github_data import GitHubDataError
+from server.services.mail import notify_account_request
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -64,15 +65,21 @@ def auth_logout(response: Response) -> dict[str, bool]:
 @router.post("/request-account", response_model=AccountRequestResponse)
 def auth_request_account(payload: AccountRequestPayload) -> AccountRequestResponse:
     try:
-        send_account_request_email(
+        compte = create_pending_account(
             email=payload.email,
             nom=payload.nom,
             prenom=payload.prenom,
             password=payload.password,
         )
-    except RuntimeError as exc:
+    except FileExistsError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except (RuntimeError, ValueError, GitHubDataError) as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+    notify_account_request(compte)
     return AccountRequestResponse(
         ok=True,
-        message="Demande envoyée. Un administrateur la traitera prochainement.",
+        message=(
+            "Demande enregistrée. Un administrateur activera votre compte "
+            "avant la première connexion."
+        ),
     )

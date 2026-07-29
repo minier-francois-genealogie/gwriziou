@@ -1,5 +1,6 @@
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Request
 
+from server.auth_session import require_session
 from server.db import connection, database_exists
 from server.gedcom_id import normalize_gedcom_id
 from server.import_service import empreintes_inchangees, run_import
@@ -32,14 +33,23 @@ from server.services.profession_mapping import (
 from server.services.warnings import get_warnings_stats, list_warnings
 from server.schemas.status import RafraichirResponse, StatusResponse
 from server.schemas.accounts import (
+    CompteActifUpdate,
     CompteListResponse,
     CompteLigne,
     HashPasswordRequest,
     HashPasswordResponse,
 )
-from server.services.accounts import hash_password, list_accounts_public
+from server.services.accounts import hash_password, list_accounts_public, set_account_actif
+from server.services.github_data import GitHubDataError
 
 router = APIRouter(prefix="/api", tags=["api"])
+
+
+def _require_admin(request: Request) -> dict:
+    session = require_session(request)
+    if str(session.get("role") or "") != "admin":
+        raise HTTPException(status_code=403, detail="Droits administrateur requis")
+    return session
 
 
 def _status_payload(**fields) -> StatusResponse:
@@ -357,7 +367,8 @@ def api_gestion_professions_reset(
 
 
 @router.get("/admin/comptes", response_model=CompteListResponse)
-def api_admin_comptes() -> CompteListResponse:
+def api_admin_comptes(request: Request) -> CompteListResponse:
+    _require_admin(request)
     try:
         rows, source = list_accounts_public()
     except FileNotFoundError as exc:
@@ -370,6 +381,22 @@ def api_admin_comptes() -> CompteListResponse:
     )
 
 
+@router.patch("/admin/comptes/actif", response_model=CompteLigne)
+def api_admin_compte_actif(payload: CompteActifUpdate, request: Request) -> CompteLigne:
+    _require_admin(request)
+    try:
+        row = set_account_actif(payload.email, payload.actif)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except (RuntimeError, GitHubDataError, ValueError) as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return CompteLigne(**row)
+
+
 @router.post("/admin/hash-password", response_model=HashPasswordResponse)
-def api_admin_hash_password(payload: HashPasswordRequest) -> HashPasswordResponse:
+def api_admin_hash_password(
+    payload: HashPasswordRequest,
+    request: Request,
+) -> HashPasswordResponse:
+    _require_admin(request)
     return HashPasswordResponse(password_hash=hash_password(payload.password))
