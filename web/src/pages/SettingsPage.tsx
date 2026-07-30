@@ -1,13 +1,52 @@
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
+import { FloatingTooltip } from "../components/FloatingTooltip";
 import { RefreshButton } from "../components/RefreshButton";
 import { useApp } from "../context/AppContext";
 import { useAsync } from "../hooks/useApi";
+import { useEffect, useState } from "react";
+import {
+  loadTreeDetails,
+  loadTreeHorizontal,
+  saveTreeDetails,
+  saveTreeHorizontal,
+} from "../utils/appStorage";
+
+function Switch({
+  checked,
+  onChange,
+  ariaLabel,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  ariaLabel: string;
+}) {
+  return (
+    <input
+      type="checkbox"
+      role="switch"
+      aria-label={ariaLabel}
+      checked={checked}
+      onChange={(e) => onChange(e.target.checked)}
+      className="h-4 w-7 shrink-0 cursor-pointer appearance-none rounded-full bg-slate-300 transition checked:bg-sky-600 before:block before:h-3 before:w-3 before:translate-x-0.5 before:rounded-full before:bg-white before:transition before:content-[''] checked:before:translate-x-3.5"
+    />
+  );
+}
 
 export function SettingsPage() {
   const { ancetres, descendants, setAncetres, setDescendants } = useApp();
   const { data: status, reload } = useAsync(() => api.status(), []);
   const navigate = useNavigate();
+  const [treeDetails, setTreeDetails] = useState(() => loadTreeDetails());
+  const [treeHorizontal, setTreeHorizontal] = useState(() => loadTreeHorizontal());
+
+  useEffect(() => {
+    saveTreeDetails(treeDetails);
+  }, [treeDetails]);
+
+  useEffect(() => {
+    saveTreeHorizontal(treeHorizontal);
+  }, [treeHorizontal]);
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-6 overflow-y-auto p-4">
@@ -27,7 +66,7 @@ export function SettingsPage() {
             className="w-full"
           />
         </label>
-        <label className="flex flex-col gap-2">
+        <label className="mb-4 flex flex-col gap-2">
           <span className="flex items-center justify-between text-sm text-slate-600">
             <span>Descendants</span>
             <span className="font-medium text-slate-900">{descendants}</span>
@@ -41,8 +80,41 @@ export function SettingsPage() {
             className="w-full"
           />
         </label>
+        <div className="flex flex-col gap-3 border-t border-slate-100 pt-4">
+          <label className="flex items-center justify-between gap-3 text-sm text-slate-600">
+            <FloatingTooltip
+              content="Cellules détaillées (événements, actes…) ou compactes"
+              maxWidth={240}
+              multiline
+            >
+              <span>Détails</span>
+            </FloatingTooltip>
+            <Switch
+              checked={treeDetails}
+              onChange={setTreeDetails}
+              ariaLabel="Afficher les détails des cellules"
+            />
+          </label>
+          <label className="flex items-center justify-between gap-3 text-sm text-slate-600">
+            <FloatingTooltip
+              content={
+                treeHorizontal
+                  ? "Générations de gauche à droite"
+                  : "Générations de haut en bas"
+              }
+              maxWidth={240}
+            >
+              <span>Horizontal</span>
+            </FloatingTooltip>
+            <Switch
+              checked={treeHorizontal}
+              onChange={setTreeHorizontal}
+              ariaLabel="Disposition horizontale de l'arbre"
+            />
+          </label>
+        </div>
         <p className="mt-3 text-xs text-slate-400">
-          Appliqué au prochain chargement de l&apos;écran Arbre.
+          Appliqué à l&apos;écran Arbre (roue crantée en haut à droite).
         </p>
       </section>
 
@@ -62,7 +134,7 @@ export function SettingsPage() {
           <li>↑ père (ou mère) · ↓ enfant aîné · ←→ même génération</li>
           <li>+ / − : zoom avant / arrière</li>
           <li>Icône ancre : centre de l&apos;arbre (reload)</li>
-          <li>Roue crantée en haut à droite : ancêtres, descendants, compresser</li>
+          <li>Roue crantée : ancêtres, descendants, détails, horizontal</li>
           <li>Clic cellule = focus · chevrons en bas à droite</li>
           <li>Glisser : déplacer · boutons + / − à droite des chevrons</li>
         </ul>

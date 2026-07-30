@@ -7,7 +7,7 @@ import {
 } from "react";
 import type { ArbreResponse } from "../types/api";
 import { useSvgViewport } from "../hooks/useSvgViewport";
-import { layoutTree, type TreeViewMode } from "../utils/treeLayout";
+import { layoutTree, transposeTreeLayout, type TreeViewMode } from "../utils/treeLayout";
 import { getTreeLayoutMetrics } from "../utils/treeLayoutMetrics";
 import { PersonNode } from "./PersonNode";
 import { UnionNode, TREE_BRANCH_STROKE } from "./UnionNode";
@@ -25,6 +25,8 @@ interface TreeViewProps {
   focusId: string;
   ancreId: string;
   viewMode?: TreeViewMode;
+  /** Générations de gauche à droite (sinon haut → bas). */
+  horizontal?: boolean;
   onFocus: (id: string) => void;
   onAncre: (id: string) => void;
   onActeClick: (type: "naissance" | "mariage" | "deces", url: string, label?: string) => void;
@@ -43,6 +45,7 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
     focusId,
     ancreId,
     viewMode = "detail",
+    horizontal = false,
     onFocus,
     onAncre,
     onActeClick,
@@ -56,24 +59,24 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
   },
   ref,
 ) {
-  const metrics = getTreeLayoutMetrics(viewMode);
+  const metrics = getTreeLayoutMetrics(viewMode, horizontal);
   const [highlightIds, setHighlightIds] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
 
-  const layout = useMemo(
-    () =>
-      layoutTree(
-        arbre.centre,
-        arbre.noeuds,
-        arbre.unions ?? [],
-        arbre.aretes,
-        arbre.ancetres,
-        arbre.descendants,
-        viewMode,
-      ),
-    [arbre, viewMode],
-  );
+  const layout = useMemo(() => {
+    const base = layoutTree(
+      arbre.centre,
+      arbre.noeuds,
+      arbre.unions ?? [],
+      arbre.aretes,
+      arbre.ancetres,
+      arbre.descendants,
+      viewMode,
+      horizontal,
+    );
+    return horizontal ? transposeTreeLayout(base) : base;
+  }, [arbre, viewMode, horizontal]);
 
   const nodeMap = useMemo(
     () => new Map(layout.nodes.map((n) => [n.id, n])),
@@ -224,6 +227,7 @@ export const TreeView = forwardRef<TreeViewHandle, TreeViewProps>(function TreeV
                 isAncre={node.id === ancreId}
                 highlighted={highlightIds.has(node.id)}
                 viewMode={viewMode}
+                horizontal={horizontal}
                 parentsAilleurs={node.parentsAilleurs}
                 onFocus={onFocus}
                 onAncre={onAncre}

@@ -5,8 +5,10 @@ const MAX_ANCETRES = 8;
 const MAX_DESCENDANTS = 6;
 
 interface TreeViewControlsProps {
-  compress: boolean;
-  onCompressChange: (active: boolean) => void;
+  details: boolean;
+  onDetailsChange: (active: boolean) => void;
+  horizontal: boolean;
+  onHorizontalChange: (active: boolean) => void;
   ancetres: number;
   descendants: number;
   onAncetresChange: (n: number) => void;
@@ -86,6 +88,31 @@ function ControlRow({
   );
 }
 
+function Switch({
+  checked,
+  onChange,
+  ariaLabel,
+  tooltip,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  ariaLabel: string;
+  tooltip: string;
+}) {
+  return (
+    <FloatingTooltip content={tooltip} maxWidth={260} multiline align="end">
+      <input
+        type="checkbox"
+        role="switch"
+        aria-label={ariaLabel}
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="h-4 w-7 shrink-0 cursor-pointer appearance-none rounded-full bg-slate-300 transition checked:bg-sky-600 before:block before:h-3 before:w-3 before:translate-x-0.5 before:rounded-full before:bg-white before:transition before:content-[''] checked:before:translate-x-3.5"
+      />
+    </FloatingTooltip>
+  );
+}
+
 function GearIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
     <svg
@@ -105,8 +132,10 @@ function GearIcon({ className = "h-4 w-4" }: { className?: string }) {
 }
 
 export function TreeViewControls({
-  compress,
-  onCompressChange,
+  details,
+  onDetailsChange,
+  horizontal,
+  onHorizontalChange,
   ancetres,
   descendants,
   onAncetresChange,
@@ -159,26 +188,29 @@ export function TreeViewControls({
                 ariaLabel="descendants"
               />
             </ControlRow>
-            <ControlRow label="Compresser" labelActive={compress}>
-              <FloatingTooltip
-                content={
-                  compress
-                    ? "Compresser : cellules réduites (nom, prénom, ancre)"
-                    : "Vue détaillée : événements, actes, profession…"
+            <ControlRow label="Détails" labelActive={details}>
+              <Switch
+                checked={details}
+                onChange={onDetailsChange}
+                ariaLabel="Afficher les détails des cellules"
+                tooltip={
+                  details
+                    ? "Détails : événements, actes, profession…"
+                    : "Sans détails : cellules réduites (nom, prénom, ancre)"
                 }
-                maxWidth={260}
-                multiline
-                align="end"
-              >
-                <input
-                  type="checkbox"
-                  role="switch"
-                  aria-label="Compresser l'affichage de l'arbre"
-                  checked={compress}
-                  onChange={(e) => onCompressChange(e.target.checked)}
-                  className="h-4 w-7 shrink-0 cursor-pointer appearance-none rounded-full bg-slate-300 transition checked:bg-sky-600 before:block before:h-3 before:w-3 before:translate-x-0.5 before:rounded-full before:bg-white before:transition before:content-[''] checked:before:translate-x-3.5"
-                />
-              </FloatingTooltip>
+              />
+            </ControlRow>
+            <ControlRow label="Horizontal" labelActive={horizontal}>
+              <Switch
+                checked={horizontal}
+                onChange={onHorizontalChange}
+                ariaLabel="Disposition horizontale de l'arbre"
+                tooltip={
+                  horizontal
+                    ? "Horizontal : générations de gauche à droite"
+                    : "Vertical : générations de haut en bas"
+                }
+              />
             </ControlRow>
           </div>
         </div>

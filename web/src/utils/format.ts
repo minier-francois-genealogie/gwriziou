@@ -222,6 +222,48 @@ export function formatDates(
   return "";
 }
 
+/** Année seule (AAAA) depuis date ISO ou brute GEDCOM. */
+export function extractYear(
+  dateIso: string | null | undefined,
+  dateBrute: string | null | undefined = null,
+): string | null {
+  const parts = parseDateForAge(dateIso, dateBrute);
+  return parts ? String(parts.year) : null;
+}
+
+/**
+ * Plage d’années compacte pour l’arbre (ex. « 1921-1978 »).
+ * Préfère les dates d’événements ; sinon bornes estimées.
+ * Si la personne est probablement vivante, pas d’année de décès.
+ */
+export function formatAnneesVie(opts: {
+  evenements?: Array<{
+    type: string;
+    date?: string | null;
+    date_brute?: string | null;
+  }>;
+  date_naissance_min?: string | null;
+  date_deces_max?: string | null;
+}): string | null {
+  const evenements = opts.evenements ?? [];
+  const naissance = evenements.find((e) => e.type === "naissance");
+  const deces = evenements.find((e) => e.type === "deces");
+
+  const birth =
+    extractYear(naissance?.date, naissance?.date_brute) ??
+    extractYear(opts.date_naissance_min);
+
+  const death = isProbablyAlive(opts.date_deces_max)
+    ? null
+    : extractYear(deces?.date, deces?.date_brute) ??
+      extractYear(opts.date_deces_max);
+
+  if (birth && death) return `${birth}-${death}`;
+  if (birth) return `${birth}-`;
+  if (death) return `-${death}`;
+  return null;
+}
+
 export function sexeLabel(sexe: string | null | undefined): string {
   if (sexe === "M") return "Homme";
   if (sexe === "F") return "Femme";

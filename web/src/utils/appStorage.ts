@@ -8,7 +8,10 @@ const KEYS = {
   descendants: "gwriziou.descendants",
   derniereVue: "gwriziou.derniereVue",
   treeViewBoxZoom: "gwriziou.treeViewBoxZoom",
+  /** @deprecated migré vers treeDetails */
   treeViewMode: "gwriziou.treeViewMode",
+  treeDetails: "gwriziou.treeDetails",
+  treeHorizontal: "gwriziou.treeHorizontal",
 } as const;
 
 export type AppView =
@@ -168,22 +171,58 @@ export function saveTreeViewBoxZoom(zoom: TreeViewBoxZoom): void {
 
 export type TreeViewMode = "detail" | "overview";
 
-export function loadTreeViewMode(): TreeViewMode {
+/** Détails cellule : oui = fiche complète, non = vue compacte. */
+export function loadTreeDetails(): boolean {
   try {
-    const v = localStorage.getItem(KEYS.treeViewMode);
-    if (v === "overview") return "overview";
+    const v = localStorage.getItem(KEYS.treeDetails);
+    if (v === "0" || v === "false") return false;
+    if (v === "1" || v === "true") return true;
+    // Migration depuis l'ancien interrupteur « Compresser »
+    const legacy = localStorage.getItem(KEYS.treeViewMode);
+    if (legacy === "overview") return false;
   } catch {
     /* ignore */
   }
-  return "detail";
+  return true;
 }
 
-export function saveTreeViewMode(mode: TreeViewMode): void {
+export function saveTreeDetails(details: boolean): void {
   try {
-    localStorage.setItem(KEYS.treeViewMode, mode);
+    localStorage.setItem(KEYS.treeDetails, details ? "1" : "0");
+    // Compat lecture ancienne
+    localStorage.setItem(KEYS.treeViewMode, details ? "detail" : "overview");
   } catch {
     /* ignore */
   }
+}
+
+/** Disposition : false = vertical (générations haut→bas), true = horizontal (gauche→droite). */
+export function loadTreeHorizontal(): boolean {
+  try {
+    const v = localStorage.getItem(KEYS.treeHorizontal);
+    if (v === "1" || v === "true") return true;
+  } catch {
+    /* ignore */
+  }
+  return false;
+}
+
+export function saveTreeHorizontal(horizontal: boolean): void {
+  try {
+    localStorage.setItem(KEYS.treeHorizontal, horizontal ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
+}
+
+/** @deprecated préférer loadTreeDetails */
+export function loadTreeViewMode(): TreeViewMode {
+  return loadTreeDetails() ? "detail" : "overview";
+}
+
+/** @deprecated préférer saveTreeDetails */
+export function saveTreeViewMode(mode: TreeViewMode): void {
+  saveTreeDetails(mode !== "overview");
 }
 
 export { DEFAULT_ANCETRES, DEFAULT_DESCENDANTS };

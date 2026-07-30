@@ -1,0 +1,37 @@
+---
+description: Ne pas modifier les 4 modes arbre figés sans accord utilisateur
+globs: web/src/utils/treeLayoutMetrics.ts,web/src/utils/treeLayout.ts,web/src/components/PersonNode.tsx,web/src/components/TreeView.tsx,web/src/pages/TreePage.tsx
+alwaysApply: false
+---
+
+# Arbre — 4 modes figés
+
+Deux axes indépendants (voir `getTreeModeConfig`) :
+
+| Axe | Interrupteur | Contrôle |
+|-----|--------------|----------|
+| **Cartouche** | Détails | taille cellule, contenu fiche, `gapY` |
+| **Organisation** | Horizontal | `gapX`, tige filiation, badge parents, transpose |
+
+| Détails | Horizontal | Constante |
+|---------|------------|-----------|
+| oui | non | `DETAIL_VERTICAL` |
+| oui | oui | `DETAIL_HORIZONTAL` |
+| non | non | `OVERVIEW_VERTICAL` |
+| non | oui | `OVERVIEW_HORIZONTAL` |
+
+## Interdit sans demande explicite
+
+- Modifier les tables `CARTOUCHE`, `GAP_X`, `UNION_DESC_STEM`, `CARTOUCHE_UI` ou les exports figés
+- Changer `PersonNode` / `layoutTree` d’une façon qui altère un mode figé
+
+## Valeurs figées
+
+- Cartouche détail : `192×128`, `gapY: 28` — events + métier ; pas d’années ni NMD en header
+- Cartouche overview : `154×72`, `gapY: 32` — années + NMD header ; pas d’events ni métier
+- Vertical : `gapX: 24` ; stems `56` (détail) / `28` (overview)
+- Horizontal : `gapX: 56` ; stems `88` (détail) / `75` (overview) ; badge parents à gauche
+
+## En cas de doute
+
+Demander confirmation avant tout changement impactant un mode figé.

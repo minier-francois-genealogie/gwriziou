@@ -18,8 +18,13 @@ import { useNotesIndex, useNotesModal } from "../hooks/useNotesModal";
 import { useCheckedIndex } from "../hooks/useCheckedIndex";
 import type { ActeType, ArbreResponse } from "../types/api";
 import { formatNom } from "../utils/format";
-import { layoutTree, type TreeViewMode } from "../utils/treeLayout";
-import { loadTreeViewMode, saveTreeViewMode } from "../utils/appStorage";
+import { layoutTree, transposeTreeLayout, type TreeViewMode } from "../utils/treeLayout";
+import {
+  loadTreeDetails,
+  loadTreeHorizontal,
+  saveTreeDetails,
+  saveTreeHorizontal,
+} from "../utils/appStorage";
 import { buildTreeNavIndex, type TreeNavDirection } from "../utils/treeNav";
 
 const NAV_MESSAGE = "Navigation uniquement sur l'arbre chargé";
@@ -45,7 +50,9 @@ export function TreePage() {
   const skipFocusPanRef = useRef(false);
   const initialTreeFramedRef = useRef(false);
   const [displayArbre, setDisplayArbre] = useState<ArbreResponse | null>(null);
-  const [treeViewMode, setTreeViewMode] = useState<TreeViewMode>(() => loadTreeViewMode());
+  const [treeDetails, setTreeDetails] = useState(() => loadTreeDetails());
+  const [treeHorizontal, setTreeHorizontal] = useState(() => loadTreeHorizontal());
+  const treeViewMode: TreeViewMode = treeDetails ? "detail" : "overview";
 
   const [acteModal, setActeModal] = useState<{
     type: ActeType;
@@ -85,21 +92,20 @@ export function TreePage() {
     if (arbre) setDisplayArbre(arbre as ArbreResponse);
   }, [arbre]);
 
-  const layout = useMemo(
-    () =>
-      displayArbre
-        ? layoutTree(
-            displayArbre.centre,
-            displayArbre.noeuds,
-            displayArbre.unions ?? [],
-            displayArbre.aretes,
-            displayArbre.ancetres,
-            displayArbre.descendants,
-            treeViewMode,
-          )
-        : null,
-    [displayArbre, treeViewMode],
-  );
+  const layout = useMemo(() => {
+    if (!displayArbre) return null;
+    const base = layoutTree(
+      displayArbre.centre,
+      displayArbre.noeuds,
+      displayArbre.unions ?? [],
+      displayArbre.aretes,
+      displayArbre.ancetres,
+      displayArbre.descendants,
+      treeViewMode,
+      treeHorizontal,
+    );
+    return treeHorizontal ? transposeTreeLayout(base) : base;
+  }, [displayArbre, treeViewMode, treeHorizontal]);
 
   const navIndex = useMemo(
     () =>
@@ -165,16 +171,20 @@ export function TreePage() {
   }, [focusPersonneId, displayArbre, navIndex]);
 
   useEffect(() => {
-    if (!displayArbre) return;
-    requestAnimationFrame(() => treeRef.current?.fitAll());
-    // fitAll uniquement au basculement compresser/détail (pas au rechargement de l'arbre)
+    if (!displayArbre || !navIndex?.graphIds.has(focusPersonneId)) return;
+    // Changement détails / orientation : garder le zoom, recentrer sur le focus.
+    requestAnimationFrame(() => treeRef.current?.panTo(focusPersonneId));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [treeViewMode]);
+  }, [treeDetails, treeHorizontal]);
 
-  const handleTreeViewModeChange = useCallback((overview: boolean) => {
-    const mode: TreeViewMode = overview ? "overview" : "detail";
-    setTreeViewMode(mode);
-    saveTreeViewMode(mode);
+  const handleDetailsChange = useCallback((details: boolean) => {
+    setTreeDetails(details);
+    saveTreeDetails(details);
+  }, []);
+
+  const handleHorizontalChange = useCallback((horizontal: boolean) => {
+    setTreeHorizontal(horizontal);
+    saveTreeHorizontal(horizontal);
   }, []);
 
   useKeyboardNav({
@@ -263,6 +273,7 @@ export function TreePage() {
             focusId={focusPersonneId}
             ancreId={ancrePersonneId}
             viewMode={treeViewMode}
+            horizontal={treeHorizontal}
             onFocus={tryFocus}
             onAncre={handleAncre}
             onActeClick={handleActeClick}
@@ -276,8 +287,10 @@ export function TreePage() {
           />
           <div className="pointer-events-none absolute right-3 top-3 z-40 pt-[calc(env(safe-area-inset-top,0px)+0.25rem)]">
             <TreeViewControls
-              compress={treeViewMode === "overview"}
-              onCompressChange={handleTreeViewModeChange}
+              details={treeDetails}
+              onDetailsChange={handleDetailsChange}
+              horizontal={treeHorizontal}
+              onHorizontalChange={handleHorizontalChange}
               ancetres={ancetres}
               descendants={descendants}
               onAncetresChange={setAncetres}

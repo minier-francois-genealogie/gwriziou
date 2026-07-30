@@ -50,13 +50,28 @@ export interface TreeLayout {
 function isDistantFiliation(
   unionX: number,
   childX: number,
-  m: TreeLayoutMetrics,
+  sibPitch: number,
+  distantFiliationFactor: number,
 ): boolean {
-  const threshold = (m.nodeW + m.gapX) * m.distantFiliationFactor;
-  return Math.abs(childX - unionX) > threshold;
+  return Math.abs(childX - unionX) > sibPitch * distantFiliationFactor;
 }
 
 const COLUMN_MIN_GAP = 1;
+
+/**
+ * Tailles le long des axes du layout *avant* transpose.
+ * En horizontal, on inverse W/H pour qu’après swap X/Y les bords des
+ * cellules coïncident avec les attaches de liens (sinon chevauchement
+ * parents↔enfants : espacement basé sur nodeH alors que la largeur est nodeW).
+ */
+function layoutAxisSizes(
+  m: TreeLayoutMetrics,
+  horizontal: boolean,
+): { gen: number; sib: number } {
+  return horizontal
+    ? { gen: m.nodeW, sib: m.nodeH }
+    : { gen: m.nodeH, sib: m.nodeW };
+}
 
 function parentLabel(ids: string[], byId: Map<string, NoeudArbre>): string {
   return ids
@@ -95,9 +110,10 @@ function generationY(
   gen: number,
   minGen: number,
   refBadgeExtra: number,
-  m: TreeLayoutMetrics,
+  genSize: number,
+  gapY: number,
 ): number {
-  return (gen - minGen) * (m.nodeH + m.gapY) + m.nodeH / 2 + refBadgeExtra;
+  return (gen - minGen) * (genSize + gapY) + genSize / 2 + refBadgeExtra;
 }
 
 /** Décale vers le bas les rangées qui contiennent une icône ↩ (badge au-dessus de la cellule). */
@@ -750,8 +766,11 @@ export function layoutTree(
   ancetres: number,
   descendants: number,
   mode: TreeViewMode = "detail",
+  horizontal = false,
 ): TreeLayout {
-  const m = getTreeLayoutMetrics(mode);
+  const m = getTreeLayoutMetrics(mode, horizontal);
+  const { gen: genSize, sib: sibSize } = layoutAxisSizes(m, horizontal);
+  const sibPitch = sibSize + m.gapX;
   const byId = new Map(noeuds.map((n) => [n.id_gedcom, n]));
   const unionData = new Map(unions.map((u) => [u.id_famille, u]));
   const { parents, children, spouses, unionParents, unionChildren } = buildMaps(
@@ -792,7 +811,7 @@ export function layoutTree(
   const span = Math.max(maxX - minX, 1);
 
   const toPixelX = (rawX: number) =>
-    ((rawX - minX) / span) * (span * (m.nodeW + m.gapX)) + m.nodeW / 2;
+    ((rawX - minX) / span) * (span * sibPitch) + sibSize / 2;
 
   const nodes: TreeLayoutNode[] = [];
   for (const [id, gen] of generations) {
@@ -840,10 +859,10 @@ export function layoutTree(
 
     const ancestorChildren = sorted.filter((c) => c.generation < 0);
     const nearAncestors = ancestorChildren.filter(
-      (c) => !isDistantFiliation(ux, c.x, m),
+      (c) => !isDistantFiliation(ux, c.x, sibPitch, m.distantFiliationFactor),
     );
     const farAncestors = ancestorChildren.filter((c) =>
-      isDistantFiliation(ux, c.x, m),
+      isDistantFiliation(ux, c.x, sibPitch, m.distantFiliationFactor),
     );
     const far = nearAncestors.length > 0 ? farAncestors : [];
 
@@ -867,12 +886,19 @@ export function layoutTree(
       node.generation,
       minGen,
       refBadgeExtra.get(node.generation) ?? 0,
-      m,
+      genSize,
+      m.gapY,
     );
   }
   for (const union of layoutUnions) {
     const gen = generations.get(union.union.id_famille) ?? -1;
-    union.y = generationY(gen, minGen, refBadgeExtra.get(gen) ?? 0, m);
+    union.y = generationY(
+      gen,
+      minGen,
+      refBadgeExtra.get(gen) ?? 0,
+      genSize,
+      m.gapY,
+    );
   }
 
   const edges: TreeLayoutEdge[] = [];
@@ -897,8 +923,8 @@ export function layoutTree(
       edges.push(
         edgeLine(
           "conjoint",
-          { x: left.x + m.nodeW / 2, y: left.y },
-          { x: right.x - m.nodeW / 2, y: right.y },
+          { x: left.x + sibSize / 2, y: left.y },
+          { x: right.x - sibSize / 2, y: right.y },
         ),
       );
       continue;
@@ -913,7 +939,7 @@ export function layoutTree(
         edgeLine(
           "union_epoux",
           {
-            x: parent.x + (toLeft ? m.nodeW / 2 : -m.nodeW / 2),
+            x: parent.x + (toLeft ? sibSize / 2 : -sibSize / 2),
             y: parent.y,
           },
           {
@@ -937,10 +963,10 @@ export function layoutTree(
     const gen0Plus = sorted.filter((c) => c.generation >= 0);
     const ancestorChildren = sorted.filter((c) => c.generation < 0);
     const nearAncestors = ancestorChildren.filter(
-      (c) => !isDistantFiliation(ux, c.x, m),
+      (c) => !isDistantFiliation(ux, c.x, sibPitch, m.distantFiliationFactor),
     );
     const farAncestors = ancestorChildren.filter((c) =>
-      isDistantFiliation(ux, c.x, m),
+      isDistantFiliation(ux, c.x, sibPitch, m.distantFiliationFactor),
     );
     // Icône ↩ seulement si un autre enfant de la même union est déjà relié
     // directement (branche principale) — ex. @54@ proche, @185@ loin.
@@ -964,7 +990,7 @@ export function layoutTree(
 
     if (near.length === 1) {
       const child = near[0]!;
-      const top = { x: child.x, y: child.y - m.nodeH / 2 };
+      const top = { x: child.x, y: child.y - genSize / 2 };
       if (Math.abs(child.x - ux) < 1) {
         edges.push(edgeLine("union_descendant", { x: ux, y: stemTop }, top));
       } else {
@@ -990,7 +1016,7 @@ export function layoutTree(
         ),
       );
       for (const child of near) {
-        const top = { x: child.x, y: child.y - m.nodeH / 2 };
+        const top = { x: child.x, y: child.y - genSize / 2 };
         edges.push(
           edgeLine(
             "union_descendant",
@@ -1002,7 +1028,7 @@ export function layoutTree(
     }
 
     for (const child of far) {
-      const top = { x: child.x, y: child.y - m.nodeH / 2 };
+      const top = { x: child.x, y: child.y - genSize / 2 };
       edges.push(
         edgeLine(
           "parents_ref_stub",
@@ -1017,11 +1043,26 @@ export function layoutTree(
     (max, v) => Math.max(max, v),
     0,
   );
-  const width = Math.max(span * (m.nodeW + m.gapX) + m.nodeW, 320);
+  const width = Math.max(span * sibPitch + sibSize, 320);
   const height =
-    (maxGen - minGen + 1) * (m.nodeH + m.gapY) + m.gapY + refRows;
+    (maxGen - minGen + 1) * (genSize + m.gapY) + m.gapY + refRows;
 
   return { nodes, unions: layoutUnions, edges, width, height };
+}
+
+/** Passe d'un arbre vertical (générations haut→bas) à horizontal (gauche→droite). */
+export function transposeTreeLayout(layout: TreeLayout): TreeLayout {
+  const swap = (p: { x: number; y: number }) => ({ x: p.y, y: p.x });
+  return {
+    nodes: layout.nodes.map((n) => ({ ...n, x: n.y, y: n.x })),
+    unions: layout.unions.map((u) => ({ ...u, x: u.y, y: u.x })),
+    edges: layout.edges.map((e) => ({
+      ...e,
+      points: e.points.map(swap),
+    })),
+    width: layout.height,
+    height: layout.width,
+  };
 }
 
 export type { TreeViewMode } from "./treeLayoutMetrics";

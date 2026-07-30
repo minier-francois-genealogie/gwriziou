@@ -1,14 +1,17 @@
 import type { ActeType, NoeudArbre } from "../types/api";
 import { type CSSProperties } from "react";
 import {
+  actesFromEvenements,
+  formatAnneesVie,
   formatNom,
   hasMultiplePrenoms,
   splitPrenoms,
 } from "../utils/format";
 import {
-  getTreeLayoutMetrics,
+  getTreeModeConfig,
   type TreeViewMode,
 } from "../utils/treeLayoutMetrics";
+import { ActeIcons } from "./ActeIcons";
 import { AncreButton } from "./AncreButton";
 import { AvatarIcon } from "./AvatarIcon";
 import { CheckedIcon } from "./CheckedIcon";
@@ -17,7 +20,8 @@ import { FloatingTooltip } from "./FloatingTooltip";
 import { PhotoIcon } from "./PhotoIcon";
 import { NoteIcon } from "./NoteIcon";
 
-const REF_BADGE_H = 26;
+/** Espace réservé au badge « parents déjà affichés » (= refBadgeRowGap métriques). */
+const REF_BADGE = 26;
 
 interface PersonNodeProps {
   noeud: NoeudArbre;
@@ -27,6 +31,8 @@ interface PersonNodeProps {
   isAncre: boolean;
   highlighted?: boolean;
   viewMode?: TreeViewMode;
+  /** Disposition horizontale (générations gauche→droite). */
+  horizontal?: boolean;
   parentsAilleurs?: import("../utils/treeLayout").ParentsAilleursRef;
   onFocus: (id: string) => void;
   onAncre: (id: string) => void;
@@ -49,6 +55,7 @@ export function PersonNode({
   isAncre,
   highlighted = false,
   viewMode = "detail",
+  horizontal = false,
   parentsAilleurs,
   onFocus,
   onAncre,
@@ -62,8 +69,11 @@ export function PersonNode({
   onAvatarEdit,
   onParentsRefClick,
 }: PersonNodeProps) {
-  const m = getTreeLayoutMetrics(viewMode);
-  const isOverview = viewMode === "overview";
+  const { metrics: m, cartouche, orientation } = getTreeModeConfig(
+    viewMode,
+    horizontal,
+  );
+  const refOnLeft = orientation.parentsRefSide === "left";
   const isMale = noeud.sexe === "M";
   const isFemale = noeud.sexe === "F";
 
@@ -80,90 +90,42 @@ export function PersonNode({
   const fullName = formatNom(noeud.nom, noeud.prenoms);
   const prenomArbre = splitPrenoms(noeud.prenoms)[0] ?? null;
   const extraPrenoms = hasMultiplePrenoms(noeud.prenoms);
+  const anneesVie = cartouche.showAnneesVie
+    ? formatAnneesVie({
+        evenements: noeud.evenements,
+        date_naissance_min: noeud.date_naissance_min,
+        date_deces_max: noeud.date_deces_max,
+      })
+    : null;
   const handleActeClick = onActeClick
     ? (type: ActeType, url: string) => onActeClick(type, url, fullName)
     : undefined;
-  const hasRef = !!parentsAilleurs && !isOverview;
-  const extraTop = hasRef ? REF_BADGE_H : 0;
+  const hasRef = !!parentsAilleurs;
+  const extraTop = hasRef && !refOnLeft ? REF_BADGE : 0;
+  const extraLeft = hasRef && refOnLeft ? REF_BADGE : 0;
   const shellStyle: CSSProperties = {
     position: "absolute",
-    left: x - m.nodeW / 2,
+    left: x - m.nodeW / 2 - extraLeft,
     top: y - m.nodeH / 2 - extraTop,
-    width: m.nodeW,
+    width: m.nodeW + extraLeft,
     height: m.nodeH + extraTop,
     boxSizing: "border-box",
   };
 
-  if (isOverview) {
-    const nameRow = (
-      <span className="flex max-h-full w-full items-end justify-center gap-1 overflow-hidden px-0.5 pb-0.5">
-        <span className="shrink-0 overflow-hidden text-[8px] font-bold leading-none text-slate-900 [writing-mode:vertical-rl] rotate-180">
-          {noeud.nom}
-        </span>
-        {prenomArbre && (
-          <span className="shrink-0 overflow-hidden text-[8px] font-semibold leading-none text-slate-700 [writing-mode:vertical-rl] rotate-180">
-            {prenomArbre}
-            {extraPrenoms && (
-              <span className="text-[7px] font-normal text-slate-500" aria-hidden="true">
-                *
-              </span>
-            )}
-          </span>
-        )}
-      </span>
-    );
-
-    return (
-      <div style={shellStyle} data-person-id={noeud.id_gedcom}>
-        <div
-          className={`relative flex h-full w-full flex-col items-center overflow-hidden rounded-md bg-white p-[2px] shadow-sm ${border}`}
-        >
-          <div
-            role="button"
-            className="flex min-h-0 w-full flex-1 cursor-pointer flex-col justify-end overflow-hidden outline-none"
-          >
-            <div className="flex min-h-0 flex-1 w-full flex-col justify-end overflow-hidden">
-              <FloatingTooltip
-                content={fullName}
-                maxWidth={220}
-                multiline
-                align="center"
-                className="w-full"
-              >
-                {nameRow}
-              </FloatingTooltip>
-            </div>
-          </div>
-          <div className="shrink-0 pb-px" data-tree-interactive>
-            <AncreButton
-              active={isAncre}
-              onAncre={() => onAncre(noeud.id_gedcom)}
-            />
-          </div>
-          {noeud.chemin_dossier && (
-            <div
-              className="absolute bottom-0.5 right-0.5 z-10"
-              data-tree-interactive
-            >
-              <CheckedIcon
-                checked={isChecked}
-                disabled={checkedPending}
-                onToggle={(next) =>
-                  onToggleChecked?.(noeud.chemin_dossier!, next)
-                }
-              />
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div style={shellStyle} data-person-id={noeud.id_gedcom}>
-      <div className="flex h-full flex-col">
+      <div
+        className={`flex h-full ${refOnLeft ? "flex-row items-stretch" : "flex-col"}`}
+      >
         {parentsAilleurs && (
-          <div className="flex shrink-0 justify-center pb-0.5" data-tree-interactive>
+          <div
+            className={
+              refOnLeft
+                ? "flex w-[26px] shrink-0 items-center justify-center self-center pr-0.5"
+                : "flex shrink-0 justify-center pb-0.5"
+            }
+            data-tree-interactive
+          >
             <FloatingTooltip
               content={
                 <>
@@ -191,7 +153,7 @@ export function PersonNode({
               >
                 <svg
                   viewBox="0 0 24 24"
-                  className="h-3 w-3"
+                  className={`h-3 w-3 ${refOnLeft ? "-rotate-90" : ""}`}
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2.25"
@@ -207,14 +169,14 @@ export function PersonNode({
           </div>
         )}
         <div
-          className={`relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-white shadow-sm hover:shadow-md ${border}`}
+          className={`relative flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg bg-white shadow-sm hover:shadow-md ${border}`}
         >
             <div
               role="button"
-              className="flex min-h-0 min-w-0 flex-1 cursor-pointer flex-col overflow-hidden p-[2px] text-left outline-none"
+              className="flex h-full min-h-0 min-w-0 cursor-pointer flex-col justify-start overflow-hidden p-[2px] text-left outline-none"
             >
-              <div className="flex min-w-0 shrink-0 items-start justify-between gap-0.5">
-                <span className="flex min-w-0 items-start gap-0.5" data-tree-interactive>
+              <div className="flex h-4 min-w-0 shrink-0 items-center justify-between gap-0.5 leading-none">
+                <span className="flex h-4 min-w-0 items-center gap-0.5" data-tree-interactive>
                   <PhotoIcon
                     hasPhotos={noeud.photos}
                     onClick={() =>
@@ -231,6 +193,17 @@ export function PersonNode({
                       )
                     }
                   />
+                </span>
+                <span
+                  className="inline-flex h-4 shrink-0 items-center gap-0.5 leading-none"
+                  data-tree-interactive
+                >
+                  {cartouche.showNmdInHeader && (
+                    <ActeIcons
+                      actes={actesFromEvenements(noeud.evenements ?? [])}
+                      onActeClick={handleActeClick}
+                    />
+                  )}
                   {noeud.chemin_dossier && (
                     <CheckedIcon
                       checked={isChecked}
@@ -241,12 +214,8 @@ export function PersonNode({
                     />
                   )}
                 </span>
-                <AncreButton
-                  active={isAncre}
-                  onAncre={() => onAncre(noeud.id_gedcom)}
-                />
               </div>
-              <div className="my-[2px] flex min-w-0 shrink-0 items-start gap-1">
+              <div className="flex min-w-0 shrink-0 items-start gap-1">
                 <span data-tree-interactive className="shrink-0">
                   <AvatarIcon
                     sexe={noeud.sexe}
@@ -284,34 +253,50 @@ export function PersonNode({
                         )}
                       </span>
                     )}
+                    {anneesVie && (
+                      <span className="mt-px truncate text-[10px] leading-none text-slate-500">
+                        {anneesVie}
+                      </span>
+                    )}
                   </span>
                 </FloatingTooltip>
               </div>
-              <div className="min-w-0 shrink-0">
-                <EvenementsList
-                  evenements={noeud.evenements ?? []}
-                  onActeClick={handleActeClick}
-                  size="compact"
-                  className="!gap-y-px leading-none"
-                  hideMissingActeWarnings
-                  vieDates={{
-                    date_naissance_min: noeud.date_naissance_min,
-                    date_naissance_min_approximation:
-                      noeud.date_naissance_min_approximation,
-                    date_naissance_min_regle: noeud.date_naissance_min_regle,
-                    date_deces_max: noeud.date_deces_max,
-                    date_deces_max_approximation: noeud.date_deces_max_approximation,
-                    date_deces_max_regle: noeud.date_deces_max_regle,
-                    naissance_gedcom: noeud.naissance_gedcom,
-                    deces_gedcom: noeud.deces_gedcom,
-                  }}
-                />
-              </div>
-              {noeud.profession && (
+              {cartouche.showEventRows && (
+                <div className="min-w-0 shrink-0">
+                  <EvenementsList
+                    evenements={noeud.evenements ?? []}
+                    onActeClick={handleActeClick}
+                    size="compact"
+                    className="!gap-y-px leading-none"
+                    hideMissingActeWarnings
+                    vieDates={{
+                      date_naissance_min: noeud.date_naissance_min,
+                      date_naissance_min_approximation:
+                        noeud.date_naissance_min_approximation,
+                      date_naissance_min_regle: noeud.date_naissance_min_regle,
+                      date_deces_max: noeud.date_deces_max,
+                      date_deces_max_approximation: noeud.date_deces_max_approximation,
+                      date_deces_max_regle: noeud.date_deces_max_regle,
+                      naissance_gedcom: noeud.naissance_gedcom,
+                      deces_gedcom: noeud.deces_gedcom,
+                    }}
+                  />
+                </div>
+              )}
+              {cartouche.showProfession && noeud.profession && (
                 <span className="mt-px truncate text-[10px] leading-none italic text-slate-400">
                   {noeud.profession}
                 </span>
               )}
+            </div>
+            <div
+              className="absolute bottom-[2px] right-[2px] z-10 flex leading-none"
+              data-tree-interactive
+            >
+              <AncreButton
+                active={isAncre}
+                onAncre={() => onAncre(noeud.id_gedcom)}
+              />
             </div>
         </div>
       </div>
