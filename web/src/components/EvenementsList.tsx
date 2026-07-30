@@ -99,7 +99,6 @@ function EventRow({
 }) {
   const isNaissanceEnfant = evt.type === "naissance_enfant";
   const acteType = isNaissanceEnfant ? undefined : EVENT_ACTE_TYPE[evt.type];
-  const acteSize = size === "compact" ? "xs" : "sm";
   let dateDisplay: string | null = null;
   let dateEstimated = false;
   let dateTooltip: string | null = null;
@@ -124,12 +123,12 @@ function EventRow({
       : (evt.lieu?.trim() ?? "");
   const gridClass =
     size === "compact"
-      ? "grid-cols-[1.25rem_minmax(3.25rem,auto)_1fr_0.75rem]"
-      : "grid-cols-[1.75rem_minmax(4.5rem,auto)_1fr_1rem]";
+      ? "grid-cols-[1rem_minmax(3.25rem,auto)_1fr_0.75rem]"
+      : "grid-cols-[1rem_minmax(4.5rem,auto)_1fr_1rem]";
 
   return (
     <div
-      className={`grid ${gridClass} items-center gap-x-1.5 leading-tight text-slate-500`}
+      className={`grid ${gridClass} items-center gap-x-1 leading-tight text-slate-500`}
     >
       {isNaissanceEnfant ? (
         <span className="inline-block w-4" aria-hidden="true" />
@@ -138,7 +137,6 @@ function EventRow({
           type={acteType}
           acte={evt.acte}
           onActeClick={onActeClick}
-          size={acteSize}
         />
       ) : (
         <span className="inline-block w-4" aria-hidden="true" />

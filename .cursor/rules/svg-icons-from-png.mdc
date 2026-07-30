@@ -1,0 +1,22 @@
+---
+description: Création d'icônes SVG — demander un PNG ~100×100 de référence avant de vectoriser
+globs: web/src/assets/icons/**/*,web/src/components/GlyphIcon.tsx,web/src/components/GenealogyIcons.tsx,web/src/components/*Icon*.tsx
+alwaysApply: false
+---
+
+# Icônes SVG
+
+**Runtime** : uniquement `assets/icons/svg/` (ou SVG inline dans les composants).  
+`assets/icons/png/` = références de dessin seulement, **jamais** importées par l’app.
+
+## Avant de créer ou retoucher un glyphe SVG
+
+1. **Demander un PNG exemple ~100×100** (noir sur transparent) — à déposer dans `assets/icons/png/`.
+2. En déduire un SVG dans `assets/icons/svg/` (ou inline) avec `currentColor`, comme `AncreButton` / `GlyphIcon`.
+3. Préférer le **redessin vectoriel** à l’auto-trace.
+
+## À éviter
+
+- Importer des PNG pour l’affichage des glyphes.
+- Masque CSS sur PNG redimensionné.
+- SVG approximatif sans PNG de référence.

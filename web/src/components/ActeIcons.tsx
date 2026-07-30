@@ -1,8 +1,8 @@
 import type { ActeResume, ActeType, ActesPersonne } from "../types/api";
 import { formatActeTooltipLines } from "../utils/format";
-import { ICON_ABSENT_BTN } from "../utils/iconStyles";
+import { ICON_ABSENT_BTN, ICON_DISK, ICON_GLYPH_INSET } from "../utils/iconStyles";
 import { FloatingTooltip } from "./FloatingTooltip";
-import { EvenementIcon } from "./GenealogyIcons";
+import { GlyphIcon } from "./GlyphIcon";
 
 const ACTE_META: Record<
   ActeType,
@@ -25,36 +25,23 @@ const ACTE_META: Record<
   },
 };
 
-/** Symbole plus grand que le disque ne le suggère (disque inchangé). */
-const ACTE_ICON_SIZE: Record<"xs" | "sm" | "md", "xs" | "sm" | "md" | "lg"> = {
-  xs: "sm",
-  sm: "md",
-  md: "lg",
-};
-
 interface ActeIconsProps {
   actes: ActesPersonne;
   onActeClick?: (type: ActeType, url: string) => void;
-  size?: "xs" | "sm" | "md";
 }
 
 interface ActeIconSingleProps {
   type: ActeType;
   acte: ActeResume | null;
   onActeClick?: (type: ActeType, url: string) => void;
-  size?: "xs" | "sm" | "md";
 }
 
 export function ActeIconSingle({
   type,
   acte,
   onActeClick,
-  size = "sm",
 }: ActeIconSingleProps) {
-  const dim =
-    size === "xs" ? "h-4 w-4" : size === "sm" ? "h-6 w-6" : "h-7 w-7";
   const meta = ACTE_META[type];
-  const iconSize = ACTE_ICON_SIZE[size];
   const active = acte !== null;
   const canOpen = active && !!acte?.url;
   const lines = formatActeTooltipLines(meta.label, acte);
@@ -74,7 +61,7 @@ export function ActeIconSingle({
           ))}
         </>
       }
-      className="justify-center"
+      className={`${ICON_DISK} shrink-0 leading-none`}
       contentClassName="min-w-[148px] px-2.5 py-1.5"
       maxWidth={240}
       multiline
@@ -89,7 +76,7 @@ export function ActeIconSingle({
         }}
         onPointerDown={(e) => e.stopPropagation()}
         onPointerUp={(e) => e.stopPropagation()}
-        className={`inline-flex items-center justify-center rounded-full p-0 leading-none transition-colors ${dim} ${
+        className={`relative box-border ${ICON_DISK} shrink-0 overflow-hidden rounded-full border-0 m-0 p-0 leading-none transition-colors ${
           active
             ? canOpen
               ? meta.activeClass
@@ -98,17 +85,17 @@ export function ActeIconSingle({
         }`}
         aria-label={ariaLabel}
       >
-        <EvenementIcon type={type} size={iconSize} />
+        <GlyphIcon
+          name={type}
+          size="fill"
+          className={ICON_GLYPH_INSET}
+        />
       </button>
     </FloatingTooltip>
   );
 }
 
-export function ActeIcons({
-  actes,
-  onActeClick,
-  size = "md",
-}: ActeIconsProps) {
+export function ActeIcons({ actes, onActeClick }: ActeIconsProps) {
   const items: Array<{ type: ActeType; acte: ActeResume | null }> = [
     { type: "naissance", acte: actes.naissance },
     { type: "mariage", acte: actes.mariage },
@@ -123,7 +110,6 @@ export function ActeIcons({
           type={type}
           acte={acte}
           onActeClick={onActeClick}
-          size={size}
         />
       ))}
     </div>

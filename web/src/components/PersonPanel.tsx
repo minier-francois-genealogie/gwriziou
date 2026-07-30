@@ -138,8 +138,6 @@ export function PersonPanel({
               onActeClick={handleActeClick}
               photos={personne.photos.length > 0}
               photoCount={personne.photos.length}
-              photoSize="sm"
-              acteSize="xs"
               className="text-lg font-bold text-slate-900"
               datesClassName="text-sm text-slate-500"
               onPhotoClick={() => onPhotoClick(personne.photos, name)}
@@ -151,14 +149,12 @@ export function PersonPanel({
             <AncreButton
               active={personne.id_gedcom === ancrePersonneId}
               onAncre={() => onAncre(personne.id_gedcom)}
-              size="md"
             />
             {personne.dossier_actes?.chemin && (
               <CheckedIcon
                 checked={isChecked}
                 disabled={checkedPending}
                 onToggle={onToggleChecked}
-                size="md"
               />
             )}
           </div>

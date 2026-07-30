@@ -1,4 +1,10 @@
-import { ICON_ABSENT_BTN, ICON_ACTIVE_AMBER, ICON_ACTIVE_AMBER_HOVER } from "../utils/iconStyles";
+import {
+  ICON_ABSENT_BTN,
+  ICON_ACTIVE_AMBER,
+  ICON_ACTIVE_AMBER_HOVER,
+  ICON_DISK,
+  ICON_GLYPH_INSET,
+} from "../utils/iconStyles";
 import { FloatingTooltip } from "./FloatingTooltip";
 import { GlyphIcon } from "./GlyphIcon";
 
@@ -9,21 +15,10 @@ export function photoTooltip(hasPhotos: boolean, count?: number): string {
   return "Photo(s) disponible(s)";
 }
 
-const DISK = {
-  xs: "h-4 w-4",
-  sm: "h-5 w-5",
-} as const;
-
-const GLYPH = {
-  xs: "xs",
-  sm: "sm",
-} as const;
-
 interface PhotoIconProps {
   hasPhotos: boolean;
   photoCount?: number;
   onClick?: () => void;
-  size?: "xs" | "sm";
   className?: string;
 }
 
@@ -31,13 +26,15 @@ export function PhotoIcon({
   hasPhotos,
   photoCount,
   onClick,
-  size = "sm",
   className = "",
 }: PhotoIconProps) {
   const tooltip = photoTooltip(hasPhotos, photoCount);
 
   return (
-    <FloatingTooltip content={tooltip} className={`shrink-0 justify-center ${className}`}>
+    <FloatingTooltip
+      content={tooltip}
+      className={`${ICON_DISK} shrink-0 ${className}`}
+    >
       <button
         type="button"
         aria-disabled={!hasPhotos}
@@ -49,13 +46,17 @@ export function PhotoIcon({
         }}
         onPointerDown={(e) => e.stopPropagation()}
         onPointerUp={(e) => e.stopPropagation()}
-        className={`inline-flex items-center justify-center p-0 leading-none transition-colors ${DISK[size]} ${
+        className={`relative box-border ${ICON_DISK} m-0 overflow-hidden border-0 p-0 leading-none transition-colors ${
           hasPhotos
             ? `${ICON_ACTIVE_AMBER} ${ICON_ACTIVE_AMBER_HOVER}`
             : ICON_ABSENT_BTN
         }`}
       >
-        <GlyphIcon name="photo" size={GLYPH[size]} />
+        <GlyphIcon
+          name="photo"
+          size="fill"
+          className={ICON_GLYPH_INSET}
+        />
       </button>
     </FloatingTooltip>
   );

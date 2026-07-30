@@ -2,33 +2,21 @@ import {
   ICON_ABSENT_BTN,
   ICON_ABSENT_BTN_HOVER,
   ICON_ACTIVE_BLACK,
+  ICON_DISK,
+  ICON_GLYPH_INSET,
 } from "../utils/iconStyles";
 import { FloatingTooltip } from "./FloatingTooltip";
 
 interface AncreButtonProps {
   active: boolean;
   onAncre: () => void;
-  size?: "xs" | "sm" | "md";
   className?: string;
 }
-
-const SIZE = {
-  xs: "h-4 w-4",
-  sm: "h-5 w-5",
-  md: "h-6 w-6",
-} as const;
-
-const ICON = {
-  xs: "h-2.5 w-2.5",
-  sm: "h-3 w-3",
-  md: "h-3.5 w-3.5",
-} as const;
 
 /** Interrupteur ancre : gris (off) ou noir (on). Clic actif = noop. */
 export function AncreButton({
   active,
   onAncre,
-  size = "sm",
   className = "",
 }: AncreButtonProps) {
   const label = active ? "Ancre actuelle de l'arbre" : "Ancrer l'arbre ici";
@@ -36,12 +24,13 @@ export function AncreButton({
   return (
     <FloatingTooltip
       content={label}
-      className={`shrink-0 ${className}`}
+      className={`${ICON_DISK} shrink-0 ${className}`}
       contentClassName="min-w-[140px]"
       align="end"
     >
       <button
         type="button"
+        data-tree-interactive
         aria-label={label}
         aria-pressed={active}
         disabled={active}
@@ -51,7 +40,7 @@ export function AncreButton({
           if (!active) onAncre();
         }}
         onPointerDown={(e) => e.stopPropagation()}
-        className={`inline-flex ${SIZE[size]} items-center justify-center transition ${
+        className={`relative box-border ${ICON_DISK} m-0 overflow-hidden border-0 p-0 leading-none transition ${
           active
             ? `cursor-default ${ICON_ACTIVE_BLACK}`
             : `${ICON_ABSENT_BTN} ${ICON_ABSENT_BTN_HOVER}`
@@ -59,7 +48,7 @@ export function AncreButton({
       >
         <svg
           viewBox="0 0 24 24"
-          className={ICON[size]}
+          className={ICON_GLYPH_INSET}
           fill="none"
           stroke="currentColor"
           strokeWidth="2"

@@ -182,15 +182,15 @@ export function WarningIcon({
   return (
     <svg
       viewBox={VIEWBOX}
-      className={`inline-block shrink-0 ${WARNING_SIZE[size]} text-amber-500 ${className}`}
+      className={`inline-block shrink-0 ${WARNING_SIZE[size]} ${className}`}
       aria-hidden="true"
     >
       <path
-        fill="currentColor"
-        d="M12 2.2 2.2 20.8c-.3.5.1 1.2.8 1.2h18c.7 0 1.1-.7.8-1.2L12 2.2z"
+        fill="#f3b40a"
+        d="M12 3.2 3.4 19.2c-.25.45.08 1 .6 1h16c.52 0 .85-.55.6-1L12 3.2z"
       />
-      <rect x="11" y="8.5" width="2" height="5.5" rx="1" fill="white" />
-      <circle cx="12" cy="17" r="1.35" fill="white" />
+      <rect x="11" y="9" width="2" height="5.2" rx="1" fill="#3e2723" />
+      <circle cx="12" cy="17.2" r="1.25" fill="#3e2723" />
     </svg>
   );
 }

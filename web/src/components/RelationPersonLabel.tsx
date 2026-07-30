@@ -45,8 +45,6 @@ interface RelationPersonLabelProps {
   onNoteClick?: () => void;
   className?: string;
   datesClassName?: string;
-  photoSize?: "xs" | "sm";
-  acteSize?: "xs" | "sm";
 }
 
 export function RelationPersonLabel({
@@ -64,8 +62,6 @@ export function RelationPersonLabel({
   onNoteClick,
   className = "",
   datesClassName = "text-slate-500",
-  photoSize = "xs",
-  acteSize = "xs",
 }: RelationPersonLabelProps) {
   return (
     <span className={`inline-flex flex-wrap items-baseline gap-x-1 text-left ${className}`}>
@@ -76,12 +72,10 @@ export function RelationPersonLabel({
         photos={photos}
         photoCount={photoCount}
         onPhotoClick={onPhotoClick}
-        photoSize={photoSize}
         hasNotes={hasNotes}
         onNoteClick={onNoteClick}
         actes={actes}
         onActeClick={onActeClick}
-        acteSize={acteSize}
       />
       <span className={`inline-flex items-center gap-x-1 font-normal ${datesClassName}`}>
         (<EventPartWithIcon type="naissance" evt={naissance} />

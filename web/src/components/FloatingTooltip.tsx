@@ -97,7 +97,7 @@ export function FloatingTooltip({
   return (
     <span
       ref={anchorRef}
-      className={`inline-flex ${className}`}
+      className={`inline-flex align-top leading-none ${className}`}
       onMouseEnter={show}
       onMouseLeave={hide}
       onFocus={show}

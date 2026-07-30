@@ -1,5 +1,3 @@
-import avatarHommePng from "../assets/icons/avatar_homme.png";
-import avatarFemmePng from "../assets/icons/avatar_femme.png";
 import { FloatingTooltip } from "./FloatingTooltip";
 
 const SIZE = {
@@ -18,8 +16,55 @@ interface AvatarIconProps {
   onEdit?: () => void;
 }
 
+const STROKE = {
+  fill: "none" as const,
+  stroke: "currentColor",
+  strokeWidth: 5,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+};
+
+/** Glyphe homme (SVG). */
+function AvatarHommeGlyph({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 128 128"
+      className={`block ${className}`}
+      aria-hidden="true"
+      {...STROKE}
+    >
+      <path d="M31 52V24c0-12 14-21 33-21h8c18 0 25 10 25 24v22" />
+      <path d="M35 40 46 27 56 37 74 22 91 40" />
+      <path d="M37 42c0 22 10 39 27 39s27-17 27-39" />
+      <path d="M53 83v8M73 83v8" />
+      <path d="M40 91 52 105 58 96" />
+      <path d="M88 91 76 105 70 96" />
+      <path d="M56 104v23M71 104v23" />
+      <path d="M34 94C24 108 22 118 22 127" />
+      <path d="M94 94c10 14 12 24 12 33" />
+    </svg>
+  );
+}
+
+/** Glyphe femme (SVG). */
+function AvatarFemmeGlyph({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 128 128"
+      className={`block ${className}`}
+      aria-hidden="true"
+      {...STROKE}
+    >
+      <path d="M31 96V28C31 10 46 2 64 2s33 8 33 26v68" />
+      <path d="M37 40H70l4 8 4-8h13" />
+      <path d="M37 46c0 20 10 35 27 35s27-15 27-35" />
+      <path d="M22 127C22 110 26 100 34 97c8-2 18-2 30 8 12-10 22-10 30-8 8 3 12 13 12 30" />
+    </svg>
+  );
+}
+
 /**
- * Avatar : photo type A si présente, sinon glyphe gris homme/femme.
+ * Avatar : photo type A si présente, sinon glyphe SVG homme/femme.
  */
 export function AvatarIcon({
   sexe,
@@ -31,7 +76,6 @@ export function AvatarIcon({
 }: AvatarIconProps) {
   const isMale = sexe === "M";
   const isFemale = sexe === "F";
-  const glyph = isMale ? avatarHommePng : isFemale ? avatarFemmePng : null;
   const label = avatarUrl
     ? editable
       ? "Changer l'avatar"
@@ -48,7 +92,7 @@ export function AvatarIcon({
     <span
       aria-label={label}
       className={`relative inline-flex ${SIZE[size]} items-center justify-center overflow-hidden rounded-full bg-slate-200 text-slate-600 ${
-        editable ? "cursor-pointer ring-1 ring-slate-300 hover:ring-slate-400" : ""
+        editable ? "cursor-pointer ring-1 ring-inset ring-slate-300 hover:ring-slate-400" : ""
       }`}
     >
       {avatarUrl ? (
@@ -58,21 +102,10 @@ export function AvatarIcon({
           className="h-full w-full object-cover"
           draggable={false}
         />
-      ) : glyph ? (
-        <span
-          className="block h-[70%] w-[70%] bg-current"
-          style={{
-            WebkitMaskImage: `url(${glyph})`,
-            maskImage: `url(${glyph})`,
-            WebkitMaskSize: "contain",
-            maskSize: "contain",
-            WebkitMaskRepeat: "no-repeat",
-            maskRepeat: "no-repeat",
-            WebkitMaskPosition: "center",
-            maskPosition: "center",
-          }}
-          aria-hidden="true"
-        />
+      ) : isMale ? (
+        <AvatarHommeGlyph className="h-[78%] w-[78%]" />
+      ) : isFemale ? (
+        <AvatarFemmeGlyph className="h-[78%] w-[78%]" />
       ) : (
         <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
       )}

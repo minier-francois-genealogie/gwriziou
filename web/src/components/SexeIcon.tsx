@@ -83,14 +83,12 @@ interface PersonNameProps {
   photos?: boolean;
   photoCount?: number;
   onPhotoClick?: () => void;
-  photoSize?: "xs" | "sm";
   showPhoto?: boolean;
   hasNotes?: boolean;
   onNoteClick?: () => void;
   showNote?: boolean;
   actes?: ActesPersonne;
   onActeClick?: (type: ActeType, url: string) => void;
-  acteSize?: "xs" | "sm";
 }
 
 export function PersonName({
@@ -101,14 +99,12 @@ export function PersonName({
   photos = false,
   photoCount,
   onPhotoClick,
-  photoSize = "sm",
   showPhoto = true,
   hasNotes = false,
   onNoteClick,
   showNote = true,
   actes,
   onActeClick,
-  acteSize = "xs",
 }: PersonNameProps) {
   return (
     <span className={`inline-flex items-center gap-1 ${className}`}>
@@ -118,14 +114,13 @@ export function PersonName({
           hasPhotos={photos}
           photoCount={photoCount}
           onClick={onPhotoClick}
-          size={photoSize}
         />
       )}
       {showNote && (
-        <NoteIcon hasNotes={hasNotes} onClick={onNoteClick} size={photoSize} />
+        <NoteIcon hasNotes={hasNotes} onClick={onNoteClick} />
       )}
       {actes && (
-        <ActeIcons actes={actes} onActeClick={onActeClick} size={acteSize} />
+        <ActeIcons actes={actes} onActeClick={onActeClick} />
       )}
       <span>{formatNom(nom, prenoms)}</span>
     </span>

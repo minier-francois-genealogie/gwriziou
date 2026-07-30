@@ -69,22 +69,13 @@ export function PersonNode({
 
   void onFocus;
 
-  const innerBorder = highlighted
-    ? "border-amber-400"
-    : focused
-      ? isFemale
-        ? "border-rose-500"
-        : isMale
-          ? "border-sky-500"
-          : "border-slate-500"
-      : "border-transparent";
-  const border = highlighted
-    ? "border-amber-300"
+  const border = highlighted || focused
+    ? "border-2 border-amber-500"
     : isMale
-      ? "border-sky-300"
+      ? "border border-sky-300"
       : isFemale
-        ? "border-rose-300"
-        : "border-slate-300";
+        ? "border border-rose-300"
+        : "border border-slate-300";
 
   const fullName = formatNom(noeud.nom, noeud.prenoms);
   const prenomArbre = splitPrenoms(noeud.prenoms)[0] ?? null;
@@ -125,50 +116,44 @@ export function PersonNode({
     return (
       <div style={shellStyle} data-person-id={noeud.id_gedcom}>
         <div
-          className={`flex h-full w-full flex-col items-center rounded-md border bg-white p-0.5 shadow-sm ${border}`}
+          className={`relative flex h-full w-full flex-col items-center overflow-hidden rounded-md bg-white p-[2px] shadow-sm ${border}`}
         >
           <div
-            className={`relative flex min-h-0 flex-1 w-full flex-col items-center rounded border ${innerBorder}`}
+            role="button"
+            className="flex min-h-0 w-full flex-1 cursor-pointer flex-col justify-end overflow-hidden outline-none"
           >
-            <div
-              role="button"
-              className="flex min-h-0 w-full flex-1 cursor-pointer flex-col justify-end overflow-hidden outline-none"
-            >
-              <div className="flex min-h-0 flex-1 w-full flex-col justify-end overflow-hidden">
-                <FloatingTooltip
-                  content={fullName}
-                  maxWidth={220}
-                  multiline
-                  align="center"
-                  className="w-full"
-                >
-                  {nameRow}
-                </FloatingTooltip>
-              </div>
+            <div className="flex min-h-0 flex-1 w-full flex-col justify-end overflow-hidden">
+              <FloatingTooltip
+                content={fullName}
+                maxWidth={220}
+                multiline
+                align="center"
+                className="w-full"
+              >
+                {nameRow}
+              </FloatingTooltip>
             </div>
-            <div className="shrink-0 pb-px" data-tree-interactive>
-              <AncreButton
-                active={isAncre}
-                onAncre={() => onAncre(noeud.id_gedcom)}
-                size="xs"
+          </div>
+          <div className="shrink-0 pb-px" data-tree-interactive>
+            <AncreButton
+              active={isAncre}
+              onAncre={() => onAncre(noeud.id_gedcom)}
+            />
+          </div>
+          {noeud.chemin_dossier && (
+            <div
+              className="absolute bottom-0.5 right-0.5 z-10"
+              data-tree-interactive
+            >
+              <CheckedIcon
+                checked={isChecked}
+                disabled={checkedPending}
+                onToggle={(next) =>
+                  onToggleChecked?.(noeud.chemin_dossier!, next)
+                }
               />
             </div>
-            {noeud.chemin_dossier && (
-              <div
-                className="absolute bottom-0.5 right-0.5 z-10"
-                data-tree-interactive
-              >
-                <CheckedIcon
-                  checked={isChecked}
-                  disabled={checkedPending}
-                  onToggle={(next) =>
-                    onToggleChecked?.(noeud.chemin_dossier!, next)
-                  }
-                  size="xs"
-                />
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
     );
@@ -222,27 +207,22 @@ export function PersonNode({
           </div>
         )}
         <div
-          className={`relative flex min-h-0 flex-1 flex-col overflow-visible rounded-xl border-2 bg-white p-0.5 shadow-sm hover:shadow-md ${border}`}
+          className={`relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-white shadow-sm hover:shadow-md ${border}`}
         >
-          <div
-            className={`relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[10px] border-2 ${innerBorder}`}
-          >
             <div
               role="button"
-              className="flex min-h-0 min-w-0 flex-1 cursor-pointer flex-col overflow-hidden p-1.5 text-left outline-none"
+              className="flex min-h-0 min-w-0 flex-1 cursor-pointer flex-col overflow-hidden p-[2px] text-left outline-none"
             >
-              <div className="flex min-w-0 shrink-0 items-center justify-between gap-1">
-                <span className="flex min-w-0 items-center gap-1" data-tree-interactive>
+              <div className="flex min-w-0 shrink-0 items-start justify-between gap-0.5">
+                <span className="flex min-w-0 items-start gap-0.5" data-tree-interactive>
                   <PhotoIcon
                     hasPhotos={noeud.photos}
-                    size="sm"
                     onClick={() =>
                       onPhotoClick?.(noeud.id_gedcom, noeud.nom, noeud.prenoms)
                     }
                   />
                   <NoteIcon
                     hasNotes={hasNotes}
-                    size="sm"
                     onClick={() =>
                       onNoteClick?.(
                         noeud.chemin_dossier ?? null,
@@ -258,19 +238,15 @@ export function PersonNode({
                       onToggle={(next) =>
                         onToggleChecked?.(noeud.chemin_dossier!, next)
                       }
-                      size="sm"
                     />
                   )}
                 </span>
-                <div className="shrink-0" data-tree-interactive>
-                  <AncreButton
-                    active={isAncre}
-                    onAncre={() => onAncre(noeud.id_gedcom)}
-                    size="sm"
-                  />
-                </div>
+                <AncreButton
+                  active={isAncre}
+                  onAncre={() => onAncre(noeud.id_gedcom)}
+                />
               </div>
-              <div className="mt-0.5 flex min-w-0 shrink-0 items-start gap-1.5">
+              <div className="my-[2px] flex min-w-0 shrink-0 items-start gap-1">
                 <span data-tree-interactive className="shrink-0">
                   <AvatarIcon
                     sexe={noeud.sexe}
@@ -289,12 +265,12 @@ export function PersonNode({
                   align="start"
                   className="min-w-0"
                 >
-                  <span className="flex min-w-0 flex-col leading-tight">
+                  <span className="flex min-w-0 flex-col leading-none">
                     <span className="truncate text-xs font-bold text-slate-900">
                       {noeud.nom}
                     </span>
                     {prenomArbre && (
-                      <span className="flex min-w-0 items-baseline gap-0.5">
+                      <span className="mt-px flex min-w-0 items-baseline gap-0.5">
                         <span className="truncate text-xs font-bold text-slate-900">
                           {prenomArbre}
                         </span>
@@ -311,11 +287,12 @@ export function PersonNode({
                   </span>
                 </FloatingTooltip>
               </div>
-              <div className="mt-1 min-w-0 shrink-0">
+              <div className="min-w-0 shrink-0">
                 <EvenementsList
                   evenements={noeud.evenements ?? []}
                   onActeClick={handleActeClick}
                   size="compact"
+                  className="!gap-y-px leading-none"
                   hideMissingActeWarnings
                   vieDates={{
                     date_naissance_min: noeud.date_naissance_min,
@@ -331,12 +308,11 @@ export function PersonNode({
                 />
               </div>
               {noeud.profession && (
-                <span className="mt-0.5 truncate text-[10px] leading-tight italic text-slate-400">
+                <span className="mt-px truncate text-[10px] leading-none italic text-slate-400">
                   {noeud.profession}
                 </span>
               )}
             </div>
-          </div>
         </div>
       </div>
     </div>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Cheveux : contour gauche + sommet + droite (s'arrete a mi-tete) -->
+  <path d="M31 52V24c0-12 14-21 33-21h8c18 0 25 10 25 24v22"/>
+  <!-- Raie / frange en zigzag (cote gauche) -->
+  <path d="M35 40 46 27 56 37 74 22 91 40"/>
+  <!-- Visage U -->
+  <path d="M37 42c0 22 10 39 27 39s27-17 27-39"/>
+  <!-- Cou -->
+  <path d="M53 83v8M73 83v8"/>
+  <!-- Col chemise (2 triangles) -->
+  <path d="M40 91 52 105 58 96"/>
+  <path d="M88 91 76 105 70 96"/>
+  <!-- Patte de chemise / cravate -->
+  <path d="M56 104v23M71 104v23"/>
+  <!-- Epaules -->
+  <path d="M34 94C24 108 22 118 22 127"/>
+  <path d="M94 94c10 14 12 24 12 33"/>
+</svg>

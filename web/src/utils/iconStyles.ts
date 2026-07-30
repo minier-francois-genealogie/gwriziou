@@ -1,3 +1,9 @@
+/** Disque unique pour N/M/D, photo, note, checked, ancre — 16×16 px. */
+export const ICON_DISK = "h-4 w-4";
+
+/** Glyphe dans le disque : 2px d’air pour ne pas coller au bord. */
+export const ICON_GLYPH_INSET = "pointer-events-none absolute inset-[2px]";
+
 /** Surface commune des icônes inactives / absence (photo, acte, ancre…). */
 export const ICON_ABSENT_SURFACE = "bg-icon-absent-bg text-icon-absent";
 
