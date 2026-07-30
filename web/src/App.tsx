@@ -43,7 +43,7 @@ function LastViewRedirect() {
   if (last === "analyse-noms") return <Navigate to="/analyse/noms" replace />;
   if (last === "gestion-professions") return <Navigate to="/gestion/professions" replace />;
   if (last === "admin-comptes") return <Navigate to="/admin/comptes" replace />;
-  if (last === "gestion-notes" || last === "admin-notes") {
+  if (last === "gestion-notes") {
     return <Navigate to="/gestion/notes" replace />;
   }
   if (last === "a-savoir" || last === "aide-a-savoir") {

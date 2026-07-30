@@ -74,11 +74,7 @@ export function GestionNotesPage() {
             </div>
           )}
 
-          {error && (
-            <p className="text-sm text-red-600">
-              {error instanceof Error ? error.message : String(error)}
-            </p>
-          )}
+          {error && <p className="text-sm text-red-600">{error}</p>}
           {actionError && <p className="text-sm text-red-600">{actionError}</p>}
 
           {!loading && notes.length === 0 && (
